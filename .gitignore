@@ -1,0 +1,41 @@
+# --- Secrets: never commit ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# --- Private data: never commit (raw chat exports, parsed datasets, audience mapping) ---
+data/
+exports/
+ChatExport_*/
+*.mbox
+result.json
+*_chat*.txt
+
+# --- Model artifacts (large, personal) ---
+adapters/
+checkpoints/
+outputs/
+*.safetensors
+*.gguf
+*.bin
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# --- Node ---
+node_modules/
+
+# --- Xcode / iOS ---
+ios/**/xcuserdata/
+ios/**/DerivedData/
+*.xcuserstate
+build/
+
+# --- OS ---
+.DS_Store
