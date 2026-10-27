@@ -2,6 +2,7 @@
 
 A turn is a run of consecutive own messages in one chat (no other sender in
 between and no gap longer than `turn_gap_minutes`), merged with newlines.
+Turns longer than `max_turn_messages` are split at their longest pauses.
 Only the user's own text is kept; other people's messages are used only to
 detect turn boundaries and are never written out.
 
@@ -112,8 +113,8 @@ def read_messages(export_dirs: list[Path]):
     return messages
 
 
-def build_turns(messages, self_name: str, gap: timedelta):
-    """Merge consecutive own text messages into turns."""
+def build_turns(messages, self_name: str, gap: timedelta, max_messages: int):
+    """Merge consecutive own text messages into turns of at most max_messages."""
     turns = []
     current = None
     prev_ts = None
@@ -135,9 +136,9 @@ def build_turns(messages, self_name: str, gap: timedelta):
         if current is None:
             current = {"start": msg["ts"], "end": msg["ts"], "messages": [], "is_reply": None}
             turns.append(current)
-        if current["messages"] and current["messages"][-1] == text:
+        if current["messages"] and current["messages"][-1][1] == text:
             continue  # double send
-        current["messages"].append(text)
+        current["messages"].append((msg["ts"], text))
         current["end"] = msg["ts"]
     # A turn is a reply if someone else wrote right before it (within the gap).
     by_start = {}
@@ -149,7 +150,29 @@ def build_turns(messages, self_name: str, gap: timedelta):
     for turn in turns:
         other = by_start.get(turn["start"])
         turn["is_reply"] = other is not None and turn["start"] - other <= gap
-    return turns
+    return [chunk for turn in turns for chunk in split_turn(turn, max_messages)]
+
+
+def split_turn(turn, max_messages: int):
+    """Split a long monologue at its longest pauses until every chunk fits.
+
+    Only the first chunk keeps the turn's is_reply; later chunks follow the user's own messages.
+    """
+    def split(items):
+        if len(items) <= max_messages:
+            return [items]
+        cut = max(range(1, len(items)), key=lambda i: items[i][0] - items[i - 1][0])
+        return split(items[:cut]) + split(items[cut:])
+
+    return [
+        {
+            "start": items[0][0],
+            "end": items[-1][0],
+            "messages": [text for _, text in items],
+            "is_reply": turn["is_reply"] and i == 0,
+        }
+        for i, items in enumerate(split(turn["messages"]))
+    ]
 
 
 def main():
@@ -161,6 +184,7 @@ def main():
     audiences = json.loads((ROOT / "data" / "audiences.json").read_text(encoding="utf-8"))
     gap = timedelta(minutes=config.get("turn_gap_minutes", 10))
     test_span = timedelta(weeks=config.get("test_weeks", 4))
+    max_messages = config.get("max_turn_messages", 12)
     out_path = ROOT / config.get("output", "data/turns.jsonl")
 
     rows = []
@@ -171,7 +195,7 @@ def main():
             raise SystemExit(f"chat {chat!r} has no audience in data/audiences.json")
         messages = read_messages([Path(d).expanduser() for d in dirs])
         own = [m for m in messages if m["sender"] == config["self_name"]]
-        turns = build_turns(messages, config["self_name"], gap)
+        turns = build_turns(messages, config["self_name"], gap, max_messages)
         cutoff = max(t["end"] for t in turns) - test_span if turns else None
         for turn in turns:
             rows.append({
