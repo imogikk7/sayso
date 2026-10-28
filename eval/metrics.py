@@ -3,6 +3,8 @@
   fingerprint ↓  mean |feature mean(system) − feature mean(real)| / std(real) over ~15 stylometric features
   chrF ↑         character n-gram F-score against the user's real reply to the same prompt
   memorized ↓    share of outputs that copy a train turn verbatim or share a 40-char span with one
+  act/tone       (reply pairs tagged by bench_generate --tag) does the output make the same move as the user
+                 (act match ↑, tone match ↑) and the same mix of moves per audience (act TV ↓, total variation)
 Prints a table per system (and per task with --by task) and writes aggregated numbers only
 (no message text) to eval/results/<name>.json.
 
@@ -131,6 +133,38 @@ def summarize(rows, index, lex=None):
     return table
 
 
+def total_variation(a, b):
+    ca, cb = Counter(a), Counter(b)
+    return sum(abs(ca[k] / len(a) - cb[k] / len(b)) for k in set(ca) | set(cb)) / 2
+
+
+def thinking(rows):
+    """Act/tone of the chosen output vs the user's real reply, tagged by the same base-Glimmer prompt."""
+    by_system = defaultdict(list)
+    for row in rows:
+        if row.get("candidate_tags") and row["output"] in row["candidates"]:
+            tag = row["candidate_tags"][row["candidates"].index(row["output"])]
+            by_system[row["system"]].append((row["audience"], row["target_tag"], tag))
+    table = {}
+    for system, items in by_system.items():
+        audiences = defaultdict(lambda: ([], []))
+        for audience, real, out in items:
+            audiences[audience][0].append(real[0])
+            audiences[audience][1].append(out[0])
+        table[system] = {
+            "n": len(items),
+            "act_match": statistics.mean(real[0] == out[0] for _, real, out in items),
+            "tone_match": statistics.mean(real[1] == out[1] for _, real, out in items),
+            "act_tv": sum(len(r) * total_variation(r, o) for r, o in audiences.values()) / len(items),
+            "tone_tv": total_variation([real[1] for _, real, _ in items], [out[1] for _, _, out in items]),
+        }
+    if table:
+        print(f"\n{'act/tone (replies)':<20}{'n':>5}{'act match↑':>12}{'tone match↑':>13}{'act TV↓':>9}{'tone TV↓':>10}")
+        for system, t in table.items():
+            print(f"{system:<20}{t['n']:>5}{t['act_match']:>12.1%}{t['tone_match']:>13.1%}{t['act_tv']:>9.2f}{t['tone_tv']:>10.2f}")
+    return table
+
+
 def print_table(title, table):
     systems = [s for s in table if s != "real"]
     print(f"\n{title}")
@@ -178,6 +212,7 @@ def main():
     index, lex = train_index(), load_lexicon()
     results = {"all": summarize(rows, index, lex)}
     print_table("all test pairs", results["all"])
+    results["thinking"] = thinking(rows)
     if args.by:
         groups = defaultdict(list)
         for row in rows:

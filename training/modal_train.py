@@ -16,6 +16,9 @@ BASE_MODEL = "meta-models/Muse-Glimmer-30B"
 REASONING = "Reasoning strength: low."
 USER_PART = "<|start|>user<|message|>"
 REPLY_PART = "<|start|>assistant to=user<|message|>"
+# pairs_v4 put the user's thought in `reasoning_content` (the template's `to=self` channel):
+# the loss then starts at the first assistant header, so it covers the thought and the reply.
+ASSISTANT_PART = "<|start|>assistant"
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -82,7 +85,12 @@ def train(run: str, max_steps: int = -1, epochs: float = 2.0, limit: int = 0, r:
             per_device_eval_batch_size=8, save_strategy="no", report_to="none", seed=0,
         ),
     )
-    trainer = train_on_responses_only(trainer, instruction_part=USER_PART, response_part=REPLY_PART)
+    thinking = any("reasoning_content" in row["messages"][2] for row in train_rows)
+    trainer = train_on_responses_only(trainer, instruction_part=USER_PART,
+                                      response_part=ASSISTANT_PART if thinking else REPLY_PART)
+    first = next(i for i, row in enumerate(train_rows) if "reasoning_content" in row["messages"][2]) if thinking else 0
+    labels = [t for t in trainer.train_dataset[first]["labels"] if t != -100]
+    print("trained on:", tokenizer.decode(labels))
 
     started = time.time()
     stats = trainer.train()
@@ -113,6 +121,24 @@ def train(run: str, max_steps: int = -1, epochs: float = 2.0, limit: int = 0, r:
     return {"run": run, "steps": stats.global_step, "minutes": round(minutes, 1),
             "train_loss": round(stats.training_loss, 3), "eval_loss": round(metrics["eval_loss"], 3),
             "adapter": out, "samples": results}
+
+
+@app.function(image=image, volumes={"/cache": hf_cache, "/data": data}, timeout=10 * 60)
+def check_render(pairs: str = "pairs_v4"):
+    """CPU only: how a pair with a thought is rendered and tokenized, before paying for a GPU."""
+    import json
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    row = next(r for r in map(json.loads, open(f"/data/{pairs}/train.jsonl", encoding="utf-8"))
+               if "reasoning_content" in r["messages"][2])
+    text = tokenizer.apply_chat_template(with_reasoning_off(row["messages"]), tokenize=False)
+    ids = tokenizer(text, add_special_tokens=False)["input_ids"]
+    part = tokenizer(ASSISTANT_PART, add_special_tokens=False)["input_ids"]
+    hits = sum(ids[i:i + len(part)] == part for i in range(len(ids)))
+    print(text[text.index(USER_PART):])
+    print("assistant part ids:", part, "found", hits, "times")
 
 
 @app.local_entrypoint()
