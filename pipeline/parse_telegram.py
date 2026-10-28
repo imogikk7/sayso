@@ -3,14 +3,16 @@
 A turn is a run of consecutive own messages in one chat (no other sender in
 between and no gap longer than `turn_gap_minutes`), merged with newlines.
 Turns longer than `max_turn_messages` are split at their longest pauses.
-Only the user's own text is kept; other people's messages are used only to
-detect turn boundaries and are never written out.
+Only the user's own text is written out. Other people's messages are used to
+detect turn boundaries and, with `load_turns(..., with_context=True)`, are
+attached to reply turns in memory (for situation tagging) — never written out.
 
 Usage:  python3 pipeline/parse_telegram.py [--config data/config.json]
 Writes: data/turns.jsonl (gitignored) and prints turn stats per audience.
 """
 
 import argparse
+import hashlib
 import html
 import json
 import re
@@ -113,50 +115,61 @@ def read_messages(export_dirs: list[Path]):
     return messages
 
 
-def build_turns(messages, self_name: str, gap: timedelta, max_messages: int):
-    """Merge consecutive own text messages into turns of at most max_messages."""
+def incoming_text(msg) -> str:
+    """Other person's message as the tagger sees it; media becomes a placeholder."""
+    if msg["kind"] == "media":
+        return "[media]"
+    text = clean(msg["text"])[:500]
+    return f"[forwarded] {text}" if msg["kind"] == "forwarded" else text
+
+
+def build_turns(messages, self_name: str, gap: timedelta, max_messages: int,
+                max_chars: int, context_window: timedelta, context_size: int = 3):
+    """Merge consecutive own text messages into turns of at most max_messages.
+
+    Each turn gets `context`: up to `context_size` of the other person's messages
+    sent within `context_window` before it (empty if the user started the topic).
+    """
     turns = []
     current = None
     prev_ts = None
     prev_own = False
+    incoming = []
     for msg in messages:
         own = msg["sender"] == self_name
         if not own:
             current = None
             prev_own = False
+            if msg["kind"] != "text" or msg["text"].strip():
+                incoming.append(msg)
             continue
         if current is not None and (not prev_own or msg["ts"] - prev_ts > gap):
             current = None
         prev_ts, prev_own = msg["ts"], True
-        if msg["kind"] != "text" or PASTED_CODE.search(msg["text"]):
+        if msg["kind"] != "text" or PASTED_CODE.search(msg["text"]) or len(msg["text"]) > max_chars:
             continue
         text = clean(msg["text"])
         if not text:
             continue
         if current is None:
-            current = {"start": msg["ts"], "end": msg["ts"], "messages": [], "is_reply": None}
+            recent = [m for m in incoming if msg["ts"] - m["ts"] <= context_window]
+            current = {
+                "first_id": msg["id"],
+                "messages": [],
+                "context": [incoming_text(m) for m in recent[-context_size:]],
+            }
             turns.append(current)
-        if current["messages"] and current["messages"][-1][1] == text:
+            incoming = []
+        if current["messages"] and current["messages"][-1][2] == text:
             continue  # double send
-        current["messages"].append((msg["ts"], text))
-        current["end"] = msg["ts"]
-    # A turn is a reply if someone else wrote right before it (within the gap).
-    by_start = {}
-    last_other = None
-    for msg in messages:
-        if msg["sender"] != self_name:
-            last_other = msg["ts"]
-        by_start.setdefault(msg["ts"], last_other)
-    for turn in turns:
-        other = by_start.get(turn["start"])
-        turn["is_reply"] = other is not None and turn["start"] - other <= gap
+        current["messages"].append((msg["ts"], msg["id"], text))
     return [chunk for turn in turns for chunk in split_turn(turn, max_messages)]
 
 
 def split_turn(turn, max_messages: int):
     """Split a long monologue at its longest pauses until every chunk fits.
 
-    Only the first chunk keeps the turn's is_reply; later chunks follow the user's own messages.
+    Only the first chunk keeps the incoming context; later chunks follow the user's own messages.
     """
     def split(items):
         if len(items) <= max_messages:
@@ -166,26 +179,32 @@ def split_turn(turn, max_messages: int):
 
     return [
         {
+            "first_id": items[0][1],
             "start": items[0][0],
             "end": items[-1][0],
-            "messages": [text for _, text in items],
-            "is_reply": turn["is_reply"] and i == 0,
+            "messages": [text for _, _, text in items],
+            "context": turn["context"] if i == 0 else [],
         }
         for i, items in enumerate(split(turn["messages"]))
     ]
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default=str(ROOT / "data" / "config.json"))
-    args = parser.parse_args()
+def chat_key(chat: str) -> str:
+    """Stable id for a chat that doesn't reveal the contact's name."""
+    return hashlib.sha1(chat.encode("utf-8")).hexdigest()[:8]
 
-    config = json.loads(Path(args.config).read_text(encoding="utf-8"))
-    audiences = json.loads((ROOT / "data" / "audiences.json").read_text(encoding="utf-8"))
+
+def load_turns(config, audiences, with_context: bool = False):
+    """Parse every chat in the config. Returns (rows, per_chat stats).
+
+    With with_context=True, reply rows carry `context` (other people's messages).
+    Keep those rows in memory only; never write them to disk.
+    """
     gap = timedelta(minutes=config.get("turn_gap_minutes", 10))
+    context_window = timedelta(minutes=config.get("context_minutes", 30))
     test_span = timedelta(weeks=config.get("test_weeks", 4))
     max_messages = config.get("max_turn_messages", 12)
-    out_path = ROOT / config.get("output", "data/turns.jsonl")
+    max_chars = config.get("max_message_chars", 1000)
 
     rows = []
     per_chat = {}
@@ -195,19 +214,23 @@ def main():
             raise SystemExit(f"chat {chat!r} has no audience in data/audiences.json")
         messages = read_messages([Path(d).expanduser() for d in dirs])
         own = [m for m in messages if m["sender"] == config["self_name"]]
-        turns = build_turns(messages, config["self_name"], gap, max_messages)
+        turns = build_turns(messages, config["self_name"], gap, max_messages, max_chars, context_window)
         cutoff = max(t["end"] for t in turns) - test_span if turns else None
         for turn in turns:
-            rows.append({
+            row = {
+                "turn_id": f"{chat_key(chat)}:{turn['first_id']}",
                 "chat": chat,
                 "audience": audience,
                 "start": turn["start"].isoformat(),
                 "end": turn["end"].isoformat(),
                 "split": "test" if turn["start"] >= cutoff else "train",
-                "is_reply": turn["is_reply"],
+                "is_reply": bool(turn["context"]),
                 "n_messages": len(turn["messages"]),
                 "text": "\n".join(turn["messages"]),
-            })
+            }
+            if with_context:
+                row["context"] = turn["context"]
+            rows.append(row)
         per_chat[chat] = {
             "audience": audience,
             "own_messages": len(own),
@@ -216,6 +239,23 @@ def main():
             "first": min((t["start"] for t in turns), default=None),
             "last": max((t["end"] for t in turns), default=None),
         }
+    return rows, per_chat
+
+
+def load_config(path):
+    config = json.loads(Path(path).read_text(encoding="utf-8"))
+    audiences = json.loads((ROOT / "data" / "audiences.json").read_text(encoding="utf-8"))
+    return config, audiences
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default=str(ROOT / "data" / "config.json"))
+    args = parser.parse_args()
+
+    config, audiences = load_config(args.config)
+    out_path = ROOT / config.get("output", "data/turns.jsonl")
+    rows, per_chat = load_turns(config, audiences)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
@@ -252,7 +292,7 @@ def print_stats(rows, per_chat, max_share):
         print(f"{audience:<16}{chats:>6}{n:>7}{train:>7}{n - train:>6}{n / total:>6.0%}"
               f"{msgs:>10.2f}{chars:>7}{multi:>6.0%}{reply:>6.0%}")
     print("\nchars = median turn length; multi = turns of 2+ messages; "
-          "reply = turn right after someone else's message")
+          "reply = someone else wrote within context_minutes before the turn")
 
 
 if __name__ == "__main__":
