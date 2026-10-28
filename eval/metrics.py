@@ -155,9 +155,17 @@ def main():
     parser.add_argument("--by", choices=["task", "audience", "situation"])
     parser.add_argument("--name", default="bench")
     parser.add_argument("--input", default="outputs", help="data/bench/<input>.jsonl")
+    parser.add_argument("--best-of", action="store_true", help="also score '<system>+best' picked by the lexicon")
     args = parser.parse_args()
 
     rows = [json.loads(line) for line in (ROOT / "data/bench" / f"{args.input}.jsonl").open(encoding="utf-8")]
+    if args.best_of:  # add "<system>+best": the candidate with the best word-choice score
+        import sys
+        sys.path.insert(0, str(ROOT / "pipeline"))
+        import lexicon
+        lex_for_rerank = lexicon.load()
+        rows += [{**r, "system": f"{r['system']}+best", "output": max(r["candidates"], key=lambda c: lexicon.score(c, lex_for_rerank))}
+                 for r in rows if len(r.get("candidates", [])) > 1]
     index, lex = train_index(), load_lexicon()
     results = {"all": summarize(rows, index, lex)}
     print_table("all test pairs", results["all"])

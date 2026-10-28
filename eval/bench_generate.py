@@ -37,7 +37,7 @@ def few_shot_system(system, examples, audience, situation):
 
 
 @app.function(image=image, gpu="H100", volumes={"/cache": hf_cache, "/data": data}, timeout=2 * 60 * 60)
-def generate(adapters: list[str], limit: int = 0, seed: int = 0, pairs: str = "pairs"):
+def generate(adapters: list[str], limit: int = 0, seed: int = 0, pairs: str = "pairs", n: int = 1):
     import random
     from collections import defaultdict
 
@@ -80,13 +80,15 @@ def generate(adapters: list[str], limit: int = 0, seed: int = 0, pairs: str = "p
         system = few_shot_system(pair["messages"][0]["content"], examples, meta["audience"], meta["situation"])
         shots.append(prompt([{"content": system}, pair["messages"][1]]))
 
-    runs = {"base": (plain, None), "fewshot": (shots, None)}
-    for i, name in enumerate(adapters, 1):
-        runs[name] = (plain, LoRARequest(name, i, f"/data/adapters/{name}"))
+    runs = {"base": (plain, None, 1), "fewshot": (shots, None, 1)}
+    for i, name in enumerate(adapters, 1):  # adapters sample n candidates (for best-of-n reranking)
+        runs[name] = (plain, LoRARequest(name, i, f"/data/adapters/{name}"), n)
 
     rows = []
-    for name, (prompts, lora) in runs.items():
-        outputs = llm.generate(prompts, params, lora_request=lora)
+    for name, (prompts, lora, samples) in runs.items():
+        sampling = params.clone()
+        sampling.n = samples
+        outputs = llm.generate(prompts, sampling, lora_request=lora)
         for pair, output in zip(test, outputs):
             rows.append({
                 "system": name,
@@ -97,14 +99,15 @@ def generate(adapters: list[str], limit: int = 0, seed: int = 0, pairs: str = "p
                 "prompt": pair["messages"][1]["content"],
                 "target": pair["messages"][2]["content"],
                 "output": output.outputs[0].text.strip(),
+                "candidates": [o.text.strip() for o in output.outputs],
             })
         print(f"{name}: {len(outputs)} outputs")
     return rows
 
 
 @app.local_entrypoint()
-def main(adapters: str = "v1,v1e1", limit: int = 0, pairs: str = "pairs", out: str = "outputs"):
-    rows = generate.remote([a for a in adapters.split(",") if a], limit=limit, pairs=pairs)
+def main(adapters: str = "v1,v1e1", limit: int = 0, pairs: str = "pairs", out: str = "outputs", n: int = 1):
+    rows = generate.remote([a for a in adapters.split(",") if a], limit=limit, pairs=pairs, n=n)
     out = Path(__file__).resolve().parent.parent / "data" / "bench" / f"{out}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as f:

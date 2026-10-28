@@ -32,6 +32,34 @@ def words(text):
     return out
 
 
+def load(path=None):
+    lex = json.loads((path or DATA / "lexicon.json").read_text(encoding="utf-8"))
+    return {"vocab": {w for w, n in lex["vocab"].items() if n >= 2},
+            "avoid": set(lex["avoid"]), "signature": set(lex["signature"][:150])}
+
+
+USER_SIGNATURE_RATE = 0.10  # own words per word in the user's real turns (benchmark "real" column)
+USER_UNKNOWN_RATE = 0.10    # share of words outside their 2+ vocabulary in real turns
+USER_TYPICAL_CHARS = 28     # mean turn length; longer candidates dilute the rates, so length is scored too
+
+
+def score(text, lex):
+    """Word-choice score for reranking candidates: closest to the user's own rates wins.
+
+    Maximizing own words picks caricatures ("ахахах бля короче"), so the score rewards matching
+    the user's signature-word rate, penalizes never-used words above their usual rate, and avoided words.
+    """
+    tokens = words(text)
+    if not tokens:
+        return -1.0
+    signature = sum(t in lex["signature"] for t in tokens) / len(tokens)
+    unknown = sum(t not in lex["vocab"] for t in tokens) / len(tokens)
+    avoided = sum(t in lex["avoid"] for t in tokens)
+    length = abs(math.log((len(text) + 10) / (USER_TYPICAL_CHARS + 10)))
+    return (-abs(signature - USER_SIGNATURE_RATE) - max(0.0, unknown - USER_UNKNOWN_RATE)
+            - 0.5 * avoided - 0.05 * length)
+
+
 def log_odds(a: Counter, b: Counter, prior: Counter, alpha=0.01):
     """Monroe et al. log-odds ratio with an informative Dirichlet prior; returns z-scores (a vs b)."""
     na, nb = sum(a.values()), sum(b.values())
@@ -84,6 +112,7 @@ def main():
 
     lexicon = {
         "vocab": dict(user_all.most_common()),
+        "neutral_vocab": dict(neutral.most_common()),
         "signature": signature[:300],
         "avoid": avoid[:300],
         "substitutions": swaps[:300],
