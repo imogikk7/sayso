@@ -16,6 +16,23 @@ image = image.add_local_python_source("modal_train")  # the container imports th
 app = modal.App("sayso-prefs")
 
 
+def import_cpo():
+    """CPO/SimPO moved to trl.experimental in newer TRL releases."""
+    try:
+        from trl import CPOConfig, CPOTrainer
+    except ImportError:
+        from trl.experimental.cpo import CPOConfig, CPOTrainer
+    return CPOConfig, CPOTrainer
+
+
+@app.function(image=image)  # CPU only: check the training imports before paying for a GPU
+def check_imports():
+    import trl
+    config, trainer = import_cpo()
+    return f"trl {trl.__version__}: {config.__module__}.{config.__name__}, loss types ok: " \
+           f"{'simpo' in str(config.__dataclass_fields__['loss_type'].metadata)}"
+
+
 @app.function(image=image, gpu="H100", volumes={"/cache": hf_cache, "/data": data}, timeout=2 * 60 * 60)
 def train(base: str, run: str, epochs: float = 1.0, lr: float = 1e-5, beta: float = 2.0, gamma: float = 0.5,
           cpo_alpha: float = 0.2):
@@ -25,7 +42,7 @@ def train(base: str, run: str, epochs: float = 1.0, lr: float = 1e-5, beta: floa
 
     from unsloth import FastModel  # noqa: I001  (must be imported before trl/transformers)
     from datasets import Dataset
-    from trl import CPOConfig, CPOTrainer
+    CPOConfig, CPOTrainer = import_cpo()
 
     model, processor = FastModel.from_pretrained(f"/data/adapters/{base}", max_seq_length=1024, load_in_4bit=True)
     tokenizer = getattr(processor, "tokenizer", processor)

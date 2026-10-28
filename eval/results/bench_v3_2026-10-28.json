@@ -1,0 +1,1066 @@
+{
+  "all": {
+    "real": {
+      "features": {
+        "chars": 28.23446893787575,
+        "lines": 1.8757515030060121,
+        "words_per_line": 2.8184297165760093,
+        "end_period": 0.0,
+        "end_punct": 0.043754175016700064,
+        "question": 0.043754175016700064,
+        "lower_start": 0.9472277889111557,
+        "caps_words": 0.0,
+        "commas_per_word": 0.00045561506287836997,
+        "emoji_per_line": 0.10718580017177212,
+        "brackets": 0.002004008016032064,
+        "laughter": 0.026052104208416832,
+        "swear": 0.13026052104208416,
+        "latin_share": 0.008706437264773449,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.004008016032064128,
+        "unknown_words": 0.09689437818697882,
+        "signature_per_word": 0.09723724058320124
+      }
+    },
+    "base": {
+      "n": 499,
+      "fingerprint": 2.58022605984307,
+      "chrf": 13.162191017129519,
+      "memorized": 0.002004008016032064,
+      "empty": 0,
+      "median_chars": 76,
+      "features": {
+        "chars": 111.70941883767534,
+        "lines": 1.6132264529058116,
+        "words_per_line": 13.878733119343753,
+        "end_period": 0.48336559212723307,
+        "end_punct": 0.7545781471073231,
+        "question": 0.3070887807360753,
+        "lower_start": 0.12124248496993988,
+        "caps_words": 0.003748305257249504,
+        "commas_per_word": 0.08957554817595337,
+        "emoji_per_line": 0.28557114228456915,
+        "brackets": 0.0,
+        "laughter": 0.0,
+        "swear": 0.006012024048096192,
+        "latin_share": 0.48151235083168975,
+        "kazakh": 0.002004008016032064
+      },
+      "words": {
+        "avoid_hit": 0.08617234468937876,
+        "unknown_words": 0.3566186685217008,
+        "signature_per_word": 0.01966070324122576
+      }
+    },
+    "fewshot": {
+      "n": 499,
+      "fingerprint": 1.1397664360492745,
+      "chrf": 20.5007487283784,
+      "memorized": 0.028056112224448898,
+      "empty": 0.002004008016032064,
+      "median_chars": 29,
+      "features": {
+        "chars": 39.19639278557114,
+        "lines": 1.7054108216432866,
+        "words_per_line": 4.464931377907329,
+        "end_period": 0.12712090848363394,
+        "end_punct": 0.2855043420173681,
+        "question": 0.16362725450901802,
+        "lower_start": 0.6742667152486792,
+        "caps_words": 0.001206258671188531,
+        "commas_per_word": 0.06772956186783823,
+        "emoji_per_line": 0.262306431043906,
+        "brackets": 0.01603206412825651,
+        "laughter": 0.04408817635270541,
+        "swear": 0.10020040080160321,
+        "latin_share": 0.062071160343243226,
+        "kazakh": 0.002004008016032064
+      },
+      "words": {
+        "avoid_hit": 0.036072144288577156,
+        "unknown_words": 0.19389210788848532,
+        "signature_per_word": 0.1018052334817845
+      }
+    },
+    "v1": {
+      "n": 499,
+      "fingerprint": 0.07628101789348822,
+      "chrf": 28.71381719956995,
+      "memorized": 0.006012024048096192,
+      "empty": 0,
+      "median_chars": 22,
+      "features": {
+        "chars": 32.120240480961925,
+        "lines": 2.0981963927855714,
+        "words_per_line": 2.6896388292179876,
+        "end_period": 0.0,
+        "end_punct": 0.05243820975283901,
+        "question": 0.05143620574482298,
+        "lower_start": 0.9185847886248688,
+        "caps_words": 0.002004008016032064,
+        "commas_per_word": 0.00018218254691200583,
+        "emoji_per_line": 0.1539698444508064,
+        "brackets": 0.0,
+        "laughter": 0.06813627254509018,
+        "swear": 0.11422845691382766,
+        "latin_share": 0.0034806455015293745,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.01002004008016032,
+        "unknown_words": 0.12445236590872029,
+        "signature_per_word": 0.1104758913344539
+      }
+    },
+    "v2": {
+      "n": 499,
+      "fingerprint": 0.07281606230709696,
+      "chrf": 28.415634417653752,
+      "memorized": 0.006012024048096192,
+      "empty": 0,
+      "median_chars": 25,
+      "features": {
+        "chars": 33.414829659318634,
+        "lines": 2.0981963927855714,
+        "words_per_line": 2.899960727315437,
+        "end_period": 0.0,
+        "end_punct": 0.04215096860387441,
+        "question": 0.04081496325985304,
+        "lower_start": 0.9291917167668671,
+        "caps_words": 0.0,
+        "commas_per_word": 3.711125955614933e-05,
+        "emoji_per_line": 0.13099532398129593,
+        "brackets": 0.0,
+        "laughter": 0.06012024048096192,
+        "swear": 0.08016032064128256,
+        "latin_share": 0.002313718345782474,
+        "kazakh": 0.004008016032064128
+      },
+      "words": {
+        "avoid_hit": 0.006012024048096192,
+        "unknown_words": 0.12206218608392637,
+        "signature_per_word": 0.08625976966629427
+      }
+    },
+    "v3": {
+      "n": 499,
+      "fingerprint": 0.10031150831103995,
+      "chrf": 25.517738803265505,
+      "memorized": 0.008016032064128256,
+      "empty": 0,
+      "median_chars": 22,
+      "features": {
+        "chars": 32.66132264529058,
+        "lines": 2.2865731462925853,
+        "words_per_line": 2.578670833730954,
+        "end_period": 0.0,
+        "end_punct": 0.024749498997995993,
+        "question": 0.024749498997995993,
+        "lower_start": 0.9297261189044757,
+        "caps_words": 0.0017535070140280561,
+        "commas_per_word": 0.000125250501002004,
+        "emoji_per_line": 0.1804943219772879,
+        "brackets": 0.0,
+        "laughter": 0.07014028056112225,
+        "swear": 0.15030060120240482,
+        "latin_share": 0.004008016032064128,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.004008016032064128,
+        "unknown_words": 0.12090722520047749,
+        "signature_per_word": 0.19239227501598377
+      }
+    },
+    "v1+best": {
+      "n": 499,
+      "fingerprint": 0.09269897884352002,
+      "chrf": 29.04336968386654,
+      "memorized": 0.004008016032064128,
+      "empty": 0,
+      "median_chars": 29,
+      "features": {
+        "chars": 36.57715430861723,
+        "lines": 2.376753507014028,
+        "words_per_line": 3.2158634729777016,
+        "end_period": 0.0,
+        "end_punct": 0.036979514584725,
+        "question": 0.036979514584725,
+        "lower_start": 0.9681990966059102,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0014028056112224449,
+        "emoji_per_line": 0.07200273562999014,
+        "brackets": 0.0,
+        "laughter": 0.028056112224448898,
+        "swear": 0.12224448897795591,
+        "latin_share": 0.004008016032064128,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.002004008016032064,
+        "unknown_words": 0.052659250640282554,
+        "signature_per_word": 0.07773760863117521
+      }
+    },
+    "v2+best": {
+      "n": 499,
+      "fingerprint": 0.11581932444587643,
+      "chrf": 30.077827340515444,
+      "memorized": 0.006012024048096192,
+      "empty": 0,
+      "median_chars": 30,
+      "features": {
+        "chars": 39.637274549098194,
+        "lines": 2.472945891783567,
+        "words_per_line": 3.375440635961678,
+        "end_period": 0.0,
+        "end_punct": 0.03927855711422846,
+        "question": 0.03994655978623914,
+        "lower_start": 0.9690253522918854,
+        "caps_words": 0.0,
+        "commas_per_word": 0.001920507682030728,
+        "emoji_per_line": 0.06449406750007952,
+        "brackets": 0.0,
+        "laughter": 0.028056112224448898,
+        "swear": 0.11422845691382766,
+        "latin_share": 0.004008016032064128,
+        "kazakh": 0.002004008016032064
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.05390377381894196,
+        "signature_per_word": 0.07915506113138072
+      }
+    },
+    "v3+best": {
+      "n": 499,
+      "fingerprint": 0.10507910869907261,
+      "chrf": 27.87983859077425,
+      "memorized": 0.01002004008016032,
+      "empty": 0,
+      "median_chars": 29,
+      "features": {
+        "chars": 37.93186372745491,
+        "lines": 2.5831663326653307,
+        "words_per_line": 2.8889439051262698,
+        "end_period": 0.000668002672010688,
+        "end_punct": 0.03186372745490982,
+        "question": 0.031195724782899132,
+        "lower_start": 0.9694388777555111,
+        "caps_words": 0.0017535070140280561,
+        "commas_per_word": 0.001002004008016032,
+        "emoji_per_line": 0.06209084836339345,
+        "brackets": 0.0,
+        "laughter": 0.04208416833667335,
+        "swear": 0.14428857715430862,
+        "latin_share": 0.004198873938352896,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.059801013703514073,
+        "signature_per_word": 0.1126157385518746
+      }
+    }
+  },
+  "task=reply": {
+    "real": {
+      "features": {
+        "chars": 27.512,
+        "lines": 1.896,
+        "words_per_line": 2.7491857142857143,
+        "end_period": 0.0,
+        "end_punct": 0.035666666666666666,
+        "question": 0.035666666666666666,
+        "lower_start": 0.9150666666666667,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0001951219512195122,
+        "emoji_per_line": 0.18354285714285715,
+        "brackets": 0.004,
+        "laughter": 0.024,
+        "swear": 0.16,
+        "latin_share": 0.012,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.004,
+        "unknown_words": 0.10967664110055751,
+        "signature_per_word": 0.09983831974698848
+      }
+    },
+    "base": {
+      "n": 250,
+      "fingerprint": 2.8890248983293314,
+      "chrf": 0.2979957540618199,
+      "memorized": 0,
+      "empty": 0,
+      "median_chars": 87.0,
+      "features": {
+        "chars": 114.824,
+        "lines": 1.324,
+        "words_per_line": 17.37146965452848,
+        "end_period": 0.4723790849673203,
+        "end_punct": 0.7363790849673203,
+        "question": 0.3391111111111111,
+        "lower_start": 0.16,
+        "caps_words": 0.005942673105661725,
+        "commas_per_word": 0.04323732878336754,
+        "emoji_per_line": 0.439,
+        "brackets": 0.0,
+        "laughter": 0.0,
+        "swear": 0.004,
+        "latin_share": 0.9391474358974359,
+        "kazakh": 0.004
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.5178032575271476,
+        "signature_per_word": 0.0014120082815734989
+      }
+    },
+    "fewshot": {
+      "n": 250,
+      "fingerprint": 1.269040022084614,
+      "chrf": 6.827829899276085,
+      "memorized": 0.048,
+      "empty": 0.004,
+      "median_chars": 27.0,
+      "features": {
+        "chars": 35.852,
+        "lines": 1.948,
+        "words_per_line": 3.6671,
+        "end_period": 0.029333333333333333,
+        "end_punct": 0.1488,
+        "question": 0.13193333333333332,
+        "lower_start": 0.835,
+        "caps_words": 0.0008076923076923077,
+        "commas_per_word": 0.045707653156888,
+        "emoji_per_line": 0.4562,
+        "brackets": 0.028,
+        "laughter": 0.06,
+        "swear": 0.136,
+        "latin_share": 0.11001684306265734,
+        "kazakh": 0.004
+      },
+      "words": {
+        "avoid_hit": 0.008,
+        "unknown_words": 0.21620938555625577,
+        "signature_per_word": 0.12407507136398387
+      }
+    },
+    "v1": {
+      "n": 250,
+      "fingerprint": 0.13156620702776775,
+      "chrf": 7.031765699480238,
+      "memorized": 0.004,
+      "empty": 0,
+      "median_chars": 24.0,
+      "features": {
+        "chars": 35.304,
+        "lines": 2.284,
+        "words_per_line": 2.6551066933066934,
+        "end_period": 0.0,
+        "end_punct": 0.06233333333333333,
+        "question": 0.058333333333333334,
+        "lower_start": 0.8672952380952381,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.26665714285714287,
+        "brackets": 0.0,
+        "laughter": 0.096,
+        "swear": 0.124,
+        "latin_share": 0.0029473684210526313,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.008,
+        "unknown_words": 0.12806968812604516,
+        "signature_per_word": 0.10931202822150857
+      }
+    },
+    "v2": {
+      "n": 250,
+      "fingerprint": 0.1241717428722269,
+      "chrf": 7.6536396626456975,
+      "memorized": 0.004,
+      "empty": 0,
+      "median_chars": 30.0,
+      "features": {
+        "chars": 37.532,
+        "lines": 2.328,
+        "words_per_line": 2.9542771672771675,
+        "end_period": 0.0,
+        "end_punct": 0.04646666666666667,
+        "question": 0.042466666666666666,
+        "lower_start": 0.881,
+        "caps_words": 0.0,
+        "commas_per_word": 7.407407407407407e-05,
+        "emoji_per_line": 0.23613333333333333,
+        "brackets": 0.0,
+        "laughter": 0.08,
+        "swear": 0.088,
+        "latin_share": 0.0,
+        "kazakh": 0.004
+      },
+      "words": {
+        "avoid_hit": 0.008,
+        "unknown_words": 0.11291228837771633,
+        "signature_per_word": 0.0773272977241229
+      }
+    },
+    "v3": {
+      "n": 250,
+      "fingerprint": 0.1495211003572358,
+      "chrf": 7.281454741127591,
+      "memorized": 0.008,
+      "empty": 0,
+      "median_chars": 24.5,
+      "features": {
+        "chars": 35.952,
+        "lines": 2.552,
+        "words_per_line": 2.442169841269841,
+        "end_period": 0.0,
+        "end_punct": 0.0136,
+        "question": 0.0136,
+        "lower_start": 0.8780666666666667,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.32993333333333336,
+        "brackets": 0.0,
+        "laughter": 0.088,
+        "swear": 0.188,
+        "latin_share": 0.004,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.004,
+        "unknown_words": 0.11200011832720437,
+        "signature_per_word": 0.211163500861519
+      }
+    },
+    "v1+best": {
+      "n": 250,
+      "fingerprint": 0.14953614274594212,
+      "chrf": 8.582568811691795,
+      "memorized": 0,
+      "empty": 0,
+      "median_chars": 34.0,
+      "features": {
+        "chars": 41.948,
+        "lines": 2.652,
+        "words_per_line": 3.600431746031746,
+        "end_period": 0.0,
+        "end_punct": 0.041411111111111114,
+        "question": 0.041411111111111114,
+        "lower_start": 0.9690460317460318,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.05582539682539683,
+        "brackets": 0.0,
+        "laughter": 0.024,
+        "swear": 0.14,
+        "latin_share": 0.0,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.03471932102133071,
+        "signature_per_word": 0.0827041803115447
+      }
+    },
+    "v2+best": {
+      "n": 250,
+      "fingerprint": 0.20627705454597495,
+      "chrf": 9.18751924559336,
+      "memorized": 0.004,
+      "empty": 0,
+      "median_chars": 36.0,
+      "features": {
+        "chars": 47.208,
+        "lines": 2.828,
+        "words_per_line": 3.8856031746031747,
+        "end_period": 0.0,
+        "end_punct": 0.0404,
+        "question": 0.0404,
+        "lower_start": 0.979,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0013333333333333333,
+        "emoji_per_line": 0.06366666666666666,
+        "brackets": 0.0,
+        "laughter": 0.024,
+        "swear": 0.116,
+        "latin_share": 0.0,
+        "kazakh": 0.004
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.026491121398644363,
+        "signature_per_word": 0.08754062064819196
+      }
+    },
+    "v3+best": {
+      "n": 250,
+      "fingerprint": 0.17135510170352522,
+      "chrf": 9.410525226941049,
+      "memorized": 0.008,
+      "empty": 0,
+      "median_chars": 36.0,
+      "features": {
+        "chars": 46.236,
+        "lines": 3.128,
+        "words_per_line": 3.0927333333333333,
+        "end_period": 0.0013333333333333333,
+        "end_punct": 0.030466666666666666,
+        "question": 0.029133333333333334,
+        "lower_start": 0.9671333333333333,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.0768,
+        "brackets": 0.0,
+        "laughter": 0.04,
+        "swear": 0.148,
+        "latin_share": 0.0,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.03352904444514915,
+        "signature_per_word": 0.11038997187092767
+      }
+    }
+  },
+  "task=rewrite": {
+    "real": {
+      "features": {
+        "chars": 31.174825174825173,
+        "lines": 1.9230769230769231,
+        "words_per_line": 3.0006993006993006,
+        "end_period": 0.0,
+        "end_punct": 0.05303030303030303,
+        "question": 0.05303030303030303,
+        "lower_start": 0.9864801864801864,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0007492507492507493,
+        "emoji_per_line": 0.03333333333333333,
+        "brackets": 0.0,
+        "laughter": 0.04195804195804196,
+        "swear": 0.11188811188811189,
+        "latin_share": 0.0,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.006993006993006993,
+        "unknown_words": 0.06998220130407974,
+        "signature_per_word": 0.10893535311344531
+      }
+    },
+    "base": {
+      "n": 143,
+      "fingerprint": 2.7733940786741638,
+      "chrf": 28.52820490080452,
+      "memorized": 0,
+      "empty": 0,
+      "median_chars": 48,
+      "features": {
+        "chars": 94.07692307692308,
+        "lines": 1.986013986013986,
+        "words_per_line": 8.7451245723973,
+        "end_period": 0.5631615858888586,
+        "end_punct": 0.8440594758776577,
+        "question": 0.2776889776889777,
+        "lower_start": 0.027972027972027972,
+        "caps_words": 0.0023149114912473256,
+        "commas_per_word": 0.15192299199127915,
+        "emoji_per_line": 0.051864801864801864,
+        "brackets": 0.0,
+        "laughter": 0.0,
+        "swear": 0.0,
+        "latin_share": 0.019895219398123262,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.16783216783216784,
+        "unknown_words": 0.16568241476823536,
+        "signature_per_word": 0.03918560387990299
+      }
+    },
+    "fewshot": {
+      "n": 143,
+      "fingerprint": 1.6472287024383996,
+      "chrf": 40.70674555945944,
+      "memorized": 0,
+      "empty": 0,
+      "median_chars": 26,
+      "features": {
+        "chars": 34.69230769230769,
+        "lines": 1.2867132867132867,
+        "words_per_line": 5.143939393939394,
+        "end_period": 0.30244755244755245,
+        "end_punct": 0.48951048951048953,
+        "question": 0.19405594405594406,
+        "lower_start": 0.4020979020979021,
+        "caps_words": 0.002797202797202797,
+        "commas_per_word": 0.09840808326227163,
+        "emoji_per_line": 0.03496503496503497,
+        "brackets": 0.0,
+        "laughter": 0.013986013986013986,
+        "swear": 0.04195804195804196,
+        "latin_share": 0.013986013986013986,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.055944055944055944,
+        "unknown_words": 0.10965404006074714,
+        "signature_per_word": 0.08456133428549542
+      }
+    },
+    "v1": {
+      "n": 143,
+      "fingerprint": 0.026122509760437496,
+      "chrf": 57.3337709516217,
+      "memorized": 0.006993006993006993,
+      "empty": 0,
+      "median_chars": 23,
+      "features": {
+        "chars": 31.713286713286713,
+        "lines": 1.9580419580419581,
+        "words_per_line": 2.9345205299750754,
+        "end_period": 0.0,
+        "end_punct": 0.04836829836829837,
+        "question": 0.051864801864801864,
+        "lower_start": 0.9877622377622378,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.04195804195804196,
+        "brackets": 0.0,
+        "laughter": 0.03496503496503497,
+        "swear": 0.07692307692307693,
+        "latin_share": 0.0,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.013986013986013986,
+        "unknown_words": 0.09540570989963702,
+        "signature_per_word": 0.1019307690360322
+      }
+    },
+    "v2": {
+      "n": 143,
+      "fingerprint": 0.0453347194945555,
+      "chrf": 55.56493597234613,
+      "memorized": 0.006993006993006993,
+      "empty": 0,
+      "median_chars": 21,
+      "features": {
+        "chars": 31.90909090909091,
+        "lines": 1.881118881118881,
+        "words_per_line": 2.97976467976468,
+        "end_period": 0.0,
+        "end_punct": 0.03904428904428904,
+        "question": 0.041375291375291376,
+        "lower_start": 0.9947552447552448,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.012237762237762238,
+        "brackets": 0.0,
+        "laughter": 0.04195804195804196,
+        "swear": 0.06293706293706294,
+        "latin_share": 0.0,
+        "kazakh": 0.006993006993006993
+      },
+      "words": {
+        "avoid_hit": 0.006993006993006993,
+        "unknown_words": 0.1013455689400985,
+        "signature_per_word": 0.10537137385401653
+      }
+    },
+    "v3": {
+      "n": 143,
+      "fingerprint": 0.025003645726130192,
+      "chrf": 50.86993830264162,
+      "memorized": 0,
+      "empty": 0,
+      "median_chars": 22,
+      "features": {
+        "chars": 31.307692307692307,
+        "lines": 2.034965034965035,
+        "words_per_line": 2.8363969363969366,
+        "end_period": 0.0,
+        "end_punct": 0.043356643356643354,
+        "question": 0.043356643356643354,
+        "lower_start": 0.9877622377622378,
+        "caps_words": 0.006118881118881119,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.03146853146853147,
+        "brackets": 0.0,
+        "laughter": 0.04195804195804196,
+        "swear": 0.11188811188811189,
+        "latin_share": 0.0,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.006993006993006993,
+        "unknown_words": 0.09989449262569108,
+        "signature_per_word": 0.17084651633411171
+      }
+    },
+    "v1+best": {
+      "n": 143,
+      "fingerprint": 0.07635219753979691,
+      "chrf": 56.722181081036375,
+      "memorized": 0.006993006993006993,
+      "empty": 0,
+      "median_chars": 24,
+      "features": {
+        "chars": 32.59440559440559,
+        "lines": 2.055944055944056,
+        "words_per_line": 2.948190698190698,
+        "end_period": 0.0,
+        "end_punct": 0.0351981351981352,
+        "question": 0.0351981351981352,
+        "lower_start": 0.9678543678543678,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.1054057054057054,
+        "brackets": 0.0,
+        "laughter": 0.04195804195804196,
+        "swear": 0.0979020979020979,
+        "latin_share": 0.006993006993006993,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.006993006993006993,
+        "unknown_words": 0.050722351890411334,
+        "signature_per_word": 0.08040302149776717
+      }
+    },
+    "v2+best": {
+      "n": 143,
+      "fingerprint": 0.08361246433769885,
+      "chrf": 58.220035493369004,
+      "memorized": 0.006993006993006993,
+      "empty": 0,
+      "median_chars": 25,
+      "features": {
+        "chars": 32.53146853146853,
+        "lines": 2.104895104895105,
+        "words_per_line": 2.8917168689895965,
+        "end_period": 0.0,
+        "end_punct": 0.04195804195804196,
+        "question": 0.04428904428904429,
+        "lower_start": 0.9513542013542013,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.07645132645132645,
+        "brackets": 0.0,
+        "laughter": 0.03496503496503497,
+        "swear": 0.09090909090909091,
+        "latin_share": 0.006993006993006993,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.0603647896417467,
+        "signature_per_word": 0.07496851065936073
+      }
+    },
+    "v3+best": {
+      "n": 143,
+      "fingerprint": 0.04035472183237937,
+      "chrf": 52.667656202680504,
+      "memorized": 0,
+      "empty": 0,
+      "median_chars": 23,
+      "features": {
+        "chars": 31.972027972027973,
+        "lines": 2.034965034965035,
+        "words_per_line": 2.8871106166560714,
+        "end_period": 0.0,
+        "end_punct": 0.039277389277389274,
+        "question": 0.039277389277389274,
+        "lower_start": 0.9799533799533799,
+        "caps_words": 0.006118881118881119,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.050349650349650346,
+        "brackets": 0.0,
+        "laughter": 0.04195804195804196,
+        "swear": 0.11888111888111888,
+        "latin_share": 0.007659007659007659,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.07145615069780666,
+        "signature_per_word": 0.11619041521229095
+      }
+    }
+  },
+  "task=compose": {
+    "real": {
+      "features": {
+        "chars": 25.971698113207548,
+        "lines": 1.7641509433962264,
+        "words_per_line": 2.7358490566037736,
+        "end_period": 0.0,
+        "end_punct": 0.050314465408805034,
+        "question": 0.050314465408805034,
+        "lower_start": 0.970125786163522,
+        "caps_words": 0.0,
+        "commas_per_word": 0.000673854447439353,
+        "emoji_per_line": 0.026729559748427674,
+        "brackets": 0.0,
+        "laughter": 0.009433962264150943,
+        "swear": 0.08490566037735849,
+        "latin_share": 0.012684077312471238,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.1030535816384873,
+        "signature_per_word": 0.07532120395327942
+      }
+    },
+    "base": {
+      "n": 106,
+      "fingerprint": 2.662458728640051,
+      "chrf": 22.772651681293667,
+      "memorized": 0.009433962264150943,
+      "empty": 0,
+      "median_chars": 75.5,
+      "features": {
+        "chars": 128.1509433962264,
+        "lines": 1.7924528301886793,
+        "words_per_line": 12.566675462901879,
+        "end_period": 0.4016278532787967,
+        "end_punct": 0.6767850859831992,
+        "question": 0.27122641509433965,
+        "lower_start": 0.15566037735849056,
+        "caps_words": 0.0005066387141858839,
+        "commas_per_word": 0.11475357065288609,
+        "emoji_per_line": 0.2389937106918239,
+        "brackets": 0.0,
+        "laughter": 0.0,
+        "swear": 0.018867924528301886,
+        "latin_share": 0.024931959591722588,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.1792452830188679,
+        "unknown_words": 0.2340501499875863,
+        "signature_per_word": 0.036359882001435403
+      }
+    },
+    "fewshot": {
+      "n": 106,
+      "fingerprint": 1.3282877420020562,
+      "chrf": 25.489165336217923,
+      "memorized": 0.018867924528301886,
+      "empty": 0,
+      "median_chars": 40.5,
+      "features": {
+        "chars": 53.160377358490564,
+        "lines": 1.6981132075471699,
+        "words_per_line": 5.430588907947398,
+        "end_period": 0.12122641509433962,
+        "end_punct": 0.33270440251572325,
+        "question": 0.19732704402515724,
+        "lower_start": 0.6623499142367066,
+        "caps_words": 0.0,
+        "commas_per_word": 0.07828096392758899,
+        "emoji_per_line": 0.11170668953687822,
+        "brackets": 0.009433962264150943,
+        "laughter": 0.04716981132075472,
+        "swear": 0.09433962264150944,
+        "latin_share": 0.01386130420390599,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.07547169811320754,
+        "unknown_words": 0.25489894074154146,
+        "signature_per_word": 0.07254502701498729
+      }
+    },
+    "v1": {
+      "n": 106,
+      "fingerprint": 0.09464363058451492,
+      "chrf": 41.24079350597586,
+      "memorized": 0.009433962264150943,
+      "empty": 0,
+      "median_chars": 19.5,
+      "features": {
+        "chars": 25.160377358490567,
+        "lines": 1.849056603773585,
+        "words_per_line": 2.4407232704402517,
+        "end_period": 0.0,
+        "end_punct": 0.03459119496855346,
+        "question": 0.03459119496855346,
+        "lower_start": 0.9462264150943396,
+        "caps_words": 0.009433962264150943,
+        "commas_per_word": 0.0008576329331046312,
+        "emoji_per_line": 0.03930817610062893,
+        "brackets": 0.0,
+        "laughter": 0.04716981132075472,
+        "swear": 0.14150943396226415,
+        "latin_share": 0.009433962264150943,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.009433962264150943,
+        "unknown_words": 0.15510652869143435,
+        "signature_per_word": 0.12474870517323347
+      }
+    },
+    "v2": {
+      "n": 106,
+      "fingerprint": 0.06339579502086236,
+      "chrf": 40.756658629267,
+      "memorized": 0.009433962264150943,
+      "empty": 0,
+      "median_chars": 20.0,
+      "features": {
+        "chars": 25.735849056603772,
+        "lines": 1.849056603773585,
+        "words_per_line": 2.6641958670260557,
+        "end_period": 0.0,
+        "end_punct": 0.036163522012578615,
+        "question": 0.036163522012578615,
+        "lower_start": 0.9544025157232704,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0,
+        "emoji_per_line": 0.04323899371069182,
+        "brackets": 0.0,
+        "laughter": 0.03773584905660377,
+        "swear": 0.08490566037735849,
+        "latin_share": 0.010891938250428817,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.1715900226699631,
+        "signature_per_word": 0.08154428463514858
+      }
+    },
+    "v3": {
+      "n": 106,
+      "fingerprint": 0.09559617530470674,
+      "chrf": 34.326290568583374,
+      "memorized": 0.018867924528301886,
+      "empty": 0,
+      "median_chars": 21.0,
+      "features": {
+        "chars": 26.72641509433962,
+        "lines": 2,
+        "words_per_line": 2.5529200359389037,
+        "end_period": 0.0,
+        "end_punct": 0.025943396226415096,
+        "question": 0.025943396226415096,
+        "lower_start": 0.9732704402515723,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0005896226415094339,
+        "emoji_per_line": 0.02908805031446541,
+        "brackets": 0.0,
+        "laughter": 0.0660377358490566,
+        "swear": 0.11320754716981132,
+        "latin_share": 0.009433962264150943,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.17026191837512591,
+        "signature_per_word": 0.1771869639794168
+      }
+    },
+    "v1+best": {
+      "n": 106,
+      "fingerprint": 0.14869496271090868,
+      "chrf": 39.95969221451182,
+      "memorized": 0.009433962264150943,
+      "empty": 0,
+      "median_chars": 25.0,
+      "features": {
+        "chars": 29.28301886792453,
+        "lines": 2.160377358490566,
+        "words_per_line": 2.6699685534591193,
+        "end_period": 0.0,
+        "end_punct": 0.028930817610062894,
+        "question": 0.028930817610062894,
+        "lower_start": 0.9666666666666667,
+        "caps_words": 0.0,
+        "commas_per_word": 0.006603773584905661,
+        "emoji_per_line": 0.06509433962264151,
+        "brackets": 0.0,
+        "laughter": 0.018867924528301886,
+        "swear": 0.11320754716981132,
+        "latin_share": 0.009433962264150943,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.09758339145131598,
+        "signature_per_word": 0.06242820334801467
+      }
+    },
+    "v2+best": {
+      "n": 106,
+      "fingerprint": 0.14817845363540996,
+      "chrf": 41.381990150633,
+      "memorized": 0.009433962264150943,
+      "empty": 0,
+      "median_chars": 26.0,
+      "features": {
+        "chars": 31.367924528301888,
+        "lines": 2.1320754716981134,
+        "words_per_line": 2.824797843665768,
+        "end_period": 0.0,
+        "end_punct": 0.0330188679245283,
+        "question": 0.0330188679245283,
+        "lower_start": 0.9693396226415094,
+        "caps_words": 0.0,
+        "commas_per_word": 0.00589622641509434,
+        "emoji_per_line": 0.05031446540880503,
+        "brackets": 0.0,
+        "laughter": 0.02830188679245283,
+        "swear": 0.14150943396226415,
+        "latin_share": 0.009433962264150943,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.10983997987944501,
+        "signature_per_word": 0.06502569168134349
+      }
+    },
+    "v3+best": {
+      "n": 106,
+      "fingerprint": 0.15269673496918929,
+      "chrf": 37.99937087809222,
+      "memorized": 0.02830188679245283,
+      "empty": 0,
+      "median_chars": 24.0,
+      "features": {
+        "chars": 26.38679245283019,
+        "lines": 2.0377358490566038,
+        "words_per_line": 2.4107816711590297,
+        "end_period": 0.0,
+        "end_punct": 0.025157232704402517,
+        "question": 0.025157232704402517,
+        "lower_start": 0.960691823899371,
+        "caps_words": 0.0,
+        "commas_per_word": 0.0047169811320754715,
+        "emoji_per_line": 0.04323899371069182,
+        "brackets": 0.0,
+        "laughter": 0.04716981132075472,
+        "swear": 0.16981132075471697,
+        "latin_share": 0.009433962264150943,
+        "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.10603976582056493,
+        "signature_per_word": 0.11304274711599906
+      }
+    }
+  }
+}
