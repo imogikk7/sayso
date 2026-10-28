@@ -33,3 +33,15 @@ Benchmark v4 vs v2 (+cell rerank): chrF, fingerprint, and new: act/tone distribu
 ## Budget
 Modal ≈ $16 left: thoughts tagging ≈ $1, v4 training ≈ $1.5, benchmark ≈ $0.5. Fireworks ($100, Glimmer SFT
 free until Nov 30) can train v4 if Modal runs low — check it accepts reasoning_content in SFT data.
+
+## Result (2026-10-28, `eval/results/bench_v4.json`)
+v4 trained 2 epochs on pairs_v4 (15.5 min H100). Benchmark on 499 test pairs, 5 candidates each, act/tone of every
+reply re-tagged by base Glimmer with one prompt (the tagger agrees with its own earlier labels only 48% of the time,
+so ~48% is the ceiling for act match; always guessing the cell's most common act gives 36.8%).
+- Act match on replies: v2 41%, v4 38%, v4+best 44% (closest to the ceiling). Act mix per audience (TV↓): v4+cell 0.14 vs v2 0.19.
+- Tone mix: v4p (act + tone drawn from the style profile) halves the gap, tone TV 0.06 vs 0.11 for v2.
+- Form: v4p reply fingerprint 0.07 vs v2 0.12; reply length 24 chars vs v2 38 (real 28). chrF on replies a bit lower (6.4 vs 7.7).
+- Rewrite chrF slightly up (56.6 vs 55.3).
+Takeaway: the thought does not make the model read the user's mind better than v2 (both near the tagger's noise),
+but it makes the mood mix and length match the user, and the act becomes a control: prefill `act: agree` /
+`act: refuse` / `act: joke` to get three options with different intents in the user's voice (A5).
