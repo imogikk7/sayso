@@ -35,7 +35,7 @@ def with_reasoning_off(messages):
 
 @app.function(image=image, gpu="H100", volumes={"/cache": hf_cache, "/data": data}, timeout=5 * 60 * 60)
 def train(run: str, max_steps: int = -1, epochs: float = 2.0, limit: int = 0, r: int = 16, lr: float = 2e-4,
-          samples: int = 12):
+          samples: int = 12, pairs: str = "pairs"):
     import json
     import random
     import time
@@ -54,7 +54,7 @@ def train(run: str, max_steps: int = -1, epochs: float = 2.0, limit: int = 0, r:
     )
 
     def load(split):
-        rows = [json.loads(line) for line in open(f"/data/pairs/{split}.jsonl", encoding="utf-8")]
+        rows = [json.loads(line) for line in open(f"/data/{pairs}/{split}.jsonl", encoding="utf-8")]
         random.Random(0).shuffle(rows)  # files are grouped by chat
         return rows
 
@@ -116,11 +116,12 @@ def train(run: str, max_steps: int = -1, epochs: float = 2.0, limit: int = 0, r:
 
 
 @app.local_entrypoint()
-def main(run: str = "smoke", max_steps: int = 30, epochs: float = 2.0, limit: int = 0, r: int = 16):
+def main(run: str = "smoke", max_steps: int = 30, epochs: float = 2.0, limit: int = 0, r: int = 16,
+         pairs: str = "pairs"):
     import json
     from pathlib import Path
 
-    result = train.remote(run=run, max_steps=max_steps, epochs=epochs, limit=limit, r=r)
+    result = train.remote(run=run, max_steps=max_steps, epochs=epochs, limit=limit, r=r, pairs=pairs)
     # Samples contain the user's own messages: keep them in gitignored data/, print only metrics.
     out = Path(__file__).resolve().parent.parent / "data" / "runs" / f"{run}.json"
     out.parent.mkdir(parents=True, exist_ok=True)

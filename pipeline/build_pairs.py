@@ -60,17 +60,27 @@ SYNTH_PROMPTS = {
 }
 
 
-def load_rows():
+def load_rows(detailed=False):
+    """Turns joined with their situation labels. With detailed=True the reply input uses the
+    25-30 word summary from `situations.py --detail` where one exists."""
     turns = [json.loads(line) for line in (DATA / "turns.jsonl").open(encoding="utf-8")]
     labels = {}
     for line in (DATA / "situations.jsonl").open(encoding="utf-8"):
         label = json.loads(line)
         labels[label["turn_id"]] = label
+    details = {}
+    if detailed:
+        for line in (DATA / "summaries_detailed.jsonl").open(encoding="utf-8"):
+            item = json.loads(line)
+            details[item["turn_id"]] = item["summary"]
     rows = []
     for turn in turns:
         label = labels.get(turn["turn_id"])
         if label and len(turn["text"]) <= MAX_CHARS:
-            rows.append({**turn, **label})
+            row = {**turn, **label}
+            if turn["turn_id"] in details:
+                row["summary"] = details[turn["turn_id"]]
+            rows.append(row)
     return rows
 
 
@@ -221,12 +231,14 @@ def main():
     parser.add_argument("--config", default=str(DATA / "config.json"))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--detailed", action="store_true", help="reply input = 25-30 word summary")
+    parser.add_argument("--out", default="pairs", help="output folder under data/")
     args = parser.parse_args()
 
     config, _ = load_config(args.config)
     max_share = config.get("max_chat_share", 0.35)
     rng = random.Random(0)
-    rows = load_rows()
+    rows = load_rows(detailed=args.detailed)
     rows_by_id = {row["turn_id"]: row for row in rows}
 
     splits = {
@@ -246,7 +258,7 @@ def main():
     jobs = [(r["turn_id"], r["task"], r["text"]) for picked in splits.values() for r in picked if r["task"] != "reply"]
     cache = synthesize(jobs, args.workers)
 
-    out_dir = DATA / "pairs"
+    out_dir = DATA / args.out
     out_dir.mkdir(exist_ok=True)
     for split, picked in splits.items():
         pairs = build(picked, cache)

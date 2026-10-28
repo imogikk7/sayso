@@ -37,7 +37,7 @@ def few_shot_system(system, examples, audience, situation):
 
 
 @app.function(image=image, gpu="H100", volumes={"/cache": hf_cache, "/data": data}, timeout=2 * 60 * 60)
-def generate(adapters: list[str], limit: int = 0, seed: int = 0):
+def generate(adapters: list[str], limit: int = 0, seed: int = 0, pairs: str = "pairs"):
     import random
     from collections import defaultdict
 
@@ -45,7 +45,7 @@ def generate(adapters: list[str], limit: int = 0, seed: int = 0):
     from vllm.lora.request import LoRARequest
 
     def load(split):
-        return [json.loads(line) for line in open(f"/data/pairs/{split}.jsonl", encoding="utf-8")]
+        return [json.loads(line) for line in open(f"/data/{pairs}/{split}.jsonl", encoding="utf-8")]
 
     train, test = load("train"), load("test")
     if limit:
@@ -103,9 +103,9 @@ def generate(adapters: list[str], limit: int = 0, seed: int = 0):
 
 
 @app.local_entrypoint()
-def main(adapters: str = "v1,v1e1", limit: int = 0):
-    rows = generate.remote([a for a in adapters.split(",") if a], limit=limit)
-    out = Path(__file__).resolve().parent.parent / "data" / "bench" / "outputs.jsonl"
+def main(adapters: str = "v1,v1e1", limit: int = 0, pairs: str = "pairs", out: str = "outputs"):
+    rows = generate.remote([a for a in adapters.split(",") if a], limit=limit, pairs=pairs)
+    out = Path(__file__).resolve().parent.parent / "data" / "bench" / f"{out}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as f:
         for row in rows:

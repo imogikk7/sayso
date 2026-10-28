@@ -121,9 +121,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--by", choices=["task", "audience", "situation"])
     parser.add_argument("--name", default="bench")
+    parser.add_argument("--input", default="outputs", help="data/bench/<input>.jsonl")
     args = parser.parse_args()
 
-    rows = [json.loads(line) for line in (ROOT / "data/bench/outputs.jsonl").open(encoding="utf-8")]
+    rows = [json.loads(line) for line in (ROOT / "data/bench" / f"{args.input}.jsonl").open(encoding="utf-8")]
     index = train_index()
     results = {"all": summarize(rows, index)}
     print_table("all test pairs", results["all"])

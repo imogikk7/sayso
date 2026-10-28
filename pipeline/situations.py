@@ -9,6 +9,7 @@ Usage:
   python3 pipeline/situations.py --limit 200      # pilot on a random sample
   python3 pipeline/situations.py                  # everything
   python3 pipeline/situations.py --check          # distribution + 50 random rows (local only)
+  python3 pipeline/situations.py --detail         # 25-30 word summaries for reply turns in data/pairs
 Needs SAYSO_GLIMMER_URL and SAYSO_API_TOKEN in .env.
 """
 
@@ -97,10 +98,14 @@ def prompt_for(row):
     return f"No earlier message; the user starts.\n\nUser's message:\n{row['text']}"
 
 
-def call_glimmer(url, token, row, retries=3):
+def valid_tag(label):
+    return label.get("situation") in SITUATIONS and label.get("summary")
+
+
+def call_glimmer(url, token, row, retries=3, system=SYSTEM, user=None, valid=valid_tag):
     body = json.dumps({
         "model": "muse-glimmer",
-        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt_for(row)}],
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user or prompt_for(row)}],
         "temperature": 0.6,
         "top_p": 0.95,
         "max_tokens": 1024,
@@ -115,7 +120,7 @@ def call_glimmer(url, token, row, retries=3):
                 content = json.load(response)["choices"][0]["message"]["content"] or ""
             match = re.search(r"\{.*\}", content, re.S)
             label = json.loads(match.group(0)) if match else {}
-            if label.get("situation") in SITUATIONS and label.get("summary"):
+            if valid(label):
                 return label
         except Exception as error:  # network hiccup or cold start
             if attempt == retries - 1:
@@ -133,12 +138,65 @@ def name_forms(names):
     return {f for f in forms if len(f) >= 3}
 
 
-def scrub(summary, names):
-    """Safety net: drop contact names and digits, cap at 12 words."""
+def scrub(summary, names, max_words=12, keep_short_numbers=False):
+    """Safety net: drop contact names and digits (or only long digit runs), cap the length."""
     for name in name_forms(names):
         summary = re.sub(rf"\b{re.escape(name)}\w*", "", summary, flags=re.I)
-    summary = re.sub(r"\d", "", summary)
-    return " ".join(summary.split()[:12]).strip(" .,\"'")
+    summary = re.sub(r"\d{5,}" if keep_short_numbers else r"\d", "", summary)
+    summary = re.sub(r"\s+([,.:;!?])", r"\1", summary)  # "at :" left by removed numbers
+    return " ".join(summary.split()[:max_words]).strip(" .,:\"'")
+
+
+DETAIL_SYSTEM = """Reasoning strength: low
+You describe what the other person wrote in a chat, so that someone could reply without seeing the messages.
+Return JSON only: {"summary": "<text>"}.
+
+summary — 20 to 30 English words, third person, neutral. Say what they tell, ask or feel, the facts needed to
+answer (what, when, where, how many), and their tone (joking, upset, tender, in a hurry). Focus on the latest
+messages. Don't guess how anyone will reply.
+No names (say "a friend", "her mom", "the teacher"), no quotes, no phone numbers, addresses or other personal
+details. Short numbers like times and prices are fine. Messages may be in Russian, Kazakh or English.
+
+Example: messages "ты где?? / мы уже у кинотеатра / начало в 7" →
+{"summary": "Asks impatiently where the user is, says the group is already waiting at the cinema and the film starts at 7."}"""
+
+OUT_DETAIL = ROOT / "data" / "summaries_detailed.jsonl"
+
+
+def detail(rows, config, workers):
+    """Detailed summaries (other person's messages only, no user reply) for reply-task turns in data/pairs."""
+    reply_ids = set()
+    for split in ("train", "test"):
+        for line in (ROOT / "data" / "pairs" / f"{split}.jsonl").open(encoding="utf-8"):
+            meta = json.loads(line)["meta"]
+            if meta["task"] == "reply":
+                reply_ids.add(meta["turn_id"])
+    env = load_env()
+    url, token = env["SAYSO_GLIMMER_URL"], env["SAYSO_API_TOKEN"]
+    names = {word for chat in config["chats"] for word in chat.split()} | {config["self_name"]}
+    done = {json.loads(line)["turn_id"] for line in OUT_DETAIL.open(encoding="utf-8")} if OUT_DETAIL.exists() else set()
+    todo = [r for r in rows if r["turn_id"] in reply_ids and r["context"] and r["turn_id"] not in done]
+    print(f"{len(done)} already summarized, {len(todo)} to go")
+    failed = 0
+    started = time.time()
+    with OUT_DETAIL.open("a", encoding="utf-8") as out, ThreadPoolExecutor(workers) as pool:
+        futures = {
+            pool.submit(call_glimmer, url, token, row, system=DETAIL_SYSTEM,
+                        user="Other person's messages (latest last):\n" + "\n".join(f"- {m}" for m in row["context"]),
+                        valid=lambda label: bool(label.get("summary"))): row
+            for row in todo
+        }
+        for i, future in enumerate(as_completed(futures), 1):
+            row, label = futures[future], future.result()
+            if label is None:
+                failed += 1
+                continue
+            summary = scrub(label["summary"], names, max_words=35, keep_short_numbers=True)
+            out.write(json.dumps({"turn_id": row["turn_id"], "summary": summary}, ensure_ascii=False) + "\n")
+            if i % 200 == 0:
+                out.flush()
+                print(f"  {i}/{len(todo)}  {i / (time.time() - started):.1f}/s")
+    print(f"done, {failed} failed (re-run to retry them)")
 
 
 def tag(rows, config, workers):
@@ -192,12 +250,16 @@ def main():
     parser.add_argument("--limit", type=int, help="tag only a random sample of this size")
     parser.add_argument("--workers", type=int, default=48)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--detail", action="store_true", help="25-30 word summaries for reply turns in data/pairs")
     args = parser.parse_args()
 
     config, audiences = load_config(args.config)
     rows, _ = load_turns(config, audiences, with_context=True)
     if args.check:
         check(rows)
+        return
+    if args.detail:
+        detail(rows, config, args.workers)
         return
     if args.limit:
         rows = random.Random(0).sample(rows, args.limit)
