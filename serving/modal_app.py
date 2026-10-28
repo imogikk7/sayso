@@ -38,14 +38,15 @@ app = modal.App("sayso")
 def glimmer():
     import os
 
+    # Passed via env, not --api-key: vLLM logs its CLI args at startup.
+    env = {**os.environ, "VLLM_API_KEY": os.environ["SAYSO_API_TOKEN"]}
     subprocess.Popen([
         "vllm", "serve", MODEL,
         "--served-model-name", "muse-glimmer",
         "--host", "0.0.0.0", "--port", str(VLLM_PORT),
-        "--api-key", os.environ["SAYSO_API_TOKEN"],
         "--max-model-len", "8192",
         "--max-num-seqs", "64",
         "--gpu-memory-utilization", "0.92",
         "--reasoning-parser", "muse_glimmer",
         "--generation-config", "auto",
-    ])
+    ], env=env)

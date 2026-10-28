@@ -16,6 +16,7 @@ import argparse
 import json
 import random
 import re
+import ssl
 import sys
 import time
 import urllib.request
@@ -26,6 +27,12 @@ from pathlib import Path
 from parse_telegram import ROOT, load_config, load_turns
 
 OUT = ROOT / "data" / "situations.jsonl"
+
+try:  # python.org builds on macOS ship without root certificates
+    import certifi
+    SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+except ImportError:
+    SSL_CONTEXT = None
 
 SITUATIONS = {
     "request": "asks for something or asks a question",
@@ -38,19 +45,40 @@ SITUATIONS = {
     "apology": "apologizes",
     "logistics": "coordinates where/when, on the way, timing, practical details",
     "refusal": "declines or says no",
-    "other": "small talk or anything else",
+    "affection": "is tender, flirts, compliments, misses the other person",
+    "sharing": "tells what they are doing or what happened, everyday updates and opinions",
+    "reaction": "only laughs, reacts with emoji, or sends media without text",
+    "greeting": "says hello, good morning or good night",
+    "other": "none of the above",
 }
+
+TRANSLIT = dict(zip(
+    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя",
+    ["a", "b", "v", "g", "d", "e", "e", "zh", "z", "i", "y", "k", "l", "m", "n", "o", "p", "r", "s", "t",
+     "u", "f", "kh", "ts", "ch", "sh", "shch", "", "y", "", "e", "yu", "ya"],
+))
 
 SYSTEM = f"""Reasoning strength: low
 You label short chat exchanges for a writing-style dataset.
 Return JSON only: {{"situation": "<label>", "summary": "<text>"}}.
 
-situation — what the user's message is responding to (or, if the user starts, what the user is doing). One of:
+If the other person's messages are given, BOTH fields describe the OTHER PERSON's messages, not the user's reply.
+Never start such a summary with "user". Only if the user starts the topic, both fields describe the user's message.
+Use "other" only when nothing else fits.
+
+situation — one of:
 {chr(10).join(f"- {k}: {v}" for k, v in SITUATIONS.items())}
 
-summary — at most 12 English words, neutral, third person. For a reply describe the other person's message
-("asks to move the meeting to tomorrow"); if the user starts, describe the user's message ("user suggests going out tonight").
-No names, no quotes, no numbers, addresses or other personal details. Messages may be in Russian, Kazakh or English."""
+summary — at most 12 English words, neutral, third person, starting with a verb for the other person
+("asks to move the meeting to tomorrow") or with "user" when the user starts ("user suggests going out tonight").
+No names, no quotes, no numbers, addresses or other personal details. Messages may be in Russian, Kazakh or English.
+
+Examples:
+Other: "ты опять не пришел, я ждала час" / User: "прости, я забыл" → {{"situation": "conflict", "summary": "complains the user didn't show up again"}}
+Other: "завтра кино идем?" / User: "го" → {{"situation": "invitation", "summary": "asks if they are going to the cinema tomorrow"}}
+Other: "ахаха" / User: "ну а че" → {{"situation": "reaction", "summary": "laughs"}}
+Other: "соскучилась по тебе" / User: "я тоже" → {{"situation": "affection", "summary": "says she misses the user"}}
+User starts: "ты где" → {{"situation": "logistics", "summary": "user asks where the other person is"}}"""
 
 
 def load_env():
@@ -83,7 +111,7 @@ def call_glimmer(url, token, row, retries=3):
     )
     for attempt in range(retries):
         try:
-            with urllib.request.urlopen(request, timeout=300) as response:
+            with urllib.request.urlopen(request, timeout=300, context=SSL_CONTEXT) as response:
                 content = json.load(response)["choices"][0]["message"]["content"] or ""
             match = re.search(r"\{.*\}", content, re.S)
             label = json.loads(match.group(0)) if match else {}
@@ -96,10 +124,19 @@ def call_glimmer(url, token, row, retries=3):
     return None
 
 
+def name_forms(names):
+    """Names as written plus Latin transliterations (Илья → ilya), since summaries are English."""
+    forms = set()
+    for name in names:
+        latin = "".join(TRANSLIT.get(ch, ch) for ch in name.lower())
+        forms |= {name, latin, latin.replace("ya", "ia"), latin.replace("y", "i")}
+    return {f for f in forms if len(f) >= 3}
+
+
 def scrub(summary, names):
     """Safety net: drop contact names and digits, cap at 12 words."""
-    for name in names:
-        summary = re.sub(rf"\b{re.escape(name)}\b", "", summary, flags=re.I)
+    for name in name_forms(names):
+        summary = re.sub(rf"\b{re.escape(name)}\w*", "", summary, flags=re.I)
     summary = re.sub(r"\d", "", summary)
     return " ".join(summary.split()[:12]).strip(" .,\"'")
 
