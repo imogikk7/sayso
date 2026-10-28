@@ -18,11 +18,14 @@ Writes data/pairs/train.jsonl and data/pairs/test.jsonl (chat-format messages + 
 """
 
 import argparse
+import functools
 import json
 import random
 import re
+import socket
 import sys
 import time
+import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -37,6 +40,9 @@ TRAIN_BUDGET = 12000
 TEST_PER_CHAT = 250
 
 SYSTEM = "You write chat messages exactly the way this user writes them."
+
+# macOS's resolver fails under many parallel lookups ("nodename nor servname"); resolve each host once.
+socket.getaddrinfo = functools.lru_cache(maxsize=32)(socket.getaddrinfo)
 
 SYNTH_PROMPTS = {
     "rewrite": (
@@ -117,7 +123,7 @@ def assign_task(row, rng):
     return rng.choices(["rewrite", "compose"], [0.6, 0.4])[0]
 
 
-def call_spark(env, task, text, retries=4):
+def call_spark(env, task, text, retries=7):
     body = json.dumps({
         "model": env["BASETEN_MODEL"],
         "messages": [{"role": "system", "content": SYNTH_PROMPTS[task]}, {"role": "user", "content": text}],
@@ -134,10 +140,16 @@ def call_spark(env, task, text, retries=4):
             content = content.strip("«»\"' \n")
             if content:
                 return content
+        except urllib.error.HTTPError as error:
+            if attempt == retries - 1:
+                print(f"  {task}: {error}", file=sys.stderr)
+            if error.code == 429:  # rate limited: wait as told, else back off longer
+                time.sleep(float(error.headers.get("Retry-After") or 5 * 2 ** attempt) + random.random())
+                continue
         except Exception as error:
             if attempt == retries - 1:
                 print(f"  {task}: {error}", file=sys.stderr)
-        time.sleep(2 ** attempt)
+        time.sleep(2 ** attempt + random.random())
     return None
 
 
@@ -208,7 +220,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=str(DATA / "config.json"))
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--workers", type=int, default=24)
+    parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()
 
     config, _ = load_config(args.config)

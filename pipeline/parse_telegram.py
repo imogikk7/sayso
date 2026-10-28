@@ -206,15 +206,24 @@ def load_turns(config, audiences, with_context: bool = False):
     max_messages = config.get("max_turn_messages", 12)
     max_chars = config.get("max_message_chars", 1000)
 
+    from sources import read_chat
+
     rows = []
     per_chat = {}
-    for chat, dirs in config["chats"].items():
+    for chat, entry in config["chats"].items():
         audience = audiences.get(chat)
         if audience is None:
             raise SystemExit(f"chat {chat!r} has no audience in data/audiences.json")
-        messages = read_messages([Path(d).expanduser() for d in dirs])
-        own = [m for m in messages if m["sender"] == config["self_name"]]
-        turns = build_turns(messages, config["self_name"], gap, max_messages, max_chars, context_window)
+        # Entry is a list of export paths, or {"paths": [...], "self_name": "..."} when the
+        # user's display name differs in that messenger.
+        paths = entry["paths"] if isinstance(entry, dict) else entry
+        self_name = entry.get("self_name", config["self_name"]) if isinstance(entry, dict) else config["self_name"]
+        messages = read_chat(paths)
+        senders = {m["sender"] for m in messages}
+        if self_name not in senders:
+            raise SystemExit(f"chat {chat!r}: {self_name!r} not among senders {sorted(senders)}; set self_name")
+        own = [m for m in messages if m["sender"] == self_name]
+        turns = build_turns(messages, self_name, gap, max_messages, max_chars, context_window)
         cutoff = max(t["end"] for t in turns) - test_span if turns else None
         for turn in turns:
             row = {
