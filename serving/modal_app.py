@@ -22,13 +22,15 @@ image = (
 )
 
 cache = modal.Volume.from_name("sayso-hf-cache", create_if_missing=True)
+data = modal.Volume.from_name("sayso-data", create_if_missing=True)  # LoRA adapters in /data/adapters
+ADAPTERS = ["v1"]
 app = modal.App("sayso")
 
 
 @app.function(
     image=image,
     gpu="H100",
-    volumes={"/cache": cache},
+    volumes={"/cache": cache, "/data": data},
     secrets=[modal.Secret.from_name("sayso")],
     timeout=60 * 60,
     scaledown_window=5 * 60,  # stay warm only while in use
@@ -49,6 +51,11 @@ def glimmer():
         "--gpu-memory-utilization", "0.92",
         "--reasoning-parser", "muse_glimmer",
         "--generation-config", "auto",
+        # Personal adapters, requested as model="v1" etc. Text only: LoRA + image-encoder
+        # profiling crashes in vLLM 0.28, and screenshots are read by Muse Spark anyway.
+        "--enable-lora", "--max-lora-rank", "16",
+        "--lora-modules", *[f"{name}=/data/adapters/{name}" for name in ADAPTERS],
+        "--limit-mm-per-prompt", '{"image": 0, "video": 0}',
     ], env=env)
 
 
