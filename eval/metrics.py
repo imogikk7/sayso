@@ -47,6 +47,30 @@ def features(text: str) -> dict:
     }
 
 
+def load_lexicon():
+    path = ROOT / "data" / "lexicon.json"
+    if not path.exists():
+        return None
+    lex = json.loads(path.read_text(encoding="utf-8"))
+    return {"vocab": {w for w, n in lex["vocab"].items() if n >= 2},
+            "avoid": set(lex["avoid"]), "signature": set(lex["signature"][:150])}
+
+
+def word_choice(text, lex):
+    """Avoid-word hit, share of words the user never used (2+ times), signature words per word."""
+    import sys
+    sys.path.insert(0, str(ROOT / "pipeline"))
+    from lexicon import words
+    tokens = words(text)
+    if not tokens:
+        return {"avoid_hit": 0.0, "unknown_words": 0.0, "signature_per_word": 0.0}
+    return {
+        "avoid_hit": float(any(t in lex["avoid"] for t in tokens)),
+        "unknown_words": sum(t not in lex["vocab"] for t in tokens) / len(tokens),
+        "signature_per_word": sum(t in lex["signature"] for t in tokens) / len(tokens),
+    }
+
+
 def chrf(hypothesis: str, reference: str, n_max: int = 6, beta: float = 2.0) -> float:
     def grams(text, n):
         text = text.replace(" ", "")
@@ -78,8 +102,10 @@ def memorized(text, index):
     return any(text[i:i + window] in spans for i in range(0, max(len(text) - window + 1, 0)))
 
 
-def summarize(rows, index):
+def summarize(rows, index, lex=None):
     real = [features(r["target"]) for r in rows if r["system"] == rows[0]["system"]]
+    lexical = lambda items, key: {f: statistics.mean(word_choice(r[key], lex)[f] for r in items)
+                                  for f in ("avoid_hit", "unknown_words", "signature_per_word")} if lex else {}
     names = list(real[0])
     real_mean = {f: statistics.mean(x[f] for x in real) for f in names}
     real_std = {f: statistics.pstdev([x[f] for x in real]) or 1.0 for f in names}
@@ -87,7 +113,8 @@ def summarize(rows, index):
     by_system = defaultdict(list)
     for row in rows:
         by_system[row["system"]].append(row)
-    table = {"real": {"features": real_mean}}
+    first = [r for r in rows if r["system"] == rows[0]["system"]]
+    table = {"real": {"features": real_mean, "words": lexical(first, "target")}}
     for system, items in by_system.items():
         feats = [features(r["output"]) for r in items]
         means = {f: statistics.mean(x[f] for x in feats) for f in names}
@@ -99,6 +126,7 @@ def summarize(rows, index):
             "empty": statistics.mean(not r["output"].strip() for r in items),
             "median_chars": statistics.median(len(r["output"]) for r in items),
             "features": means,
+            "words": lexical(items, "output"),
         }
     return table
 
@@ -115,6 +143,11 @@ def print_table(title, table):
     for f in ("chars", "lines", "lower_start", "end_period", "end_punct", "emoji_per_line", "laughter",
               "swear", "latin_share", "commas_per_word"):
         print(f"{f:<16}{table['real']['features'][f]:>8.2f}" + "".join(f"{table[s]['features'][f]:>10.2f}" for s in systems))
+    if table["real"].get("words"):
+        print(f"\n{'word choice':<20}{'real':>8}" + "".join(f"{s:>10}" for s in systems))
+        for f, label in (("avoid_hit", "avoid-word hit ↓"), ("unknown_words", "never-used words ↓"),
+                         ("signature_per_word", "own words/word ↑")):
+            print(f"{label:<20}{table['real']['words'][f]:>8.2f}" + "".join(f"{table[s]['words'][f]:>10.2f}" for s in systems))
 
 
 def main():
@@ -125,8 +158,8 @@ def main():
     args = parser.parse_args()
 
     rows = [json.loads(line) for line in (ROOT / "data/bench" / f"{args.input}.jsonl").open(encoding="utf-8")]
-    index = train_index()
-    results = {"all": summarize(rows, index)}
+    index, lex = train_index(), load_lexicon()
+    results = {"all": summarize(rows, index, lex)}
     print_table("all test pairs", results["all"])
     if args.by:
         groups = defaultdict(list)
@@ -134,7 +167,7 @@ def main():
             groups[row[args.by]].append(row)
         for key, items in sorted(groups.items(), key=lambda kv: -len(kv[1])):
             if len({r["turn_id"] for r in items}) >= 20:
-                results[f"{args.by}={key}"] = summarize(items, index)
+                results[f"{args.by}={key}"] = summarize(items, index, lex)
                 print_table(f"{args.by} = {key}", results[f"{args.by}={key}"])
 
     out = ROOT / "eval" / "results" / f"{args.name}.json"

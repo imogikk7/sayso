@@ -17,6 +17,11 @@
         "swear": 0.13026052104208416,
         "latin_share": 0.008706437264773449,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.004008016032064128,
+        "unknown_words": 0.09689437818697882,
+        "signature_per_word": 0.09723724058320124
       }
     },
     "base": {
@@ -42,6 +47,11 @@
         "swear": 0.006012024048096192,
         "latin_share": 0.4822703219161035,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0841683366733467,
+        "unknown_words": 0.3523518783084595,
+        "signature_per_word": 0.018917717172975742
       }
     },
     "fewshot": {
@@ -67,6 +77,11 @@
         "swear": 0.08216432865731463,
         "latin_share": 0.03909843260291733,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.03807615230460922,
+        "unknown_words": 0.16539041162650356,
+        "signature_per_word": 0.10875747652237576
       }
     },
     "v1": {
@@ -92,6 +107,11 @@
         "swear": 0.08216432865731463,
         "latin_share": 0.004008016032064128,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.012024048096192385,
+        "unknown_words": 0.10564710286137144,
+        "signature_per_word": 0.08727248587310783
       }
     },
     "v1e1": {
@@ -117,6 +137,11 @@
         "swear": 0.07615230460921844,
         "latin_share": 0.00445335114673792,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.01002004008016032,
+        "unknown_words": 0.1839973569547482,
+        "signature_per_word": 0.10270332749904165
       }
     }
   },
@@ -138,6 +163,11 @@
         "swear": 0.16,
         "latin_share": 0.012,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.004,
+        "unknown_words": 0.10967664110055751,
+        "signature_per_word": 0.09983831974698848
       }
     },
     "base": {
@@ -163,6 +193,11 @@
         "swear": 0.004,
         "latin_share": 0.94016,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.5077545685024473,
+        "signature_per_word": 0.0
       }
     },
     "fewshot": {
@@ -188,6 +223,11 @@
         "swear": 0.1,
         "latin_share": 0.06416327849296685,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.012,
+        "unknown_words": 0.15982956874467172,
+        "signature_per_word": 0.1379310195017289
       }
     },
     "v1": {
@@ -213,6 +253,11 @@
         "swear": 0.06,
         "latin_share": 0.0,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.012,
+        "unknown_words": 0.08613072175630573,
+        "signature_per_word": 0.06777761756844071
       }
     },
     "v1e1": {
@@ -238,6 +283,11 @@
         "swear": 0.056,
         "latin_share": 0.0008888888888888888,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.004,
+        "unknown_words": 0.22753529585597376,
+        "signature_per_word": 0.10195195414642547
       }
     }
   },
@@ -259,6 +309,11 @@
         "swear": 0.11188811188811189,
         "latin_share": 0.0,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.006993006993006993,
+        "unknown_words": 0.06998220130407974,
+        "signature_per_word": 0.10893535311344531
       }
     },
     "base": {
@@ -284,6 +339,11 @@
         "swear": 0.0,
         "latin_share": 0.02076377068915241,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.16083916083916083,
+        "unknown_words": 0.16684558907581667,
+        "signature_per_word": 0.03887669046830279
       }
     },
     "fewshot": {
@@ -309,6 +369,11 @@
         "swear": 0.04195804195804196,
         "latin_share": 0.013986013986013986,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.055944055944055944,
+        "unknown_words": 0.10968091744611509,
+        "signature_per_word": 0.08469572121233518
       }
     },
     "v1": {
@@ -334,6 +399,11 @@
         "swear": 0.07692307692307693,
         "latin_share": 0.006993006993006993,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.013986013986013986,
+        "unknown_words": 0.09782081323007216,
+        "signature_per_word": 0.10359815834644209
       }
     },
     "v1e1": {
@@ -359,6 +429,11 @@
         "swear": 0.055944055944055944,
         "latin_share": 0.006993006993006993,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.02097902097902098,
+        "unknown_words": 0.12488015911306542,
+        "signature_per_word": 0.1113884272844255
       }
     }
   },
@@ -380,6 +455,11 @@
         "swear": 0.08490566037735849,
         "latin_share": 0.012684077312471238,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.0,
+        "unknown_words": 0.1030535816384873,
+        "signature_per_word": 0.07532120395327942
       }
     },
     "base": {
@@ -405,6 +485,11 @@
         "swear": 0.018867924528301886,
         "latin_share": 0.024940296486668182,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.1792452830188679,
+        "unknown_words": 0.23609458407988385,
+        "signature_per_word": 0.03660918992780752
       }
     },
     "fewshot": {
@@ -430,6 +515,11 @@
         "swear": 0.09433962264150944,
         "latin_share": 0.01386130420390599,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.07547169811320754,
+        "unknown_words": 0.25366086811946126,
+        "signature_per_word": 0.07241262052706939
       }
     },
     "v1": {
@@ -455,6 +545,11 @@
         "swear": 0.14150943396226415,
         "latin_share": 0.009433962264150943,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.009433962264150943,
+        "unknown_words": 0.16223441129101507,
+        "signature_per_word": 0.11122669259461712
       }
     },
     "v1e1": {
@@ -480,6 +575,11 @@
         "swear": 0.1509433962264151,
         "latin_share": 0.009433962264150943,
         "kazakh": 0.0
+      },
+      "words": {
+        "avoid_hit": 0.009433962264150943,
+        "unknown_words": 0.1610659849363921,
+        "signature_per_word": 0.09275874324285446
       }
     }
   }
