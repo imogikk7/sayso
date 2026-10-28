@@ -14,13 +14,16 @@ Built solo for the **Meta Global AI Developer Hackathon** (indie track). This fi
 
 ## Product
 
-1. **Keyboard panel** (iOS Keyboard Extension, no letter keys): reads the draft before the cursor, user picks an audience chip, taps **Rewrite** (draft → my style) or **Compose** (short instruction → my message), sees a preview, taps **Insert** (replaces the draft). User always sends manually.
-2. **Reply from screenshot.** iOS keyboards cannot capture the screen, so the main flow is: **Back Tap** (double-tap the back of the iPhone) runs an iOS **Shortcut** that takes a screenshot and POSTs it to `/reply` → Muse Spark (vision) extracts the conversation and the situation → the personal model writes 2–3 replies in the user's style → server stores them for this user → when the SaySo keyboard opens, it fetches the latest replies and shows them as tap-to-insert options. Fallback: Share Extension (screenshot → Share → SaySo) and in-app picker. Verify early: Shortcut screenshot + HTTP upload, and keyboard fetching replies on open.
-3. **Container app (SwiftUI):** onboarding (enable keyboard + Full Access), style card per audience and per situation, "Proof" screen with benchmark results, sandbox, privacy screen with "delete everything".
+1. **Keyboard panel** (iOS Keyboard Extension): the user keeps their native keyboard for typing and opens the SaySo panel for **Rewrite** (draft → my style), **Compose** (short instruction → my message) or **Reply** (latest screenshot replies): pick an audience chip, see a preview, tap **Insert** (replaces the draft). User always sends manually.
+2. **Reply from screenshot.** One iOS **Shortcut** ("Take Screenshot" → SaySo App Intent), triggered by **Back Tap** (double-tap the back of the iPhone) or the **Action Button** (iPhone 15 Pro+). The intent POSTs the screenshot to `/reply` → Muse Spark (vision) extracts audience guess, situation and a neutral summary → the personal model writes 3 replies with different intents → an **interactive snippet shows over the messenger**: context line + 3 reply buttons (tap = copy). The server stores them so the keyboard panel shows the same replies with Insert. Fallback: Share Extension and in-app picker.
+3. **Learns as you write (headline feature).** Every use teaches the model: the draft before Rewrite (typed by the user), which suggestion was picked vs skipped, edits to an inserted suggestion, regenerate/dismiss. Optional **training mode**: a toggle in the panel shows SaySo's own letter keys (RU ЙЦУКЕН + EN QWERTY, Kazakh letters by long-press: а→ә, г→ғ, к→қ, н→ң, о→ө, у→ұ ү, х→һ, и→і); messages sent while typing with them go straight into training. Typing works without Full Access (App Store 4.4.1). Never collected: other people's text, secure/email/URL/one-time-code/payment fields, search fields. Two speeds: new samples go into the retrieval index instantly; "Update my model" runs a short LoRA continuation + DPO on picks. "Learned from you" screen lists samples with delete.
+4. **Container app (SwiftUI):** 5-step onboarding checklist (add chats → who is who → train → keyboard → screenshot shortcut), style card per audience and per situation, "Proof" screen with benchmark results, sandbox, "Learned from you", privacy screen with "delete everything". No sign-up: device token in the App Group.
 
 Audiences come from the data, not a fixed list: `partner`, `friends`, `family`, `elder_informal` (respectful but informal), optionally `formal` (email). The mapping chat → audience lives in `data/audiences.json` (gitignored).
 
-Situations (8–10, tag for training + section of the style card): request/question, invitation/plans, good news, sadness/complaint, conflict/complaint about me, joke/meme, thanks, apology, logistics (where/when), refusal.
+Situations (tag for training + section of the style card): request/question, invitation/plans, good news, sadness/complaint, conflict/complaint about me, joke/meme, thanks, apology, logistics (where/when), refusal, other. Style is conditioned on **audience + situation**, in general, never per contact.
+
+Situation tagging (`pipeline/situations.py`): base Glimmer on our Modal reads the other person's last ≤3 messages (from the 30 min before the turn, in memory only) + the user's turn and returns `situation` and `summary` (≤12 words, neutral, no names, no quotes, e.g. "asks to move the meeting to tomorrow"). Only `{turn_id, situation, summary}` is saved. `/reply` must produce the **same** summary format from screenshots, so training and inference match.
 
 ## Architecture
 
@@ -58,6 +61,7 @@ Latency targets: `/rewrite` and `/compose` < 3 s warm; `/reply` (screenshot) ~6�
 - Source: Telegram Desktop **HTML** per-chat exports (`ChatExport_<name>/messages.html, messages2.html, …`; sort numerically). Each message is `div.message.default`; continuation messages have class `joined` and no `from_name` — they belong to the previous sender. Text is in `div.text`. Service messages are `div.message.service`. The user's display name in exports is stored in `data/config.json` as `self_name` (gitignored) — never hardcode it.
 - Volume: roughly 43k of the user's own text messages across 5 chats, heavily skewed to one chat (~58%). **Cap per-chat share** when building training sets so audiences stay balanced.
 - Exports live outside the repo (e.g. `~/Downloads/ChatExport_*`); pass paths via `data/config.json`.
+- **Phone-only import** (no computer, SaySo never gets access to chats — only what the user hands over): WhatsApp *Export Chat → Share → SaySo*; Instagram/Facebook *Accounts Center → Download your information → Messages, JSON*; X *Download an archive* (~24 h); Telegram by forwarding up to 100 selected messages at a time to the SaySo bot (own = `forward_origin` is the user); iMessage (no export on iPhone) by **screen recording** a scroll through the chat → on-device Apple Vision OCR, right bubbles = user. Every parser (`pipeline/parse_*.py`) outputs the same turn format. Raw uploads are parsed in memory and deleted. Priority: P0 Telegram Desktop, WhatsApp, Instagram · P1 Telegram bot, screen recording · P2 X.
 
 - **Unit = turn:** consecutive own messages are merged with newlines into one training target (preserves the habit of splitting thoughts into several short messages). The keyboard inserts multi-line text.
 - **Cleaning:** strip URLs, phone numbers, emails, card-like numbers, stickers/media placeholders, forwarded messages, duplicates.
@@ -92,9 +96,11 @@ The user writes in Russian (with Kazakh/English mixed in); judges are likely Eng
 ## Repo layout (target)
 
 ```
-pipeline/   parse_telegram.py, build_pairs.py, situations.py, fingerprint.py
-training/   modal_train.py (Unsloth QLoRA), configs/
-serving/    modal_app.py (FastAPI + vLLM + LoRA)
+pipeline/   parse_telegram.py, parse_whatsapp.py, parse_instagram.py, parse_x.py, parse_forwarded.py,
+            situations.py, build_pairs.py, fingerprint.py
+training/   modal_train.py (Unsloth QLoRA), update_lora.py (continuation + DPO), configs/
+serving/    modal_app.py (FastAPI + vLLM + LoRA; /rewrite /compose /reply /feedback /profile, bot webhook)
+tests/      test_privacy.py, parser fixtures
 eval/       run_benchmark.py, BLIND_TEST.md, results/ (aggregated metrics only)
 ios/        SaySo.xcodeproj, SaySoApp/, SaySoKeyboard/, SaySoShare/
 docs/       architecture, data-flow diagram
@@ -105,17 +111,18 @@ docs/       architecture, data-flow diagram
 | Date | Goal |
 |---|---|
 | Oct 27 | Repo, parser, `config.json`/`audiences.json`, counts per audience, train/test split |
-| Oct 28 | Pairs via Muse Spark Open, fingerprint, few-shot baselines. iOS spike: keyboard inserts text from a test endpoint; Back Tap Shortcut uploads a screenshot to a test endpoint |
-| Oct 29 | First Glimmer LoRA on Modal, vLLM serving, `/rewrite` `/compose` |
-| Oct 30 | Benchmark (5 systems × metrics) + data-size curve. Watch Fireworks training workshop |
-| Oct 31 | SwiftUI app: onboarding, style card, sandbox. Keyboard: chips, actions, preview, insert |
-| Nov 1 | Situation tags + `/reply`; Share Extension "reply from screenshot" via Muse Spark vision |
+| Oct 28 | Parser: turn ids + in-memory context. Base Glimmer on Modal (vLLM), situation tagging + check. iOS spike: Shortcut → App Intent snippet from a test endpoint |
+| Oct 29 | Pairs (Muse Spark Open), fingerprint per audience × situation, few-shot baselines. Decide training plan; first LoRA |
+| Oct 30 | LoRA serving `/rewrite` `/compose` `/reply`; benchmark per situation + data-size curve. Parsers: WhatsApp, Instagram, X; Telegram bot |
+| Oct 31 | SwiftUI app: onboarding checklist, style card, sandbox. Keyboard: panel + training mode letter keys + learning signals; `/feedback` + instant retrieval |
+| Nov 1 | Overlay end-to-end with Muse Spark vision; Share Extension imports; screen recording import; "Learned from you"; `update_lora.py` + feedback curve |
 | Nov 2 | **Feature freeze.** Blind test, Proof screen, privacy screen, README with results and data-flow diagram |
 | Nov 3 | Record and edit the ≤3-min video |
 | Nov 4 | Submit by ~22:00 Astana |
 
 ## Conventions
 
-- Python 3.11+, `uv` for envs. Read keys from `.env` only.
+- Python 3.11+; project venv in `.venv` (Modal CLI lives there). Pipeline scripts use the standard library where possible. Read keys from `.env` only.
+- Credits: Meta Model API available. Modal and Fireworks credits not yet; Modal runs on the user's account.
 - Small, frequent commits with clear messages (judges must see what was built during the hackathon).
 - Ask before any change that could expose private data.
