@@ -50,3 +50,43 @@ def glimmer():
         "--reasoning-parser", "muse_glimmer",
         "--generation-config", "auto",
     ], env=env)
+
+
+api_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi[standard]")
+
+
+@app.function(image=api_image, secrets=[modal.Secret.from_name("sayso")], scaledown_window=5 * 60)
+@modal.asgi_app()
+def api():
+    """App-facing API. For now /reply is a test stub for the iOS overlay spike:
+    it checks the token, reads the uploaded screenshot and returns fixed replies."""
+    import os
+    import secrets
+
+    from fastapi import FastAPI, Header, HTTPException, Request
+
+    web = FastAPI()
+
+    def check(authorization: str | None):
+        expected = f"Bearer {os.environ['SAYSO_API_TOKEN']}"
+        if not authorization or not secrets.compare_digest(authorization, expected):
+            raise HTTPException(status_code=401)
+
+    @web.post("/reply")
+    async def reply(request: Request, authorization: str | None = Header(None)):
+        check(authorization)
+        size_kb = len(await request.body()) // 1024  # screenshot bytes, not stored
+        return {
+            "context": {
+                "audience": "friends",
+                "situation": "invitation",
+                "summary": f"asks if you're free on Saturday (test, got {size_kb} KB)",
+            },
+            "replies": [
+                {"intent": "yes", "text": "го, во сколько?"},
+                {"intent": "no", "text": "ой не смогу в субботу\nдавай в воскресенье"},
+                {"intent": "joke", "text": "смотря что по программе 😏"},
+            ],
+        }
+
+    return web
