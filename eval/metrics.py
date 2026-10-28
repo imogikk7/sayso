@@ -155,7 +155,9 @@ def main():
     parser.add_argument("--by", choices=["task", "audience", "situation"])
     parser.add_argument("--name", default="bench")
     parser.add_argument("--input", default="outputs", help="data/bench/<input>.jsonl")
-    parser.add_argument("--best-of", action="store_true", help="also score '<system>+best' picked by the lexicon")
+    parser.add_argument("--best-of", action="store_true",
+                        help="also score '<system>+best' (lexicon) and '<system>+cell' (audience × situation stats)")
+    parser.add_argument("--pairs", default="pairs_v2", help="train pairs for the per-cell statistics")
     args = parser.parse_args()
 
     rows = [json.loads(line) for line in (ROOT / "data/bench" / f"{args.input}.jsonl").open(encoding="utf-8")]
@@ -164,8 +166,15 @@ def main():
         sys.path.insert(0, str(ROOT / "pipeline"))
         import lexicon
         lex_for_rerank = lexicon.load()
+        from style_stats import StyleStats
+        stats = StyleStats.from_pairs(args.pairs)
+        multi = [r for r in rows if len(r.get("candidates", [])) > 1]
         rows += [{**r, "system": f"{r['system']}+best", "output": max(r["candidates"], key=lambda c: lexicon.score(c, lex_for_rerank))}
-                 for r in rows if len(r.get("candidates", [])) > 1]
+                 for r in multi]
+        # "+cell": closest to a random real turn of the same audience × situation (user's distribution)
+        rows += [{**r, "system": f"{r['system']}+cell",
+                  "output": stats.pick(r["candidates"], r["audience"], r["situation"], key=r["turn_id"])}
+                 for r in multi]
     index, lex = train_index(), load_lexicon()
     results = {"all": summarize(rows, index, lex)}
     print_table("all test pairs", results["all"])
