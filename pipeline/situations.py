@@ -161,6 +161,57 @@ Example: messages "ты где?? / мы уже у кинотеатра / нач�
 {"summary": "Asks impatiently where the user is, says the group is already waiting at the cinema and the film starts at 7."}"""
 
 OUT_DETAIL = ROOT / "data" / "summaries_detailed.jsonl"
+OUT_THOUGHTS = ROOT / "data" / "thoughts.jsonl"
+
+ACTS = ["agree", "refuse", "ask_back", "clarify", "joke", "tease", "support", "comfort", "apologize", "argue",
+        "explain", "share", "react", "affection", "plan", "other"]
+TONES = ["warm", "playful", "teasing", "neutral", "blunt", "irritated", "excited", "tired", "caring", "sarcastic"]
+
+THOUGHT_SYSTEM = f"""Reasoning strength: low
+You read the user's own chat message and describe the decision behind it: what they chose to do, in what tone,
+and what they mean. This is about the message, not the person's personality.
+Return JSON only: {{"act": "<act>", "tone": "<tone>", "gist": "<text>"}}.
+act — one of: {", ".join(ACTS)}
+tone — one of: {", ".join(TONES)}
+gist — what the user means, 6 to 15 English words, neutral wording, no slang, no names, no quotes.
+Messages may be in Russian, Kazakh or English."""
+
+
+def thoughts(rows, config, workers):
+    """act + tone + gist of the user's own turns used in data/pairs_v2 (the 'thought' before the reply)."""
+    wanted = set()
+    for split in ("train", "test"):
+        for line in (ROOT / "data" / "pairs_v2" / f"{split}.jsonl").open(encoding="utf-8"):
+            wanted.add(json.loads(line)["meta"]["turn_id"])
+    labels = {json.loads(line)["turn_id"]: json.loads(line) for line in OUT.open(encoding="utf-8")}
+    env = load_env()
+    url, token = env["SAYSO_GLIMMER_URL"], env["SAYSO_API_TOKEN"]
+    names = {word for chat in config["chats"] for word in chat.split()} | {config["self_name"]}
+    done = {json.loads(line)["turn_id"] for line in OUT_THOUGHTS.open(encoding="utf-8")} if OUT_THOUGHTS.exists() else set()
+    todo = [r for r in rows if r["turn_id"] in wanted and r["turn_id"] not in done]
+    print(f"{len(done)} done, {len(todo)} to go")
+    valid = lambda t: t.get("act") in ACTS and t.get("tone") in TONES and t.get("gist")
+    failed = 0
+    started = time.time()
+    with OUT_THOUGHTS.open("a", encoding="utf-8") as out, ThreadPoolExecutor(workers) as pool:
+        futures = {
+            pool.submit(call_glimmer, url, token, row, system=THOUGHT_SYSTEM, valid=valid,
+                        user=f"Situation: {labels[row['turn_id']]['situation']} — {labels[row['turn_id']]['summary']}\n\n"
+                             f"User's message:\n{row['text']}"): row
+            for row in todo if row["turn_id"] in labels
+        }
+        for i, future in enumerate(as_completed(futures), 1):
+            row, t = futures[future], future.result()
+            if t is None:
+                failed += 1
+                continue
+            out.write(json.dumps({"turn_id": row["turn_id"], "act": t["act"], "tone": t["tone"],
+                                  "gist": scrub(t["gist"], names, max_words=18, keep_short_numbers=True)},
+                                 ensure_ascii=False) + "\n")
+            if i % 500 == 0:
+                out.flush()
+                print(f"  {i}/{len(todo)}  {i / (time.time() - started):.1f}/s")
+    print(f"done, {failed} failed (re-run to retry them)")
 
 
 def detail(rows, config, workers):
@@ -251,6 +302,7 @@ def main():
     parser.add_argument("--workers", type=int, default=48)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--detail", action="store_true", help="25-30 word summaries for reply turns in data/pairs")
+    parser.add_argument("--thoughts", action="store_true", help="act + tone + gist of own turns in data/pairs_v2")
     args = parser.parse_args()
 
     config, audiences = load_config(args.config)
@@ -260,6 +312,9 @@ def main():
         return
     if args.detail:
         detail(rows, config, args.workers)
+        return
+    if args.thoughts:
+        thoughts(rows, config, args.workers)
         return
     if args.limit:
         rows = random.Random(0).sample(rows, args.limit)
