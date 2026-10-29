@@ -50,7 +50,7 @@ class StyleStats:
         """turns: iterable of (audience, situation, text) from the user's real train turns."""
         self.lex = lex
         self.cells, self.audiences = defaultdict(list), defaultdict(list)
-        everything = []
+        self.everything = everything = []
         for audience, situation, text in turns:
             v = vector(text, lex)
             self.cells[(audience, situation)].append(v)
@@ -66,7 +66,7 @@ class StyleStats:
 
     def targets(self, audience, situation):
         cell = self.cells.get((audience, situation), [])
-        return cell if len(cell) >= MIN_CELL else self.audiences[audience]
+        return cell if len(cell) >= MIN_CELL else self.audiences.get(audience) or self.everything
 
     def distance(self, candidate_vector, target):
         return sum(abs(candidate_vector[f] - target[f]) / self.scale[f] for f in target)

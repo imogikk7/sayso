@@ -10,7 +10,7 @@ Usage:
   python3 pipeline/situations.py                  # everything
   python3 pipeline/situations.py --check          # distribution + 50 random rows (local only)
   python3 pipeline/situations.py --detail         # 25-30 word summaries for reply turns in data/pairs
-Needs SAYSO_GLIMMER_URL and SAYSO_API_TOKEN in .env.
+Needs SAYSO_GLIMMER_URL and GLIMMER_KEY (the vLLM key, never shipped in the app) in .env.
 """
 
 import argparse
@@ -185,7 +185,7 @@ def thoughts(rows, config, workers):
             wanted.add(json.loads(line)["meta"]["turn_id"])
     labels = {json.loads(line)["turn_id"]: json.loads(line) for line in OUT.open(encoding="utf-8")}
     env = load_env()
-    url, token = env["SAYSO_GLIMMER_URL"], env["SAYSO_API_TOKEN"]
+    url, token = env["SAYSO_GLIMMER_URL"], env.get("GLIMMER_KEY") or env["SAYSO_API_TOKEN"]
     names = {word for chat in config["chats"] for word in chat.split()} | {config["self_name"]}
     done = {json.loads(line)["turn_id"] for line in OUT_THOUGHTS.open(encoding="utf-8")} if OUT_THOUGHTS.exists() else set()
     todo = [r for r in rows if r["turn_id"] in wanted and r["turn_id"] not in done]
@@ -223,7 +223,7 @@ def detail(rows, config, workers):
             if meta["task"] == "reply":
                 reply_ids.add(meta["turn_id"])
     env = load_env()
-    url, token = env["SAYSO_GLIMMER_URL"], env["SAYSO_API_TOKEN"]
+    url, token = env["SAYSO_GLIMMER_URL"], env.get("GLIMMER_KEY") or env["SAYSO_API_TOKEN"]
     names = {word for chat in config["chats"] for word in chat.split()} | {config["self_name"]}
     done = {json.loads(line)["turn_id"] for line in OUT_DETAIL.open(encoding="utf-8")} if OUT_DETAIL.exists() else set()
     todo = [r for r in rows if r["turn_id"] in reply_ids and r["context"] and r["turn_id"] not in done]
@@ -252,7 +252,7 @@ def detail(rows, config, workers):
 
 def tag(rows, config, workers):
     env = load_env()
-    url, token = env["SAYSO_GLIMMER_URL"], env["SAYSO_API_TOKEN"]
+    url, token = env["SAYSO_GLIMMER_URL"], env.get("GLIMMER_KEY") or env["SAYSO_API_TOKEN"]
     names = {word for chat in config["chats"] for word in chat.split()} | {config["self_name"]}
     done = {json.loads(line)["turn_id"] for line in OUT.open(encoding="utf-8")} if OUT.exists() else set()
     todo = [r for r in rows if r["turn_id"] not in done]

@@ -79,7 +79,7 @@ def generate(adapters: list[str], limit: int = 0, seed: int = 0, pairs: str = "p
         rendered = tokenizer.apply_chat_template(
             [{"role": "system", "content": f"{system}\n{REASONING}"}, {"role": "user", "content": user}],
             tokenize=False, add_generation_prompt=True)
-        return rendered + channel
+        return rendered.removeprefix(tokenizer.bos_token or "") + channel  # vLLM adds BOS itself
 
     profile = defaultdict(list)  # (audience, situation) and (audience, None) → the user's real (act, tone)
     for pair in train:
@@ -179,7 +179,7 @@ def tag(llm, tokenizer, rows, tagger):
         user = f"Situation: {situation} — {summary}\n\nUser's message:\n{text}"
         prompts.append(tokenizer.apply_chat_template(
             [{"role": "system", "content": tagger["system"]}, {"role": "user", "content": user}],
-            tokenize=False, add_generation_prompt=True) + REPLY)
+            tokenize=False, add_generation_prompt=True).removeprefix(tokenizer.bos_token or "") + REPLY)
     outputs = llm.generate(prompts, SamplingParams(temperature=0, max_tokens=80))
     for key, output in zip(texts, outputs):
         match = re.search(r"\{.*?\}", output.outputs[0].text, re.S)

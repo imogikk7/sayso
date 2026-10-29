@@ -91,8 +91,8 @@ def chrf(hypothesis: str, reference: str, n_max: int = 6, beta: float = 2.0) -> 
     return 0.0 if p + r == 0 else 100 * (1 + beta ** 2) * p * r / (beta ** 2 * p + r)
 
 
-def train_index(window=40):
-    turns = [json.loads(line)["messages"][2]["content"] for line in (ROOT / "data/pairs/train.jsonl").open(encoding="utf-8")]
+def train_index(pairs="pairs_v2", window=40):
+    turns = [json.loads(line)["messages"][2]["content"] for line in (ROOT / "data" / pairs / "train.jsonl").open(encoding="utf-8")]
     spans = {t[i:i + window] for t in turns for i in range(0, max(len(t) - window + 1, 0))}
     return set(turns), spans, window
 
@@ -144,6 +144,8 @@ def thinking(rows):
     for row in rows:
         if row.get("candidate_tags") and row["output"] in row["candidates"]:
             tag = row["candidate_tags"][row["candidates"].index(row["output"])]
+            if None in tag or None in row["target_tag"]:  # the tagger failed: no match, no category
+                continue
             by_system[row["system"]].append((row["audience"], row["target_tag"], tag))
     table = {}
     for system, items in by_system.items():
@@ -209,7 +211,7 @@ def main():
         rows += [{**r, "system": f"{r['system']}+cell",
                   "output": stats.pick(r["candidates"], r["audience"], r["situation"], key=r["turn_id"])}
                  for r in multi]
-    index, lex = train_index(), load_lexicon()
+    index, lex = train_index(args.pairs), load_lexicon()
     results = {"all": summarize(rows, index, lex)}
     print_table("all test pairs", results["all"])
     results["thinking"] = thinking(rows)
