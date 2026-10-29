@@ -96,7 +96,7 @@ def api():
     import time
 
     import httpx
-    from fastapi import FastAPI, Header, HTTPException, Request
+    from fastapi import Depends, FastAPI, Header, HTTPException, Request
     from fastapi.responses import JSONResponse
     from pydantic import BaseModel, Field, ValidationError
     from transformers import AutoTokenizer
@@ -105,7 +105,13 @@ def api():
     from writer import AUDIENCES, Unavailable, Writer
     from situations import SITUATIONS
 
-    web = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    def check(authorization: str | None = Header(None)):
+        expected = f"Bearer {os.environ['SAYSO_API_TOKEN']}".encode()
+        if not authorization or not secrets.compare_digest(authorization.encode(), expected):
+            raise HTTPException(status_code=401)
+
+    # Auth runs as an app-wide dependency, before any body is parsed or validated.
+    web = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, dependencies=[Depends(check)])
     client = httpx.AsyncClient(follow_redirects=True)  # Modal answers 303 to requests longer than 150 s
     writer = Writer(client, glimmer.get_web_url(), os.environ["GLIMMER_KEY"],
                     AutoTokenizer.from_pretrained(MODEL), os.environ["META_API_KEY"])
@@ -114,11 +120,6 @@ def api():
     @web.exception_handler(Unavailable)
     async def unavailable(_, error: Unavailable):
         return JSONResponse({"detail": error.detail}, status_code=error.status)
-
-    def check(authorization: str | None):
-        expected = f"Bearer {os.environ['SAYSO_API_TOKEN']}".encode()
-        if not authorization or not secrets.compare_digest(authorization.encode(), expected):
-            raise HTTPException(status_code=401)
 
     def audience_of(value):
         return value if value in AUDIENCES else "friends"
@@ -139,24 +140,20 @@ def api():
         audience: str | None = None
 
     @web.post("/rewrite")
-    async def rewrite(body: Styled, authorization: str | None = Header(None)):
-        check(authorization)
+    async def rewrite(body: Styled):
         if not body.text.strip():
             raise HTTPException(422, "text is empty")
         return await writer.rewrite(body.text, audience_of(body.audience), situation_of(body.situation))
 
     @web.post("/compose")
-    async def compose(body: Styled, authorization: str | None = Header(None)):
-        check(authorization)
+    async def compose(body: Styled):
         if not body.instruction.strip():
             raise HTTPException(422, "instruction is empty")
         return await writer.compose(body.instruction, audience_of(body.audience), situation_of(body.situation))
 
     @web.post("/reply")
-    async def reply(request: Request, authorization: str | None = Header(None), audience: str | None = None):
-        check(authorization)
+    async def reply(request: Request, audience: str | None = None):
         started = time.monotonic()
-        await writer.ensure_warm()  # fail fast before paying for Muse Spark
         content_type = request.headers.get("content-type", "")
         if content_type.startswith("image/"):
             if int(request.headers.get("content-length") or 0) > max_image:
@@ -164,6 +161,7 @@ def api():
             image = await request.body()
             if len(image) > max_image:
                 raise HTTPException(413, "screenshot is larger than 4 MB")
+            await writer.ensure_warm()  # fail fast before paying for Muse Spark
             context = await writer.read(image=image, image_type=content_type.split(";")[0], audience=audience)
         else:
             try:
@@ -174,6 +172,7 @@ def api():
             if body.summary.strip():
                 context = {"audience": audience, "situation": situation_of(body.situation), "summary": body.summary}
             elif body.messages.strip():
+                await writer.ensure_warm()
                 context = await writer.read(messages=body.messages, audience=audience)
             else:
                 raise HTTPException(422, "send a screenshot, messages or a summary")
@@ -184,8 +183,7 @@ def api():
                 "ms": {"read": read_ms, "total": round((time.monotonic() - started) * 1000)}}
 
     @web.get("/warmup")
-    async def warmup(authorization: str | None = Header(None)):
-        check(authorization)
+    async def warmup():
         response = await client.get(f"{writer.url}/v1/models", timeout=900,
                                     headers={"Authorization": f"Bearer {writer.token}"})
         return {"ready": response.status_code == 200}
