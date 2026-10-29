@@ -13,10 +13,22 @@ struct SaySoApp: App {
 struct SpikeView: View {
     @State private var response = ReplyStore.latest
     @State private var status = ""
+    @State private var tryText = ""
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    TextField("Type a draft, then switch to the SaySo keyboard 🌐", text: $tryText, axis: .vertical)
+                        .lineLimit(2...5)
+                    Button("Fill in an example draft") {
+                        tryText = "Привет! Я сегодня не смогу прийти, извини, давай перенесём на завтра."
+                    }
+                } header: {
+                    Text("Try the keyboard")
+                } footer: {
+                    Text("Settings → General → Keyboard → Keyboards → Add New Keyboard → SaySo → Allow Full Access.")
+                }
                 Section("Set up the shortcut") {
                     Text("1. Shortcuts → + → Take Screenshot")
                     Text("2. Add “Reply from Screenshot” (SaySo), Screenshot = output of Take Screenshot")

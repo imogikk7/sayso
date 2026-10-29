@@ -41,4 +41,4 @@ build/
 .DS_Store
 
 # --- iOS generated secrets ---
-ios/SaySoApp/Generated/
+ios/Shared/Generated/

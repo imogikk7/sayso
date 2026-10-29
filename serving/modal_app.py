@@ -28,6 +28,9 @@ image = (
 )
 
 cache = modal.Volume.from_name("sayso-hf-cache", create_if_missing=True)
+# The last /reply result for the keyboard panel: the user's own suggested replies and the situation tag only,
+# never the summary of the other person's messages.
+latest = modal.Dict.from_name("sayso-latest", create_if_missing=True)
 data = modal.Volume.from_name("sayso-data", create_if_missing=True)  # LoRA adapters in /data/adapters
 ADAPTERS = ["v2", "v4"]
 app = modal.App("sayso")
@@ -88,6 +91,7 @@ def api():
     POST /compose {instruction, audience, situation?} → {text, candidates}
     POST /reply   screenshot (image/*, ≤ 4 MB) or {messages} or {summary, situation}, audience optional
                   → {context: {audience, situation, summary}, replies: [{intent, tone, thought, text} × 3], ms}
+    GET  /latest  the last /reply options (for the keyboard panel)
     GET  /warmup  wakes the GPU and waits (a cold start takes minutes); the app calls it from a button
     While the GPU is cold, generation routes answer 503 {"detail": "warming up…"} at once and start waking it.
     Screenshots and other people's messages are read in memory and never stored."""
@@ -179,8 +183,14 @@ def api():
         read_ms = round((time.monotonic() - started) * 1000)
         context["audience"] = audience_of(context["audience"])
         replies = await writer.reply(context["summary"], context["audience"], context["situation"])
+        await latest.put.aio("reply", {"audience": context["audience"], "situation": context["situation"],
+                                       "replies": replies, "at": time.time()})
         return {"context": context, "replies": replies,
                 "ms": {"read": read_ms, "total": round((time.monotonic() - started) * 1000)}}
+
+    @web.get("/latest")
+    async def last_reply():
+        return await latest.get.aio("reply") or {}
 
     @web.get("/warmup")
     async def warmup():
