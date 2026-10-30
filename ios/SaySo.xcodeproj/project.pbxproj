@@ -41,9 +41,21 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		5A0000000000000000000002 /* SaySoApp */ = {isa = PBXFileSystemSynchronizedRootGroup; path = SaySoApp; sourceTree = "<group>"; };
-		5A0000000000000000000022 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Shared; sourceTree = "<group>"; };
-		5A0000000000000000000023 /* SaySoKeyboard */ = {isa = PBXFileSystemSynchronizedRootGroup; path = SaySoKeyboard; sourceTree = "<group>"; };
+		5A0000000000000000000002 /* SaySoApp */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SaySoApp;
+			sourceTree = "<group>";
+		};
+		5A0000000000000000000022 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		5A0000000000000000000023 /* SaySoKeyboard */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SaySoKeyboard;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */

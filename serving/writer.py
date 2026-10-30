@@ -5,9 +5,11 @@
              about the other person's latest messages; nothing is stored)
   rewrite  — the user's draft → their own wording            (v4, user channel)
   compose  — an instruction → the message they'd write          (v4, user channel)
-  reply    — summary → three options with different intents. For each intent the thought is prefilled with
-             an act and a tone from the user's own shares for that audience × situation (style profile),
-             v4 writes the gist and the reply, and the candidate closest to the user's statistics wins.
+  reply    — Muse Spark, which sees the whole chat and gets the user's style profile (how they usually react
+             per audience × situation, how long and how they write), drafts three replies the way this user would
+             mean them; v4 rewrites each in the user's voice (its strongest task) and the candidate closest to the
+             user's statistics wins. While the GPU is cold, Spark's drafts are returned at once (styled: false).
+             Without a chat (summary only), v4 thinks (act · tone · gist) and writes by itself.
 
 Runs inside the Modal `api` container: the user's data (pairs, lexicon, profile) is on the private volume,
 mounted so that pipeline/ modules find it at their usual data/ path.
@@ -57,20 +59,57 @@ CONTRASTS = {
 DEFAULT_CONTRASTS = ["agree", "ask_back", "joke"]
 
 META_URL = "https://api.meta.ai/v1/chat/completions"
-GIST_WORDS = 18
-READ_SYSTEM = DETAIL_SYSTEM.replace(
-    'Return JSON only: {"summary": "<text>"}.',
-    'Return JSON only: {"chat_name": "<text>", "audience": "<audience>", "situation": "<situation>", '
-    '"summary": "<text>", "options": [{"act": "<act>", "gist": "<text>"}, {...}, {...}]}.\n'
-    "The user's own messages are on the right (or marked 'me'); describe only the other person's messages.\n"
-    "chat_name — the chat title at the top of the screenshot, exactly as written, or empty.\n"
-    f"audience — who the other person is to the user, one of: {', '.join(AUDIENCES)}.\n"
-    "situation — what the other person's latest messages do, one of:\n"
-    + "\n".join(f"- {k}: {v}" for k, v in SITUATIONS.items()) + "\n"
-    "options — three different replies the user could send now to the other person's LATEST messages, the most "
-    "natural first, each with a different intent. act — one of: " + ", ".join(ACTS) + ". gist — 6 to 15 English "
-    "words: what the user would say, concrete and grounded in this chat (not a description of the chat), no names.",
-).replace("Reasoning strength: low\n", "")
+DRAFT_WORDS = 40
+REWRITE_TEMPERATURE = 0.8  # rewriting a given draft: less drift into made-up words than free writing at 1.0
+
+
+def read_system(profile_text):
+    return DETAIL_SYSTEM.replace(
+        'Return JSON only: {"summary": "<text>"}.',
+        'Return JSON only: {"chat_name": "<text>", "audience": "<audience>", "situation": "<situation>", '
+        '"summary": "<text>", "options": [{"act": "<act>", "draft": "<text>"}, {...}, {...}]}.\n'
+        "The user's own messages are on the right (or marked 'me'); describe only the other person's messages.\n"
+        "chat_name — the chat title at the top of the screenshot, exactly as written, or empty.\n"
+        f"audience — who the other person is to the user, one of: {', '.join(AUDIENCES)}.\n"
+        "situation — what the other person's latest messages do, one of:\n"
+        + "\n".join(f"- {k}: {v}" for k, v in SITUATIONS.items()) + "\n"
+        "options — three replies the user could send now to the other person's LATEST messages. Think like THIS user "
+        "(profile below): the first option is what they would most likely do here, the other two are different moves "
+        "they also make. act — one of: " + ", ".join(ACTS) + ". draft — the reply itself in the language of the chat, "
+        "as ONE message without line breaks, about as long as this user usually writes to that audience, casual and "
+        "concrete to this chat, following their case and punctuation habits, no names.\n\n"
+        "The user's profile, from their own chats (how they write, not who they are):\n" + profile_text,
+    ).replace("Reasoning strength: low\n", "")
+
+
+def profile_text(profile):
+    """data/style_profile.json → a few lines Spark can use to think like the user."""
+    share = lambda shares: ", ".join(f"{k} {v:.0%}" for k, v in shares.items())
+    lines = []
+    for audience, p in profile.items():
+        lines.append(f"- {audience}: usually ~{p['median_chars']:.0f} characters; lowercase starts {p['lowercase_start']:.0%}, "
+                     f"ends with punctuation {p['ends_with_punctuation']:.0%}, laughter {p['laughter']:.0%}, "
+                     f"swearing {p['swear']:.0%}. Moves: {share(p['acts'])}. Tones: {share(p['tones'])}.")
+        for situation, c in list(p.get("situations", {}).items())[:5]:
+            lines.append(f"  · {situation}: {share(dict(list(c['acts'].items())[:3]))}; "
+                         f"{share(dict(list(c['tones'].items())[:2]))}; ~{c['median_chars']:.0f} chars")
+    return "\n".join(lines)
+
+
+STYLE_SYSTEM = """You write chat messages for one specific user, in their own voice, so that their friends could not
+tell it was not them. Use their profile below: length, case, punctuation, slang and swearing habits for that audience.
+Keep the full meaning: every fact (when, what, who, how much, why) and every request, refusal or question
+stays, only the wording changes. Their usual length is for short thoughts; a draft with several points stays complete
+(write it as one longer message rather than dropping anything). Write in the language of the input. One message, no line breaks, no names, nothing else.
+Return JSON only: {{"text": "<the message>"}}.
+
+The user's profile, from their own chats (how they write, not who they are):
+{profile}"""
+
+
+def one_message(text):
+    """The user often sends a reply as several short lines; a suggestion is easier to use as one message."""
+    return " ".join(line.strip() for line in text.splitlines() if line.strip())
 
 
 class Unavailable(Exception):
@@ -86,13 +125,18 @@ def clean(text):
 
 
 class Writer:
-    def __init__(self, client, glimmer_url, token, tokenizer, meta_key):
+    def __init__(self, client, glimmer_url, token, tokenizer, meta_key, gpu="modal"):
         self.client, self.url, self.token, self.meta_key = client, glimmer_url.rstrip("/"), token, meta_key
         self.tokenizer = tokenizer
         # The user's own chat → audience labels (private volume): a chat title read from a screenshot beats a guess.
         path = ROOT / "data" / "audiences.json"
         chats = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
         self.chats = {name.casefold().strip(): audience for name, audience in chats.items() if audience in AUDIENCES}
+        path = ROOT / "data" / "style_profile.json"
+        profile = profile_text(json.loads(path.read_text(encoding="utf-8"))) if path.exists() else ""
+        self.read_system = read_system(profile)
+        self.style_system = STYLE_SYSTEM.format(profile=profile)
+        self.gpu = gpu  # "modal", or "off": never touch the GPU (the user's model), Muse Spark writes alone
         self.warm_until = 0.0
         self.warming = None
         self.stats = StyleStats.from_pairs("pairs_v2")
@@ -115,6 +159,8 @@ class Writer:
     async def ensure_warm(self):
         """Fail fast while the H100 is cold: start waking it in the background and tell the app to retry,
         instead of holding the request for minutes (iOS intents and the keyboard can't wait that long)."""
+        if self.gpu == "off":
+            raise Unavailable(503, "the user's model is offline")
         if time.monotonic() < self.warm_until:
             return
         try:
@@ -129,18 +175,27 @@ class Writer:
             self.warming = asyncio.create_task(self.wake())
         raise Unavailable(503, "warming up, retry in a minute")
 
+    async def is_warm(self):
+        """Like ensure_warm, but answers instead of failing (a cold GPU starts waking up)."""
+        try:
+            await self.ensure_warm()
+            return True
+        except Unavailable:
+            return False
+
     async def wake(self):
         try:
             await self.client.get(f"{self.url}/v1/models", timeout=900, headers={"Authorization": f"Bearer {self.token}"})
         except Exception:
             pass
 
-    async def complete(self, prompts, n=1, max_tokens=160):
+    async def complete(self, prompts, n=1, max_tokens=160, temperature=None):
         """One batched call to our vLLM; returns n texts per prompt (choices are numbered prompt × n + j)."""
         response = await self.client.post(
             f"{self.url}/v1/completions", timeout=120,
             headers={"Authorization": f"Bearer {self.token}"},
-            json={"model": ADAPTER, "prompt": prompts, "n": n, "max_tokens": max_tokens, **SAMPLING,
+            json={"model": ADAPTER, "prompt": prompts, "n": n, "max_tokens": max_tokens,
+                  **SAMPLING, **({"temperature": temperature} if temperature else {}),
                   "stop": ["<|eot|>", "<|eom|>"], "skip_special_tokens": False})
         if response.status_code != 200:
             raise Unavailable(502, f"model error {response.status_code}")
@@ -153,11 +208,35 @@ class Writer:
         usable = [c for c in candidates if c.strip() and not KAZAKH.search(c)] or [c for c in candidates if c.strip()]
         return self.stats.pick(usable, audience, situation) if usable else ""
 
+    async def spark(self, system, user, key, max_tokens=3000):
+        """One Muse Spark call that returns a JSON object (one retry, then 502)."""
+        for attempt in range(2):
+            try:
+                response = await self.client.post(
+                    META_URL, timeout=30, headers={"Authorization": f"Bearer {self.meta_key}"},
+                    json={"model": "muse-spark-1.3", "reasoning_effort": "low", "max_tokens": max_tokens,
+                          "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]})
+                response.raise_for_status()
+                text = response.json()["choices"][0]["message"].get("content") or ""
+                match = re.search(r"\{.*\}", text, re.S)
+                label = json.loads(match.group(0)) if match else {}
+            except Exception:  # 429/5xx, timeout, non-JSON
+                label = {}
+            if isinstance(label, dict) and isinstance(label.get(key), str) and label[key].strip():
+                return label
+            await asyncio.sleep(1)
+        raise Unavailable(502, "Muse Spark did not answer")
+
     async def styled(self, task, field, text, audience, situation):
-        await self.ensure_warm()
+        if not await self.is_warm():  # the user's model is asleep or off: Muse Spark writes in their style alone
+            ask = {"rewrite": "Rewrite this draft the way the user would write it",
+                   "compose": "Write the message the user would send for this instruction"}[task]
+            label = await self.spark(self.style_system, f"{ask} to their {audience} ({situation}):\n{clean(text)}", "text")
+            out = one_message(" ".join(clean(label["text"]).split()[:DRAFT_WORDS * 2]))
+            return {"text": out, "candidates": [out], "styled": False}
         prompt = self.prompt(audience, situation, task, field, text) + REPLY
         candidates = (await self.complete([prompt], n=CANDIDATES + 2))[0]
-        return {"text": self.best(candidates, audience, situation), "candidates": candidates}
+        return {"text": self.best(candidates, audience, situation), "candidates": candidates, "styled": True}
 
     async def rewrite(self, text, audience, situation="other"):
         return await self.styled("rewrite", "draft", text, audience, situation)
@@ -190,17 +269,23 @@ class Writer:
         return moves
 
     async def reply(self, summary, audience, situation, options=None):
-        """With options from Muse Spark (it saw the whole chat): Spark decides what to say, the user's model says it
-        in their voice with their usual tone for that act. Without (summary only): the model also writes the gist."""
+        """options = Spark's drafts [{act, draft}] (it saw the chat and the profile): v4 rewrites them in the user's
+        voice, or they come back as they are while the GPU is cold. Without options the model thinks by itself."""
+        if options:
+            styled = await self.is_warm()
+            groups = [[o["draft"]] for o in options]
+            if styled:
+                prompts = [self.prompt(audience, situation, "rewrite", "draft", o["draft"]) + REPLY for o in options]
+                groups = await self.complete(prompts, n=CANDIDATES + 2, temperature=REWRITE_TEMPERATURE)
+            replies = []
+            for option, group in zip(options, groups):
+                text = self.best(group, audience, situation) if styled else option["draft"]
+                replies.append({"intent": option["act"], "tone": self.tone_for(option["act"], audience, situation),
+                                "thought": f"act: {option['act']} · draft: {option['draft']}", "styled": styled,
+                                "text": one_message(text), "parts": [l for l in text.splitlines() if l.strip()]})
+            return replies
         await self.ensure_warm()
         base = self.prompt(audience, situation, "reply", "incoming", summary) + THOUGHT
-        if options:
-            thoughts = [f"act: {o['act']} · tone: {self.tone_for(o['act'], audience, situation)} · gist: {o['gist']}"
-                        for o in options]
-            replies = await self.complete([base + t + AFTER_THOUGHT for t in thoughts], n=CANDIDATES)
-            return [{"intent": o["act"], "tone": t.split(" · ")[1].removeprefix("tone: "), "thought": t,
-                     "text": self.best(group, audience, situation)}
-                    for o, t, group in zip(options, thoughts, replies)]
         moves = self.intents(audience, situation)
         heads = [f"act: {act} · tone: {tone} · gist:" for act, tone in moves]
         gists = await self.complete([base + h for h in heads], n=CANDIDATES, max_tokens=60)
@@ -211,13 +296,14 @@ class Writer:
         for i, (act, tone) in enumerate(moves):
             group = [r[0] for r in replies[i * CANDIDATES:(i + 1) * CANDIDATES]]
             text = self.best(group, audience, situation)
-            options.append({"intent": act, "tone": tone, "thought": thoughts[i][group.index(text)], "text": text})
+            options.append({"intent": act, "tone": tone, "thought": thoughts[i][group.index(text)], "styled": True,
+                            "text": one_message(text), "parts": [l for l in text.splitlines() if l.strip()]})
         return options
 
     # ---- reading the chat (Muse Spark, nothing stored) --------------------------------------------
 
     async def read(self, image=None, image_type="image/jpeg", messages=None, audience=None, instruction=""):
-        """→ (context, options): context = {audience, situation, summary}; options = up to 3 {act, gist}.
+        """→ (context, options): context = {audience, situation, summary}; options = up to 3 {act, draft}.
         instruction: what the user wants to say or extra context ("politely decline, I'm busy")."""
         ask = "Describe this chat screenshot."
         if instruction and instruction.strip():
@@ -228,24 +314,7 @@ class Writer:
                        {"type": "image_url", "image_url": {"url": f"data:{image_type};base64," + base64.b64encode(image).decode()}}]
         else:
             content = ask.replace("Describe this chat screenshot.", "Messages (latest last):\n" + clean(messages))
-        label = {}
-        for attempt in range(2):
-            try:
-                response = await self.client.post(
-                    META_URL, timeout=30, headers={"Authorization": f"Bearer {self.meta_key}"},
-                    json={"model": "muse-spark-1.3", "reasoning_effort": "low", "max_tokens": 3000,
-                          "messages": [{"role": "system", "content": READ_SYSTEM}, {"role": "user", "content": content}]})
-                response.raise_for_status()
-                text = response.json()["choices"][0]["message"].get("content") or ""
-                match = re.search(r"\{.*\}", text, re.S)
-                label = json.loads(match.group(0)) if match else {}
-            except Exception:  # 429/5xx, timeout, non-JSON: one retry, then 502
-                label = {}
-            if isinstance(label, dict) and isinstance(label.get("summary"), str) and label["summary"].strip():
-                break
-            await asyncio.sleep(1)
-        else:
-            raise Unavailable(502, "could not read the chat")
+        label = await self.spark(self.read_system, content, "summary")
         # The summary goes into our prompt: plain text only, bounded, no template tokens.
         summary = " ".join(clean(label["summary"]).split()[:SUMMARY_WORDS])
         situation = label.get("situation") if label.get("situation") in SITUATIONS else "other"
@@ -253,9 +322,9 @@ class Writer:
         known = self.chats.get(str(label.get("chat_name") or "").casefold().strip())  # the title is not kept
         options = []
         for option in label.get("options") or []:
-            if isinstance(option, dict) and option.get("act") in ACTS and isinstance(option.get("gist"), str):
-                gist = " ".join(clean(option["gist"]).split()[:GIST_WORDS])
-                if gist and option["act"] not in {o["act"] for o in options}:
-                    options.append({"act": option["act"], "gist": gist})
+            if isinstance(option, dict) and option.get("act") in ACTS and isinstance(option.get("draft"), str):
+                draft = one_message(" ".join(clean(option["draft"]).split()[:DRAFT_WORDS]))
+                if draft and option["act"] not in {o["act"] for o in options}:
+                    options.append({"act": option["act"], "draft": draft})
         context = {"audience": audience or known or guessed, "situation": situation, "summary": summary}
         return context, options[:3]

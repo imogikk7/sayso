@@ -8,7 +8,7 @@ Deploy:  .venv/bin/modal deploy serving/modal_app.py
 Needs Modal secrets `sayso` (SAYSO_API_TOKEN, the app's token), `sayso-glimmer` (GLIMMER_KEY, vLLM's own key:
 never in the app, so a token pulled from the app binary can't reach the model directly) and `sayso-meta`
 (META_API_KEY), and on the `sayso-data`
-volume: adapters/, pairs_v2/, pairs_v4/, lexicon.json, audiences.json (the user's own data, never in the repo).
+volume: adapters/, pairs_v2/, pairs_v4/, lexicon.json, audiences.json, style_profile.json (the user's own data, never in the repo).
 """
 
 import os
@@ -18,6 +18,8 @@ from pathlib import Path
 import modal
 
 REPO = Path(__file__).resolve().parent.parent
+# "modal": the user's model on our H100; "off": Muse Spark alone, the GPU is never woken (Modal credits are nearly gone).
+GPU = os.environ.get("SAYSO_GPU", "off")
 MODEL = "meta-models/Muse-Glimmer-30B"
 VLLM_PORT = 8000
 
@@ -72,7 +74,7 @@ def glimmer():
 api_image = (
     modal.Image.debian_slim(python_version="3.12")
     .pip_install("fastapi[standard]", "httpx", "transformers", "jinja2")
-    .env({"HF_HOME": "/cache/hf", "TRANSFORMERS_VERBOSITY": "error"})
+    .env({"HF_HOME": "/cache/hf", "TRANSFORMERS_VERBOSITY": "error", "SAYSO_GPU": GPU})
     # pipeline/ modules read the user's data from <repo>/data; here that is the private volume
     .run_commands("mkdir -p /root/sayso && ln -s /data /root/sayso/data")
     .add_local_dir(REPO / "pipeline", "/root/sayso/pipeline", ignore=["__pycache__"])
@@ -121,8 +123,9 @@ def api():
     # Auth runs as an app-wide dependency, before any body is parsed or validated.
     web = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, dependencies=[Depends(check)])
     client = httpx.AsyncClient(follow_redirects=True)  # Modal answers 303 to requests longer than 150 s
+    GPU = os.environ.get("SAYSO_GPU", "off")
     writer = Writer(client, glimmer.get_web_url(), os.environ["GLIMMER_KEY"],
-                    AutoTokenizer.from_pretrained(MODEL), os.environ["META_API_KEY"])
+                    AutoTokenizer.from_pretrained(MODEL), os.environ["META_API_KEY"], gpu=GPU)
     max_image = 4 * 1024 * 1024
 
     @web.exception_handler(Unavailable)
@@ -143,7 +146,7 @@ def api():
 
     class Option(BaseModel):
         act: str
-        gist: str = Field(max_length=200)
+        draft: str = Field(max_length=400)
 
     class ReplyBody(BaseModel):
         image: str = Field("", max_length=6_000_000)  # base64 screenshot (≤ 4 MB decoded)
@@ -177,7 +180,6 @@ def api():
             image = await request.body()
             if len(image) > max_image:
                 raise HTTPException(413, "screenshot is larger than 4 MB")
-            await writer.ensure_warm()  # fail fast before paying for Muse Spark
             context, options = await writer.read(image=image, image_type=content_type.split(";")[0], audience=audience)
         else:
             try:
@@ -193,14 +195,12 @@ def api():
                     raise HTTPException(422, "image is not base64")
                 if len(image) > max_image:
                     raise HTTPException(413, "screenshot is larger than 4 MB")
-                await writer.ensure_warm()
                 context, options = await writer.read(image=image, image_type=body.image_type, audience=audience,
                                                      instruction=body.instruction)
             elif body.summary.strip():
                 context = {"audience": audience, "situation": situation_of(body.situation), "summary": body.summary}
                 options = [o.model_dump() for o in body.options or [] if o.act in ACTS] or None
             elif body.messages.strip():
-                await writer.ensure_warm()
                 context, options = await writer.read(messages=body.messages, audience=audience,
                                                      instruction=body.instruction)
             else:
@@ -219,6 +219,8 @@ def api():
 
     @web.get("/warmup")
     async def warmup():
+        if writer.gpu == "off":
+            return {"ready": False, "gpu": "off"}
         response = await client.get(f"{writer.url}/v1/models", timeout=900,
                                     headers={"Authorization": f"Bearer {writer.token}"})
         return {"ready": response.status_code == 200}

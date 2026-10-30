@@ -2,99 +2,67 @@ import AppIntents
 import UIKit
 import UniformTypeIdentifiers
 
-/// Run by the "SaySo Reply" Shortcut (Back Tap / Action Button): Take Screenshot → this intent.
+/// Who the reply is for. Asked on every run; "Auto" takes it from the chat title on the screenshot.
+enum ReplyAudience: String, AppEnum {
+    case auto, partner, friends, family, elders
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Audience"
+    static var caseDisplayRepresentations: [ReplyAudience: DisplayRepresentation] = [
+        .auto: "Auto (from the chat)", .partner: "Partner", .friends: "Friends", .family: "Family",
+        .elders: "Elders / formal",
+    ]
+
+    var audience: Audience? {
+        switch self {
+        case .auto: nil
+        case .partner: .partner
+        case .friends: .friends
+        case .family: .family
+        case .elders: .elder_informal
+        }
+    }
+}
+
+/// The Back Tap shortcut: Take Screenshot → Reply from Screenshot → Choose from List → Copy to Clipboard.
+/// It asks who the reply is for and an optional note ("politely decline, I'm busy" or some context), then
+/// returns only the replies, one message each, for the system list; Copy to Clipboard copies the chosen one.
 struct ReplyFromScreenshotIntent: AppIntent {
     static var title: LocalizedStringResource = "Reply from Screenshot"
-    static var description = IntentDescription("Reads the conversation on the screenshot and suggests replies in your style.")
+    static var description = IntentDescription("Reads the chat on the screenshot and writes replies in your style.")
 
-    /// Takes the output of the shortcut's previous action ("Take Screenshot") automatically,
-    /// so the user doesn't have to pick a variable (Shortcuts otherwise offers only "Choose File").
+    /// Takes the output of the shortcut's previous action ("Take Screenshot") automatically.
     @Parameter(title: "Screenshot", supportedContentTypes: [.image, .png, .jpeg],
                inputConnectionBehavior: .connectToPreviousIntentResult)
     var screenshot: IntentFile
 
-    /// Empty = detected from the chat title. Set to "Ask Each Time" in Shortcuts to pick it on every run.
-    @Parameter(title: "Audience", description: "Leave empty to detect it from the chat.")
-    var audience: Audience?
+    /// No default on purpose: Shortcuts asks for it on every run.
+    @Parameter(title: "Audience", requestValueDialog: "Who is it for?")
+    var audience: ReplyAudience
 
-    /// Optional instruction or context, e.g. "politely decline, I'm busy". "Ask Each Time" shows a text field.
-    @Parameter(title: "What to say", description: "Optional: an instruction or extra context.",
-               inputOptions: String.IntentInputOptions(multiline: true))
-    var instruction: String?
+    @Parameter(title: "Ask for a note", default: true)
+    var asksForNote: Bool
+
+    @Parameter(title: "Note", description: "Optional: what to say or some context.",
+               inputOptions: String.IntentInputOptions(multiline: false))
+    var note: String?
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Reply to \(\.$screenshot)") {
-            \.$audience
-            \.$instruction
+        Summary("Reply to \(\.$screenshot) for \(\.$audience)") {
+            \.$asksForNote
+            \.$note
         }
     }
 
-    func perform() async throws -> some IntentResult & ShowsSnippetIntent {
-        ReplyStore.latest = try await SaySoAPI.reply(screenshot: screenshot.data, audience: audience, instruction: instruction)
-        return .result(snippetIntent: RepliesSnippetIntent())
+    func perform() async throws -> some IntentResult & ReturnsValue<[String]> {
+        var note = note
+        if note == nil && asksForNote {
+            // Cancelling or leaving it empty just means "no note".
+            note = try? await $note.requestValue("Anything to add? An instruction or some context, or leave it empty.")
+        }
+        let response = try await SaySoAPI.reply(screenshot: screenshot.data, audience: audience.audience, instruction: note)
+        ReplyStore.latest = response
+        return .result(value: response.replies.map(\.text))
     }
-}
-
-/// The card shown over the current app: context line + reply buttons.
-struct RepliesSnippetIntent: SnippetIntent {
-    static var title: LocalizedStringResource = "SaySo Replies"
-    static var isDiscoverable = false
-
-    func perform() async throws -> some IntentResult & ShowsSnippetView {
-        .result(view: RepliesSnippetView(response: ReplyStore.latest, copiedIndex: ReplyStore.copiedIndex))
-    }
-}
-
-/// Tapped from a reply button in the snippet: copies the reply and marks it in the card.
-struct CopyReplyIntent: AppIntent {
-    static var title: LocalizedStringResource = "Copy Reply"
-    static var isDiscoverable = false
-
-    @Parameter(title: "Index")
-    var index: Int
-
-    init() {}
-
-    init(index: Int) {
-        self.index = index
-    }
-
-    func perform() async throws -> some IntentResult {
-        guard let replies = ReplyStore.latest?.replies, replies.indices.contains(index) else { return .result() }
-        UIPasteboard.general.string = replies[index].text
-        ReplyStore.copiedIndex = index
-        RepliesSnippetIntent.reload()
-        return .result()
-    }
-}
-
-/// Audience chip in the snippet: the same replies, rewritten for another audience (no new screenshot read).
-struct RestyleRepliesIntent: AppIntent {
-    static var title: LocalizedStringResource = "Restyle Replies"
-    static var isDiscoverable = false
-
-    @Parameter(title: "Audience")
-    var audience: Audience
-
-    init() {}
-
-    init(audience: Audience) {
-        self.audience = audience
-    }
-
-    func perform() async throws -> some IntentResult {
-        guard let latest = ReplyStore.latest, !(latest.options ?? []).isEmpty else { return .result() }
-        ReplyStore.latest = try await SaySoAPI.restyle(latest, for: audience)
-        RepliesSnippetIntent.reload()
-        return .result()
-    }
-}
-
-extension Audience: AppEnum {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Audience"
-    static var caseDisplayRepresentations: [Audience: DisplayRepresentation] = [
-        .partner: "Partner", .friends: "Friends", .family: "Family", .elder_informal: "Elders",
-    ]
 }
 
 struct SaySoShortcuts: AppShortcutsProvider {

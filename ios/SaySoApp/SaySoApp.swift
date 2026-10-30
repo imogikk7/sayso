@@ -31,17 +31,18 @@ struct SpikeView: View {
                 }
                 Section("Set up the shortcut") {
                     Text("1. Shortcuts → + → Take Screenshot")
-                    Text("2. Add “Reply from Screenshot” (SaySo), Screenshot = output of Take Screenshot")
-                    Text("3. Settings → Accessibility → Touch → Back Tap → Double Tap → this shortcut")
-                    Text("4. iPhone 15 Pro or newer: Settings → Action Button → Shortcut")
+                    Text("2. + Reply from Screenshot (SaySo). Leave Audience empty: it asks every time.")
+                    Text("3. + Choose from List (the replies)")
+                    Text("4. + Copy to Clipboard (the chosen item)")
+                    Text("5. Settings → Accessibility → Touch → Back Tap → Double Tap → this shortcut")
                 }
                 Section("Test the endpoint") {
                     Button("Send a test image") { Task { await sendTest() } }
                     if !status.isEmpty { Text(status).foregroundStyle(.secondary) }
                 }
-                if response != nil {
+                if let response {
                     Section("Latest replies") {
-                        RepliesSnippetView(response: response, copiedIndex: nil)
+                        RepliesView(response: response)
                     }
                 }
             }

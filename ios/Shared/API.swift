@@ -11,15 +11,17 @@ struct ReplyContext: Codable, Hashable {
 
 struct ReplyOption: Codable, Hashable {
     let intent: String
-    let text: String
+    let text: String  // one message
     var tone: String? = nil
     var thought: String? = nil
+    var parts: [String]? = nil  // the same reply as the user's usual short messages, to send one by one
+    var styled: Bool? = nil  // false: Muse Spark's draft, the user's model was still waking up
 }
 
-/// What a reply says (chosen by Muse Spark from the chat); sent back to restyle for another audience.
+/// What a reply says (Muse Spark's draft from the chat); sent back to restyle for another audience.
 struct ReplyIdea: Codable, Hashable {
     let act: String
-    let gist: String
+    let draft: String
 }
 
 struct ReplyResponse: Codable, Hashable {
