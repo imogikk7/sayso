@@ -8,7 +8,7 @@ Deploy:  .venv/bin/modal deploy serving/modal_app.py
 Needs Modal secrets `sayso` (SAYSO_API_TOKEN, the app's token), `sayso-glimmer` (GLIMMER_KEY, vLLM's own key:
 never in the app, so a token pulled from the app binary can't reach the model directly) and `sayso-meta`
 (META_API_KEY), and on the `sayso-data`
-volume: adapters/, pairs_v2/, pairs_v4/, lexicon.json (the user's own data, never in the repo).
+volume: adapters/, pairs_v2/, pairs_v4/, lexicon.json, audiences.json (the user's own data, never in the repo).
 """
 
 import os
@@ -89,12 +89,16 @@ api_image = (
 def api():
     """POST /rewrite {text, audience, situation?}      → {text, candidates}
     POST /compose {instruction, audience, situation?} → {text, candidates}
-    POST /reply   screenshot (image/*, ≤ 4 MB) or {messages} or {summary, situation}, audience optional
-                  → {context: {audience, situation, summary}, replies: [{intent, tone, thought, text} × 3], ms}
+    POST /reply   screenshot (image/*, ≤ 4 MB) or JSON {image (base64) | messages | summary [+ options], audience?,
+                  instruction?} → {context: {audience, situation, summary}, replies: [{intent, tone, thought, text}
+                  × 3], options: [{act, gist}], ms}. Sending back summary + options with another audience restyles
+                  the same replies without reading the chat again.
     GET  /latest  the last /reply options (for the keyboard panel)
     GET  /warmup  wakes the GPU and waits (a cold start takes minutes); the app calls it from a button
     While the GPU is cold, generation routes answer 503 {"detail": "warming up…"} at once and start waking it.
     Screenshots and other people's messages are read in memory and never stored."""
+    import base64
+    import binascii
     import secrets
     import sys
     import time
@@ -107,7 +111,7 @@ def api():
 
     sys.path.insert(0, "/root/sayso/serving")
     from writer import AUDIENCES, Unavailable, Writer
-    from situations import SITUATIONS
+    from situations import ACTS, SITUATIONS
 
     def check(authorization: str | None = Header(None)):
         expected = f"Bearer {os.environ['SAYSO_API_TOKEN']}".encode()
@@ -137,11 +141,19 @@ def api():
         audience: str = "friends"
         situation: str = "other"
 
+    class Option(BaseModel):
+        act: str
+        gist: str = Field(max_length=200)
+
     class ReplyBody(BaseModel):
-        summary: str = Field("", max_length=400)
+        image: str = Field("", max_length=6_000_000)  # base64 screenshot (≤ 4 MB decoded)
+        image_type: str = "image/jpeg"
         messages: str = Field("", max_length=4000)
+        summary: str = Field("", max_length=400)
         situation: str = "other"
         audience: str | None = None
+        instruction: str = Field("", max_length=300)  # "politely decline, I'm busy" or extra context
+        options: list[Option] | None = Field(None, max_length=3)  # from an earlier reply: restyle without rereading
 
     @web.post("/rewrite")
     async def rewrite(body: Styled):
@@ -166,26 +178,39 @@ def api():
             if len(image) > max_image:
                 raise HTTPException(413, "screenshot is larger than 4 MB")
             await writer.ensure_warm()  # fail fast before paying for Muse Spark
-            context = await writer.read(image=image, image_type=content_type.split(";")[0], audience=audience)
+            context, options = await writer.read(image=image, image_type=content_type.split(";")[0], audience=audience)
         else:
             try:
                 body = ReplyBody.model_validate_json(await request.body())
             except ValidationError as error:
                 raise HTTPException(422, error.errors(include_url=False, include_input=False))
             audience = body.audience or audience
-            if body.summary.strip():
+            options = None
+            if body.image:
+                try:
+                    image = base64.b64decode(body.image, validate=True)
+                except binascii.Error:
+                    raise HTTPException(422, "image is not base64")
+                if len(image) > max_image:
+                    raise HTTPException(413, "screenshot is larger than 4 MB")
+                await writer.ensure_warm()
+                context, options = await writer.read(image=image, image_type=body.image_type, audience=audience,
+                                                     instruction=body.instruction)
+            elif body.summary.strip():
                 context = {"audience": audience, "situation": situation_of(body.situation), "summary": body.summary}
+                options = [o.model_dump() for o in body.options or [] if o.act in ACTS] or None
             elif body.messages.strip():
                 await writer.ensure_warm()
-                context = await writer.read(messages=body.messages, audience=audience)
+                context, options = await writer.read(messages=body.messages, audience=audience,
+                                                     instruction=body.instruction)
             else:
                 raise HTTPException(422, "send a screenshot, messages or a summary")
         read_ms = round((time.monotonic() - started) * 1000)
         context["audience"] = audience_of(context["audience"])
-        replies = await writer.reply(context["summary"], context["audience"], context["situation"])
+        replies = await writer.reply(context["summary"], context["audience"], context["situation"], options)
         await latest.put.aio("reply", {"audience": context["audience"], "situation": context["situation"],
                                        "replies": replies, "at": time.time()})
-        return {"context": context, "replies": replies,
+        return {"context": context, "replies": replies, "options": options or [],
                 "ms": {"read": read_ms, "total": round((time.monotonic() - started) * 1000)}}
 
     @web.get("/latest")

@@ -13,8 +13,24 @@ struct ReplyFromScreenshotIntent: AppIntent {
                inputConnectionBehavior: .connectToPreviousIntentResult)
     var screenshot: IntentFile
 
+    /// Empty = detected from the chat title. Set to "Ask Each Time" in Shortcuts to pick it on every run.
+    @Parameter(title: "Audience", description: "Leave empty to detect it from the chat.")
+    var audience: Audience?
+
+    /// Optional instruction or context, e.g. "politely decline, I'm busy". "Ask Each Time" shows a text field.
+    @Parameter(title: "What to say", description: "Optional: an instruction or extra context.",
+               inputOptions: String.IntentInputOptions(multiline: true))
+    var instruction: String?
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Reply to \(\.$screenshot)") {
+            \.$audience
+            \.$instruction
+        }
+    }
+
     func perform() async throws -> some IntentResult & ShowsSnippetIntent {
-        ReplyStore.latest = try await SaySoAPI.reply(screenshot: screenshot.data)
+        ReplyStore.latest = try await SaySoAPI.reply(screenshot: screenshot.data, audience: audience, instruction: instruction)
         return .result(snippetIntent: RepliesSnippetIntent())
     }
 }
@@ -50,6 +66,35 @@ struct CopyReplyIntent: AppIntent {
         RepliesSnippetIntent.reload()
         return .result()
     }
+}
+
+/// Audience chip in the snippet: the same replies, rewritten for another audience (no new screenshot read).
+struct RestyleRepliesIntent: AppIntent {
+    static var title: LocalizedStringResource = "Restyle Replies"
+    static var isDiscoverable = false
+
+    @Parameter(title: "Audience")
+    var audience: Audience
+
+    init() {}
+
+    init(audience: Audience) {
+        self.audience = audience
+    }
+
+    func perform() async throws -> some IntentResult {
+        guard let latest = ReplyStore.latest, !(latest.options ?? []).isEmpty else { return .result() }
+        ReplyStore.latest = try await SaySoAPI.restyle(latest, for: audience)
+        RepliesSnippetIntent.reload()
+        return .result()
+    }
+}
+
+extension Audience: AppEnum {
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Audience"
+    static var caseDisplayRepresentations: [Audience: DisplayRepresentation] = [
+        .partner: "Partner", .friends: "Friends", .family: "Family", .elder_informal: "Elders",
+    ]
 }
 
 struct SaySoShortcuts: AppShortcutsProvider {

@@ -16,9 +16,16 @@ struct ReplyOption: Codable, Hashable {
     var thought: String? = nil
 }
 
+/// What a reply says (chosen by Muse Spark from the chat); sent back to restyle for another audience.
+struct ReplyIdea: Codable, Hashable {
+    let act: String
+    let gist: String
+}
+
 struct ReplyResponse: Codable, Hashable {
     let context: ReplyContext
     let replies: [ReplyOption]
+    var options: [ReplyIdea]? = nil
 }
 
 struct StyledResponse: Codable, Hashable {
@@ -62,8 +69,23 @@ enum SaySoError: LocalizedError {
 }
 
 enum SaySoAPI {
-    static func reply(screenshot: Data) async throws -> ReplyResponse {
-        try await send("reply", body: jpeg(screenshot), contentType: "image/jpeg", timeout: 25)
+    /// instruction: optional "politely decline, I'm busy" or extra context; audience: nil = detect from the chat.
+    static func reply(screenshot: Data, audience: Audience? = nil, instruction: String? = nil) async throws -> ReplyResponse {
+        var body: [String: String] = ["image": jpeg(screenshot).base64EncodedString(), "image_type": "image/jpeg"]
+        body["audience"] = audience?.rawValue
+        body["instruction"] = instruction?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return try await send("reply", json: body, timeout: 25)
+    }
+
+    /// Same replies (same meaning), written for another audience; skips reading the chat again.
+    static func restyle(_ response: ReplyResponse, for audience: Audience) async throws -> ReplyResponse {
+        struct Body: Encodable {
+            let summary, situation, audience: String
+            let options: [ReplyIdea]
+        }
+        let body = Body(summary: response.context.summary, situation: response.context.situation,
+                        audience: audience.rawValue, options: response.options ?? [])
+        return try await send("reply", body: try JSONEncoder().encode(body), contentType: "application/json", timeout: 20)
     }
 
     static func reply(messages: String, audience: Audience?) async throws -> ReplyResponse {

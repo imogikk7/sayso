@@ -8,7 +8,20 @@ struct RepliesSnippetView: View {
     var body: some View {
         if let response {
             VStack(alignment: .leading, spacing: 10) {
-                Text("\(response.context.audience) · \(response.context.situation)")
+                if !(response.options ?? []).isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(Audience.allCases) { audience in
+                            let selected = audience.rawValue == response.context.audience
+                            Button(intent: RestyleRepliesIntent(audience: audience)) {
+                                Text(audience.label).font(.caption.weight(selected ? .semibold : .regular))
+                                    .lineLimit(1).frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(selected ? .accentColor : .gray)
+                        }
+                    }
+                }
+                Text(response.context.situation)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(response.context.summary)

@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "pipeline"), str(ROOT / "eval")]
 
-from situations import DETAIL_SYSTEM, SITUATIONS  # noqa: E402
+from situations import ACTS, DETAIL_SYSTEM, SITUATIONS  # noqa: E402
 from style_stats import MIN_CELL, StyleStats  # noqa: E402
 
 SYSTEM = "You write chat messages exactly the way this user writes them."
@@ -57,13 +57,19 @@ CONTRASTS = {
 DEFAULT_CONTRASTS = ["agree", "ask_back", "joke"]
 
 META_URL = "https://api.meta.ai/v1/chat/completions"
+GIST_WORDS = 18
 READ_SYSTEM = DETAIL_SYSTEM.replace(
     'Return JSON only: {"summary": "<text>"}.',
-    'Return JSON only: {"audience": "<audience>", "situation": "<situation>", "summary": "<text>"}.\n'
+    'Return JSON only: {"chat_name": "<text>", "audience": "<audience>", "situation": "<situation>", '
+    '"summary": "<text>", "options": [{"act": "<act>", "gist": "<text>"}, {...}, {...}]}.\n'
     "The user's own messages are on the right (or marked 'me'); describe only the other person's messages.\n"
+    "chat_name — the chat title at the top of the screenshot, exactly as written, or empty.\n"
     f"audience — who the other person is to the user, one of: {', '.join(AUDIENCES)}.\n"
     "situation — what the other person's latest messages do, one of:\n"
-    + "\n".join(f"- {k}: {v}" for k, v in SITUATIONS.items()),
+    + "\n".join(f"- {k}: {v}" for k, v in SITUATIONS.items()) + "\n"
+    "options — three different replies the user could send now to the other person's LATEST messages, the most "
+    "natural first, each with a different intent. act — one of: " + ", ".join(ACTS) + ". gist — 6 to 15 English "
+    "words: what the user would say, concrete and grounded in this chat (not a description of the chat), no names.",
 ).replace("Reasoning strength: low\n", "")
 
 
@@ -83,6 +89,10 @@ class Writer:
     def __init__(self, client, glimmer_url, token, tokenizer, meta_key):
         self.client, self.url, self.token, self.meta_key = client, glimmer_url.rstrip("/"), token, meta_key
         self.tokenizer = tokenizer
+        # The user's own chat → audience labels (private volume): a chat title read from a screenshot beats a guess.
+        path = ROOT / "data" / "audiences.json"
+        chats = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        self.chats = {name.casefold().strip(): audience for name, audience in chats.items() if audience in AUDIENCES}
         self.warm_until = 0.0
         self.warming = None
         self.stats = StyleStats.from_pairs("pairs_v2")
@@ -157,6 +167,16 @@ class Writer:
 
     # ---- reply: think like the user, then write ---------------------------------------------------
 
+    def cell(self, audience, situation):
+        cell = self.moves.get((audience, situation), [])
+        return cell if len(cell) >= MIN_CELL else self.moves.get((audience, None)) or [("react", "neutral")]
+
+    def tone_for(self, act, audience, situation):
+        """The user's most common tone for this act here (style profile), else for this audience."""
+        tones = (Counter(t for a, t in self.cell(audience, situation) if a == act)
+                 or Counter(t for a, t in self.moves.get((audience, None), []) if a == act))
+        return tones.most_common(1)[0][0] if tones else "neutral"
+
     def intents(self, audience, situation):
         cell = self.moves.get((audience, situation), [])
         cell = cell if len(cell) >= MIN_CELL else self.moves.get((audience, None)) or [("react", "neutral")]
@@ -169,9 +189,18 @@ class Writer:
             moves.append((act, tones.most_common(1)[0][0] if tones else "neutral"))
         return moves
 
-    async def reply(self, summary, audience, situation):
+    async def reply(self, summary, audience, situation, options=None):
+        """With options from Muse Spark (it saw the whole chat): Spark decides what to say, the user's model says it
+        in their voice with their usual tone for that act. Without (summary only): the model also writes the gist."""
         await self.ensure_warm()
         base = self.prompt(audience, situation, "reply", "incoming", summary) + THOUGHT
+        if options:
+            thoughts = [f"act: {o['act']} · tone: {self.tone_for(o['act'], audience, situation)} · gist: {o['gist']}"
+                        for o in options]
+            replies = await self.complete([base + t + AFTER_THOUGHT for t in thoughts], n=CANDIDATES)
+            return [{"intent": o["act"], "tone": t.split(" · ")[1].removeprefix("tone: "), "thought": t,
+                     "text": self.best(group, audience, situation)}
+                    for o, t, group in zip(options, thoughts, replies)]
         moves = self.intents(audience, situation)
         heads = [f"act: {act} · tone: {tone} · gist:" for act, tone in moves]
         gists = await self.complete([base + h for h in heads], n=CANDIDATES, max_tokens=60)
@@ -187,12 +216,18 @@ class Writer:
 
     # ---- reading the chat (Muse Spark, nothing stored) --------------------------------------------
 
-    async def read(self, image=None, image_type="image/jpeg", messages=None, audience=None):
+    async def read(self, image=None, image_type="image/jpeg", messages=None, audience=None, instruction=""):
+        """→ (context, options): context = {audience, situation, summary}; options = up to 3 {act, gist}.
+        instruction: what the user wants to say or extra context ("politely decline, I'm busy")."""
+        ask = "Describe this chat screenshot."
+        if instruction and instruction.strip():
+            ask += (f"\nThe user's own note about how to reply: \"{clean(instruction)[:300]}\". All three options "
+                    "must follow it (use it as context if it is not an instruction); vary wording, tone and act.")
         if image is not None:
-            content = [{"type": "text", "text": "Describe this chat screenshot."},
+            content = [{"type": "text", "text": ask},
                        {"type": "image_url", "image_url": {"url": f"data:{image_type};base64," + base64.b64encode(image).decode()}}]
         else:
-            content = "Messages (latest last):\n" + clean(messages)
+            content = ask.replace("Describe this chat screenshot.", "Messages (latest last):\n" + clean(messages))
         label = {}
         for attempt in range(2):
             try:
@@ -215,4 +250,12 @@ class Writer:
         summary = " ".join(clean(label["summary"]).split()[:SUMMARY_WORDS])
         situation = label.get("situation") if label.get("situation") in SITUATIONS else "other"
         guessed = label.get("audience") if label.get("audience") in AUDIENCES else "friends"
-        return {"audience": audience or guessed, "situation": situation, "summary": summary}
+        known = self.chats.get(str(label.get("chat_name") or "").casefold().strip())  # the title is not kept
+        options = []
+        for option in label.get("options") or []:
+            if isinstance(option, dict) and option.get("act") in ACTS and isinstance(option.get("gist"), str):
+                gist = " ".join(clean(option["gist"]).split()[:GIST_WORDS])
+                if gist and option["act"] not in {o["act"] for o in options}:
+                    options.append({"act": option["act"], "gist": gist})
+        context = {"audience": audience or known or guessed, "situation": situation, "summary": summary}
+        return context, options[:3]
