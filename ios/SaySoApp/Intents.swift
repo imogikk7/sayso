@@ -7,7 +7,10 @@ struct ReplyFromScreenshotIntent: AppIntent {
     static var title: LocalizedStringResource = "Reply from Screenshot"
     static var description = IntentDescription("Reads the conversation on the screenshot and suggests replies in your style.")
 
-    @Parameter(title: "Screenshot", supportedContentTypes: [.image])
+    /// Takes the output of the shortcut's previous action ("Take Screenshot") automatically,
+    /// so the user doesn't have to pick a variable (Shortcuts otherwise offers only "Choose File").
+    @Parameter(title: "Screenshot", supportedContentTypes: [.image, .png, .jpeg],
+               inputConnectionBehavior: .connectToPreviousIntentResult)
     var screenshot: IntentFile
 
     func perform() async throws -> some IntentResult & ShowsSnippetIntent {
