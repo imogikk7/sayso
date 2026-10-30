@@ -14,7 +14,7 @@ final class KeyboardViewController: UIInputViewController {
         addChild(host)
         view.addSubview(host.view)
         host.view.translatesAutoresizingMaskIntoConstraints = false
-        let height = host.view.heightAnchor.constraint(equalToConstant: 290)
+        let height = host.view.heightAnchor.constraint(equalToConstant: 250)
         height.priority = .defaultHigh  // lets the system resize during rotation without layout warnings
         NSLayoutConstraint.activate([
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),

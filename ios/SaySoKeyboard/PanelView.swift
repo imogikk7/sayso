@@ -4,41 +4,46 @@ struct PanelView: View {
     @ObservedObject var model: PanelModel
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             header
             Picker("Mode", selection: $model.tab) {
                 ForEach(PanelTab.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             .onChange(of: model.tab) { model.options = []; model.message = nil }
+            if !model.hasFullAccess {
+                Label("Turn on Full Access: Settings → General → Keyboard → Keyboards → SaySo", systemImage: "lock")
+                    .font(.caption).foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             content
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.top, 10)
+        .dynamicTypeSize(.small ... .large)  // the panel has a fixed height; huge text sizes would push buttons out
     }
 
+    /// Audience chips in one plain row (a horizontal ScrollView gets iOS 26's edge blur and the chips smear).
     private var header: some View {
         HStack(spacing: 6) {
             if model.showsGlobe {
                 Button(action: model.nextKeyboard) { Image(systemName: "globe") }
                     .buttonStyle(.bordered)
             }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(Audience.allCases) { audience in
-                        let selected = model.audience == audience
-                        Button { model.audience = audience } label: {
-                            Text(audience.label)
-                                .font(.footnote.weight(selected ? .semibold : .regular))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .foregroundStyle(selected ? Color.white : Color.primary)
-                                .background(selected ? Color.accentColor : Color.primary.opacity(0.08), in: .capsule)
-                        }
-                        .buttonStyle(.plain)
-                    }
+            ForEach(Audience.allCases) { audience in
+                let selected = model.audience == audience
+                Button { model.audience = audience } label: {
+                    Text(audience.label)
+                        .font(.subheadline.weight(selected ? .semibold : .regular))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .foregroundStyle(selected ? Color.white : Color.primary)
+                        .background(selected ? Color.accentColor : Color.primary.opacity(0.1), in: .capsule)
                 }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -108,9 +113,6 @@ struct PanelView: View {
                     Button("Retry") { model.run() }.controlSize(.small)
                 }
             }
-        } else if !model.hasFullAccess {
-            Text("Turn on Full Access in Settings → General → Keyboard → Keyboards → SaySo.")
-                .font(.caption).foregroundStyle(.orange)
         }
     }
 
