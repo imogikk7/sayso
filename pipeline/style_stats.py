@@ -60,7 +60,8 @@ class StyleStats:
 
     @classmethod
     def from_pairs(cls, pairs="pairs_v2"):
-        rows = (json.loads(line) for line in (ROOT / "data" / pairs / "train.jsonl").open(encoding="utf-8"))
+        with (ROOT / "data" / pairs / "train.jsonl").open(encoding="utf-8") as f:
+            rows = [json.loads(line) for line in f]
         turns = [(r["meta"]["audience"], r["meta"]["situation"], r["messages"][2]["content"]) for r in rows]
         return cls(turns, load_lexicon())
 
