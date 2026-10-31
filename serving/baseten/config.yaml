@@ -1,0 +1,29 @@
+# The user's model on Baseten: Muse Glimmer 30B + the v4 LoRA behind vLLM's OpenAI-compatible server, the same
+# server serving/modal_app.py runs on Modal. One H100, scales to zero after 5 idle minutes.
+#
+#   cp adapters/v4/adapter_config.json adapters/v4/adapter_model.safetensors serving/baseten/data/v4/   # gitignored
+#   .venv/bin/truss push serving/baseten --remote baseten --publish
+#
+# Calls go to https://model-<id>.api.baseten.co/environments/production/predict with "Api-Key <key>"; the body is
+# vLLM's /v1/completions request (model "v4"). serving/writer.py does this when SAYSO_GPU=baseten.
+model_name: SaySo Glimmer
+base_image:
+  image: vllm/vllm-openai:v0.28.0
+docker_server:
+  start_command: >-
+    sh -c "vllm serve meta-models/Muse-Glimmer-30B --served-model-name muse-glimmer --host 0.0.0.0 --port 8000
+    --max-model-len 8192 --max-num-seqs 64 --gpu-memory-utilization 0.92 --reasoning-parser muse_glimmer
+    --generation-config auto --enable-lora --max-lora-rank 16 --max-loras 4 --lora-modules v4=/app/data/v4
+    --limit-mm-per-prompt '{\"image\": 0, \"video\": 0}'"
+  readiness_endpoint: /health
+  liveness_endpoint: /health
+  predict_endpoint: /v1/completions
+  server_port: 8000
+environment_variables:
+  VLLM_ALLOW_RUNTIME_LORA_UPDATING: "1"
+  HF_HUB_ENABLE_HF_TRANSFER: "1"
+resources:
+  accelerator: H100
+  use_gpu: true
+runtime:
+  predict_concurrency: 64

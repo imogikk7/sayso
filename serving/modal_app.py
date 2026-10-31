@@ -126,7 +126,8 @@ def build_style(style_id: str, files: list):
 
 
 @app.function(image=api_image, volumes={"/cache": cache, "/data": data},
-              secrets=[modal.Secret.from_name(name) for name in ("sayso", "sayso-glimmer", "sayso-meta")],
+              secrets=[modal.Secret.from_name(name) for name in ("sayso", "sayso-glimmer", "sayso-meta")]
+              + ([modal.Secret.from_name("sayso-baseten")] if GPU == "baseten" else []),
               scaledown_window=5 * 60, timeout=10 * 60, max_containers=2)
 @modal.concurrent(max_inputs=32)
 @modal.asgi_app()
@@ -147,6 +148,7 @@ def api():
     GET  /warmup  wakes the GPU and waits (a cold start takes minutes); the app calls it from a button
     While the GPU is cold, generation routes answer at once with Muse Spark in the style and start waking it.
     Screenshots and other people's messages are read in memory and never stored."""
+    import asyncio
     import base64
     import binascii
     import secrets
@@ -174,8 +176,10 @@ def api():
     client = httpx.AsyncClient(follow_redirects=True)  # Modal answers 303 to requests longer than 150 s
     GPU = os.environ.get("SAYSO_GPU", "off")
     styles.on_write = data.commit
-    writer = Writer(client, glimmer.get_web_url(), os.environ["GLIMMER_KEY"],
-                    AutoTokenizer.from_pretrained(MODEL), os.environ["META_API_KEY"], gpu=GPU, reload=data.reload)
+    baseten = GPU == "baseten"  # the user's model on Baseten (serving/baseten), key in the `sayso-baseten` secret
+    writer = Writer(client, glimmer.get_web_url(), os.environ["BASETEN_API_KEY"] if baseten else os.environ["GLIMMER_KEY"],
+                    AutoTokenizer.from_pretrained(MODEL), os.environ["META_API_KEY"], gpu=GPU, reload=data.reload,
+                    baseten_model=os.environ.get("BASETEN_MODEL_ID"))
     max_upload = 50 * 1024 * 1024
     max_image = 4 * 1024 * 1024
 
@@ -410,8 +414,14 @@ def api():
     async def warmup():
         if writer.gpu == "off":
             return {"ready": False, "gpu": "off"}
-        response = await client.get(f"{writer.url}/v1/models", timeout=900,
-                                    headers={"Authorization": f"Bearer {writer.token}"})
-        return {"ready": response.status_code == 200}
+        await writer.wake()
+        for _ in range(60 if writer.gpu == "baseten" else 1):  # Baseten's wake returns at once: wait for ACTIVE
+            try:
+                if await writer.is_up():
+                    return {"ready": True, "gpu": writer.gpu}
+            except Exception:
+                pass
+            await asyncio.sleep(10)
+        return {"ready": False, "gpu": writer.gpu}
 
     return web

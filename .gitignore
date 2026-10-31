@@ -42,3 +42,6 @@ build/
 
 # --- iOS generated secrets ---
 ios/Shared/Generated/
+
+# the user's LoRA, copied in for truss push (never committed)
+serving/baseten/data/

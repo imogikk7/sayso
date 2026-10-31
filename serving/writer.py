@@ -288,10 +288,13 @@ class Context:
 
 
 class Writer:
-    def __init__(self, client, glimmer_url, token, tokenizer, meta_key, gpu="modal", reload=None):
+    def __init__(self, client, glimmer_url, token, tokenizer, meta_key, gpu="modal", reload=None, baseten_model=None):
+        """gpu: "modal" (our vLLM on Modal, glimmer_url + its key), "baseten" (the same vLLM on Baseten: token is the
+        Baseten API key, baseten_model its model id), or "off": never touch a GPU, Muse Spark writes alone."""
         self.client, self.url, self.token, self.meta_key = client, glimmer_url.rstrip("/"), token, meta_key
         self.tokenizer = tokenizer
-        self.gpu = gpu  # "modal", or "off": never touch the GPU (the user's models), Muse Spark writes alone
+        self.gpu = gpu
+        self.baseten = baseten_model
         self.reload = reload or (lambda: None)  # sees styles written by other containers (the build function)
         self.contexts = {}
         self.loaded = {"v2", "v4"}  # LoRAs vLLM loads at startup; a new style's is loaded on first use
@@ -327,9 +330,7 @@ class Writer:
         if time.monotonic() < self.warm_until:
             return
         try:
-            response = await self.client.get(f"{self.url}/v1/models", timeout=4,
-                                             headers={"Authorization": f"Bearer {self.token}"})
-            if response.status_code == 200:
+            if await self.is_up():
                 self.warm_until = time.monotonic() + 60
                 return
         except Exception:
@@ -349,17 +350,32 @@ class Writer:
             return False
         return await self.load_adapter(ctx.adapter)
 
+    @property
+    def auth(self):
+        return {"Authorization": f"Api-Key {self.token}" if self.gpu == "baseten" else f"Bearer {self.token}"}
+
+    async def is_up(self):
+        if self.gpu == "baseten":  # Baseten's own status: ACTIVE, or SCALED_TO_ZERO / WAKING_UP / DEPLOYING
+            response = await self.client.get(
+                f"https://api.baseten.co/v1/models/{self.baseten}/deployments/production", timeout=4, headers=self.auth)
+            return response.status_code == 200 and response.json().get("status") == "ACTIVE"
+        response = await self.client.get(f"{self.url}/v1/models", timeout=4, headers=self.auth)
+        return response.status_code == 200
+
     async def wake(self):
         try:
-            await self.client.get(f"{self.url}/v1/models", timeout=900, headers={"Authorization": f"Bearer {self.token}"})
+            if self.gpu == "baseten":
+                await self.client.post(f"https://model-{self.baseten}.api.baseten.co/production/wake", timeout=30,
+                                       headers=self.auth)
+            else:
+                await self.client.get(f"{self.url}/v1/models", timeout=900, headers=self.auth)
         except Exception:
             pass
 
     async def load_adapter(self, name):
-        if name in self.loaded:
-            return True
-        response = await self.client.post(f"{self.url}/v1/load_lora_adapter", timeout=120,
-                                          headers={"Authorization": f"Bearer {self.token}"},
+        if name in self.loaded or self.gpu == "baseten":  # Baseten serves only the adapters it started with
+            return name in self.loaded
+        response = await self.client.post(f"{self.url}/v1/load_lora_adapter", timeout=120, headers=self.auth,
                                           json={"lora_name": name, "lora_path": f"/data/adapters/{name}"})
         if response.status_code == 200 or "already" in response.text:
             self.loaded.add(name)
@@ -367,9 +383,10 @@ class Writer:
 
     async def complete(self, adapter, prompts, n=1, max_tokens=160, temperature=None):
         """One batched call to our vLLM; returns n texts per prompt (choices are numbered prompt × n + j)."""
+        url = (f"https://model-{self.baseten}.api.baseten.co/environments/production/predict" if self.gpu == "baseten"
+               else f"{self.url}/v1/completions")
         response = await self.client.post(
-            f"{self.url}/v1/completions", timeout=120,
-            headers={"Authorization": f"Bearer {self.token}"},
+            url, timeout=120, headers=self.auth,
             json={"model": adapter, "prompt": prompts, "n": n, "max_tokens": max_tokens,
                   **SAMPLING, **({"temperature": temperature} if temperature else {}),
                   "stop": ["<|eot|>", "<|eom|>"], "skip_special_tokens": False})
