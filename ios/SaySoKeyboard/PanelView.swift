@@ -1,11 +1,101 @@
 import SwiftUI
 
+/// The SaySo keyboard: a top strip (mode, audience, format, ✨) over letter keys or the panel; results replace both.
 struct PanelView: View {
     @ObservedObject var model: PanelModel
 
     var body: some View {
+        VStack(spacing: 6) {
+            strip
+            if model.busy {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if !model.options.isEmpty {
+                ResultsView(model: model)
+            } else if model.mode == .letters {
+                VStack(spacing: 4) {
+                    if let message = model.message { status(message) }
+                    LetterKeys(model: model)
+                }
+            } else {
+                panel
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 6)
+        .tint(model.settings.accent.color)
+        .dynamicTypeSize(.small ... .large)  // the keyboard has a fixed height; huge text sizes would push keys out
+    }
+
+    // MARK: Strip
+
+    private var strip: some View {
+        HStack(spacing: 6) {
+            Button {
+                model.mode = model.mode == .letters ? .panel : .letters
+                model.closeResults()
+            } label: {
+                Image(systemName: model.mode == .letters ? "rectangle.grid.1x2" : "keyboard")
+                    .frame(width: 34, height: 30)
+                    .background(Color(.systemBackground), in: .capsule)
+            }
+            .buttonStyle(.plain)
+            Menu {
+                if !model.suggested.isEmpty {
+                    Section("AI suggests") {
+                        ForEach(model.suggested.filter(model.settings.audiences.contains)) { audience in
+                            Button { model.audience = audience } label: { Label(audience.label, systemImage: "sparkles") }
+                        }
+                    }
+                }
+                Picker("Audience", selection: $model.audience) {
+                    ForEach(model.settings.audiences) { Text($0.label).tag($0) }
+                }
+            } label: {
+                chip(model.audience.label, systemImage: hint ? "sparkles" : "person.2", highlighted: hint)
+            }
+            Menu {
+                Picker("Format", selection: $model.format) {
+                    ForEach(model.settings.formats) { Label($0.label, systemImage: $0.systemImage).tag($0) }
+                }
+            } label: {
+                chip(model.format.label, systemImage: model.format.systemImage, highlighted: false)
+            }
+            Spacer(minLength: 0)
+            Button {
+                if model.mode == .letters { model.sparkle() } else { model.run() }
+            } label: {
+                Image(systemName: "sparkles")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 30)
+                    .background(model.settings.accent.color, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .disabled(model.busy)
+        }
+        .padding(.horizontal, 8)
+    }
+
+    /// The AI thinks this text is for someone else than the chosen audience.
+    private var hint: Bool {
+        if let first = model.suggested.first { return first != model.audience }
+        return false
+    }
+
+    private func chip(_ title: String, systemImage: String, highlighted: Bool) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.medium))
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .frame(height: 30)
+            .foregroundStyle(highlighted ? model.settings.accent.color : .primary)
+            .background(Color(.systemBackground), in: .capsule)
+    }
+
+    // MARK: Panel
+
+    private var panel: some View {
         VStack(spacing: 10) {
-            header
             Picker("Mode", selection: $model.tab) {
                 ForEach(PanelTab.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -16,61 +106,6 @@ struct PanelView: View {
                     .font(.caption).foregroundStyle(.orange)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            content
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .padding(.top, 10)
-        .dynamicTypeSize(.small ... .large)  // the panel has a fixed height; huge text sizes would push buttons out
-    }
-
-    /// Audience chips in one plain row (a horizontal ScrollView gets iOS 26's edge blur and the chips smear).
-    private var header: some View {
-        HStack(spacing: 6) {
-            if model.showsGlobe {
-                Button(action: model.nextKeyboard) { Image(systemName: "globe") }
-                    .buttonStyle(.bordered)
-            }
-            ForEach(Audience.allCases) { audience in
-                let selected = model.audience == audience
-                Button { model.audience = audience } label: {
-                    Text(audience.label)
-                        .font(.subheadline.weight(selected ? .semibold : .regular))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 7)
-                        .foregroundStyle(selected ? Color.white : Color.primary)
-                        .background(selected ? Color.accentColor : Color.primary.opacity(0.1), in: .capsule)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    @ViewBuilder private var content: some View {
-        if !model.options.isEmpty {
-            ScrollView {
-                VStack(spacing: 6) {
-                    ForEach(model.options) { option in
-                        Button { model.insert(option) } label: {
-                            HStack(alignment: .top, spacing: 8) {
-                                if let label = option.label {
-                                    Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                                        .frame(width: 58, alignment: .leading)
-                                }
-                                Text(option.text).frame(maxWidth: .infinity, alignment: .leading)
-                                    .multilineTextAlignment(.leading)
-                                Image(systemName: "arrow.down.left").foregroundStyle(.secondary)
-                            }
-                            .padding(8)
-                            .background(.background.secondary, in: .rect(cornerRadius: 10))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        } else {
             VStack(alignment: .leading, spacing: 8) {
                 if model.tab == .replies {
                     HStack {
@@ -83,7 +118,7 @@ struct PanelView: View {
                         .disabled(model.busy)
                     }
                 } else {
-                    Text(model.draft.isEmpty ? hint : model.draft)
+                    Text(model.draft.isEmpty ? hintText : model.draft)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .lineLimit(3)
@@ -92,28 +127,27 @@ struct PanelView: View {
                         model.run()
                     }
                 }
-                status
+                if let message = model.message { status(message) }
             }
         }
+        .padding(.horizontal, 10)
     }
 
-    private var hint: String {
+    private var hintText: String {
         model.tab == .rewrite
-            ? "Type or dictate a draft with your usual keyboard, then switch to SaySo."
-            : "Type what you want to say (“tell her I'm 20 min late”), then switch to SaySo."
+            ? "Type or dictate a draft, then tap ✨."
+            : "Type what you want to say (“tell her I'm 20 min late”), then tap ✨."
     }
 
-    @ViewBuilder private var status: some View {
-        if model.busy {
-            ProgressView().frame(maxWidth: .infinity)
-        } else if let message = model.message {
-            HStack(alignment: .top) {
-                Text(message).font(.caption).foregroundStyle(.secondary)
-                if model.warming {
-                    Button("Retry") { model.run() }.controlSize(.small)
-                }
+    private func status(_ message: String) -> some View {
+        HStack(alignment: .top) {
+            Text(message).font(.caption).foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            if model.warming {
+                Button("Retry") { model.mode == .letters ? model.sparkle() : model.run() }.controlSize(.small)
             }
         }
+        .padding(.horizontal, 10)
     }
 
     private func action(_ title: String, systemImage: String, run: @escaping () -> Void) -> some View {

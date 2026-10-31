@@ -4,65 +4,12 @@ import SwiftUI
 struct SaySoApp: App {
     var body: some Scene {
         WindowGroup {
-            SpikeView()
-        }
-    }
-}
-
-/// Spike screen: setup steps for the Shortcut and an in-app test of the same /reply call.
-struct SpikeView: View {
-    @State private var response = ReplyStore.latest
-    @State private var status = ""
-    @State private var tryText = ""
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    TextField("Type a draft, then switch to the SaySo keyboard 🌐", text: $tryText, axis: .vertical)
-                        .lineLimit(2...5)
-                    Button("Fill in an example draft") {
-                        tryText = "Привет! Я сегодня не смогу прийти, извини, давай перенесём на завтра."
-                    }
-                } header: {
-                    Text("Try the keyboard")
-                } footer: {
-                    Text("Settings → General → Keyboard → Keyboards → Add New Keyboard → SaySo → Allow Full Access.")
-                }
-                Section("Set up the shortcut") {
-                    Text("1. Shortcuts → + → Take Screenshot")
-                    Text("2. + Reply from Screenshot (SaySo). Leave Audience empty: it asks every time.")
-                    Text("3. + Choose from List (the replies)")
-                    Text("4. + Copy to Clipboard (the chosen item)")
-                    Text("5. Settings → Accessibility → Touch → Back Tap → Double Tap → this shortcut")
-                }
-                Section("Test the endpoint") {
-                    Button("Send a test image") { Task { await sendTest() } }
-                    if !status.isEmpty { Text(status).foregroundStyle(.secondary) }
-                }
-                if let response {
-                    Section("Latest replies") {
-                        RepliesView(response: response)
-                    }
-                }
+            TabView {
+                Tab("Styles", systemImage: "person.text.rectangle") { StylesView() }
+                Tab("Chat", systemImage: "bubble.left.and.text.bubble.right") { ChatView() }
+                Tab("Keyboard", systemImage: "keyboard") { KeyboardSettingsView() }
+                Tab("Setup", systemImage: "checklist") { SetupView() }
             }
-            .navigationTitle("SaySo")
-        }
-    }
-
-    private func sendTest() async {
-        status = "Sending…"
-        let image = UIGraphicsImageRenderer(size: CGSize(width: 390, height: 844)).pngData { context in
-            UIColor.systemBackground.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: 390, height: 844))
-        }
-        do {
-            let started = Date()
-            ReplyStore.latest = try await SaySoAPI.reply(screenshot: image)
-            response = ReplyStore.latest
-            status = String(format: "OK in %.1f s", Date().timeIntervalSince(started))
-        } catch {
-            status = "Error: \(error.localizedDescription)"
         }
     }
 }
