@@ -65,8 +65,13 @@
   .letter { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
             font-size: 14px; font-weight: 700; background: var(--bg); color: var(--muted); }
   .option.chosen .letter { background: var(--accent); color: var(--accent-ink); }
-  .text { white-space: pre-wrap; overflow-wrap: anywhere; padding-top: 2px; }
-  .sep { color: var(--muted); padding: 0 2px; }
+  .text { display: grid; gap: 5px; justify-items: start; min-width: 0; padding-top: 1px; }
+  .text span { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg); padding: 7px 12px;
+               border-radius: 16px 16px 16px 6px; }
+  .option.chosen .text span { background: var(--card); }
+  .situation { margin: 0 0 18px; }
+  .situation .muted { margin-bottom: 4px; }
+  .situation p { margin: 0; font-size: 18px; }
   .hint { text-align: center; margin-top: 16px; }
 
   .code { font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; padding: 14px;
@@ -87,10 +92,10 @@
   <section id="intro" class="fade">
     <div class="logo"><i></i>SaySo · слепой тест</div>
     <h1>Угадай, где я</h1>
-    <p>Один из двух вариантов написал я, другой — ИИ. Угадай, где я.</p>
-    <p class="muted"><span id="total"></span> коротких вопросов, пара минут. Над каждым — кому это написано и что
-      за ситуация. Не уверен(а) — выбирай по ощущению.</p>
-    <div class="demo" aria-hidden="true"><span>это я?</span><span>или это я?</span></div>
+    <p>Один из трёх ответов написал я, два других — ИИ. Угадай, где я.</p>
+    <p class="muted"><span id="total"></span> коротких вопросов, пара минут. В каждом — кто мне написал и о чём
+      (пересказ, без чужих слов), а ниже три ответа. Не уверен(а) — выбирай по ощущению.</p>
+    <div class="demo" aria-hidden="true"><span>это я?</span><span>или это я?</span><span>а может, это я?</span></div>
     <label for="name">Как тебя зовут? <span class="muted">(необязательно)</span></label>
     <input id="name" maxlength="40" autocomplete="given-name" placeholder="Имя">
     <button class="primary" id="start">Начать</button>
@@ -105,16 +110,20 @@
     </div>
     <div id="question" class="fade">
       <div class="context">
-        <span class="chip"><em>Кому:</em> <span id="audience"></span></span>
-        <span class="chip"><em>Ситуация:</em> <span id="situation"></span></span>
+        <span class="chip"><em>Мне пишет:</em> <span id="who"></span></span>
       </div>
-      <h2>Какое сообщение написал я?</h2>
+      <div class="card situation">
+        <div class="muted">О чём (пересказ)</div>
+        <p id="situation"></p>
+      </div>
+      <h2>Какой ответ написал я?</h2>
       <p class="muted">Нажми на вариант</p>
       <div class="options">
         <button class="option" data-choice="A"><span class="letter">A</span><span class="text" id="textA"></span></button>
         <button class="option" data-choice="B"><span class="letter">B</span><span class="text" id="textB"></span></button>
+        <button class="option" data-choice="C"><span class="letter">C</span><span class="text" id="textC"></span></button>
       </div>
-      <p class="muted hint">«/» — новое сообщение подряд</p>
+      <p class="muted hint">Несколько пузырей — несколько сообщений подряд</p>
     </div>
   </section>
 
@@ -137,8 +146,8 @@
 
 <script>
 const DATA = __BLIND_DATA__;
-const PREFIX = "SS1-";
-const KEY = "sayso-blind-" + DATA.test_id;
+const PREFIX = "SS2-";
+const KEY = "sayso-blind2-" + DATA.test_id;
 const qs = DATA.questions;
 const $ = (id) => document.getElementById(id);
 let state = load() || { name: "", choices: {}, index: 0 };
@@ -153,11 +162,12 @@ function show(id) {
   for (const s of ["intro", "quiz", "done"]) $(s).hidden = s !== id;
   window.scrollTo(0, 0);
 }
-function fill(el, text) {  // textContent only: message text is never parsed as HTML
+function fill(el, parts) {  // textContent only: message text is never parsed as HTML
   el.replaceChildren();
-  text.split(" / ").forEach((part, i) => {
-    if (i) { const s = document.createElement("span"); s.className = "sep"; s.textContent = " / "; el.append(s); }
-    el.append(document.createTextNode(part));
+  parts.forEach((part) => {
+    const s = document.createElement("span");
+    s.textContent = part;
+    el.append(s);
   });
 }
 function render() {
@@ -165,16 +175,15 @@ function render() {
   $("count").textContent = (i + 1) + " / " + qs.length;
   $("bar").style.width = (100 * Object.keys(state.choices).length / qs.length) + "%";
   $("back").disabled = i === 0;
-  $("audience").textContent = q.audience;
-  $("situation").textContent = q.situation;
-  fill($("textA"), q.a);
-  fill($("textB"), q.b);
+  $("who").textContent = q.who;
+  $("situation").textContent = q.context;
+  ["A", "B", "C"].forEach((letter, j) => fill($("text" + letter), q.options[j]));
   document.querySelectorAll(".option").forEach((b) => b.classList.toggle("chosen", state.choices[q.id] === b.dataset.choice));
   const box = $("question");
   box.classList.remove("fade"); void box.offsetWidth; box.classList.add("fade");
 }
 function code() {
-  const json = JSON.stringify({ v: 1, t: DATA.test_id, n: state.name, c: state.choices });
+  const json = JSON.stringify({ v: 2, t: DATA.test_id, n: state.name, c: state.choices });
   const bytes = new TextEncoder().encode(json);
   let bin = "";
   bytes.forEach((b) => { bin += String.fromCharCode(b); });
