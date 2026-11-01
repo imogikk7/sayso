@@ -170,7 +170,8 @@ def profile_text(profile):
     for audience, p in profile.items():
         lines.append(f"- {audience}: usually ~{p['median_chars']:.0f} characters; lowercase starts {p['lowercase_start']:.0%}, "
                      f"ends with punctuation {p['ends_with_punctuation']:.0%}, laughter {p['laughter']:.0%}, "
-                     f"swearing {p['swear']:.0%}. Moves: {share(p['acts'])}. Tones: {share(p['tones'])}.")
+                     f"swearing {p['swear']:.0%}, emoji {min(p.get('emoji', 0), 1):.0%}, "
+                     f"~{p.get('lines', 1):.1f} messages in a row. Moves: {share(p['acts'])}. Tones: {share(p['tones'])}.")
         for situation, c in list(p.get("situations", {}).items())[:5]:
             lines.append(f"  · {situation}: {share(dict(list(c['acts'].items())[:3]))}; "
                          f"{share(dict(list(c['tones'].items())[:2]))}; ~{c['median_chars']:.0f} chars")
@@ -180,7 +181,9 @@ def profile_text(profile):
 STYLE_SYSTEM = """You write messages for one specific user, in their own voice, so that their friends could not
 tell it was not them. Use their style below: length, case, punctuation, slang and swearing habits for that audience.
 Keep the full meaning: every fact (when, what, who, how much, why) and every request, refusal or question
-stays, only the wording changes, and so does the tone: don't add swear words or jokes that aren't in the draft.
+stays, only the wording changes, and the mood stays (a calm draft doesn't turn rude). Their habits ARE their voice:
+their fillers and slang, laughter, swearing, emoji and splitting a thought into several short messages; use each about
+as often as the style says for this audience, so a clean neutral draft comes out the way they'd really type it.
 Their usual length is for short thoughts; a draft with several points stays complete (write it as one longer
 message rather than dropping anything). Write in the language of the input. No names.
 An official message or an email overrides their casual habits: capitalized sentences, proper punctuation, no slang,
