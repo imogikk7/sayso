@@ -38,6 +38,28 @@ struct StyleCardView: View {
                         AudienceProfileView(profile: profile, examples: style.examples?[audience.rawValue] ?? [])
                     }
                 }
+                if let learning = style.learning {
+                    Section {
+                        LabeledContent("Sent with the keyboard", value: "\(learning.typed)")
+                        LabeledContent("Suggestions you changed", value: "\(learning.edited)")
+                        LabeledContent("Answers you liked", value: "\(learning.liked)")
+                        ForEach(learning.recent) { message in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(message.text).font(.subheadline)
+                                if let suggested = message.suggested {
+                                    Text("instead of: \(suggested)").font(.caption).foregroundStyle(.secondary).strikethrough()
+                                }
+                                Text(Audience(rawValue: message.audience)?.label ?? message.audience)
+                                    .font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            .swipeActions { Button("Delete", role: .destructive) { Task { await forgetLearned(message.id) } } }
+                        }
+                    } header: {
+                        Text("Learned from you")
+                    } footer: {
+                        Text("Your newest messages are used as examples first, so suggestions follow how you write now.")
+                    }
+                }
                 Section {
                     if (style.preferences ?? []).isEmpty {
                         Text("Nothing yet. Fix answers in Chat (\u{201C}shorter\u{201D}, \u{201C}no emoji\u{201D}) and SaySo remembers what you prefer.")
@@ -76,6 +98,10 @@ struct StyleCardView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    private func forgetLearned(_ id: String) async {
+        style = try? await SaySoAPI.updateStyle(styleID, removeLearned: id)
     }
 
     private func forget(_ index: Int) async {

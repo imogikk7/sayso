@@ -242,6 +242,11 @@ class Context:
         for f in styles.feedback(style_id):
             if f.get("audience") in AUDIENCES and f.get("text"):
                 self.approved[f["audience"]].append(f["text"])
+        self.recent = defaultdict(list)  # sent with the SaySo keyboard: how the user writes right now
+        for row in styles.learned(style_id):
+            if row.get("audience") in AUDIENCES and row.get("text") and len(row["text"]) <= 300:
+                self.recent[row["audience"]].append(row["text"])
+                self.examples[(row["audience"], None)].append(row["text"])
         self.preferences = styles.preferences(style_id)
         text = profile_text(profile)
         audiences = [a for a in AUDIENCES if self.examples.get((a, None))]
@@ -263,7 +268,8 @@ class Context:
         cell = self.examples.get((audience, situation), [])
         pool = cell if len(cell) >= k else self.examples.get((audience, None), [])
         picked = random.Random(seed).sample(pool, min(k, len(pool)))
-        return (self.approved.get(audience, [])[-3:] + picked)[:k]
+        first = self.approved.get(audience, [])[-3:] + self.recent.get(audience, [])[-3:]
+        return list(dict.fromkeys(first + picked))[:k]
 
     def examples_for(self, audience, situation=None):
         found = self.sample(audience, situation)
@@ -559,6 +565,34 @@ class Writer:
         return {"text": result["text"], "parts": result["parts"],
                 "alternatives": [c for c in result["candidates"] if c != result["text"]][:2],
                 "audience": audience, "audiences": result["audiences"], "learned": None}
+
+    async def learn(self, ctx, items):
+        """What the user sent with the SaySo keyboard: [{audience, text, suggested?}]. Kept as their own messages
+        (links, emails, phones and card numbers removed); a suggestion they changed before sending may teach a rule."""
+        from parse_telegram import PASTED_CODE
+        from parse_telegram import clean as scrub
+        rows, rules = [], []
+        for item in items:
+            text = scrub(clean(item.get("text") or ""))
+            if not text or len(text) > 1000 or PASTED_CODE.search(text) or item.get("audience") not in AUDIENCES:
+                continue
+            suggested = clean(item.get("suggested") or "") or None
+            rows.append({"audience": item["audience"], "text": text, "kind": "edited" if suggested else "typed",
+                         **({"suggested": scrub(suggested)} if suggested else {})})
+            if suggested and suggested != text and len(rules) < 2:
+                try:
+                    label = await self.spark(LEARN_SYSTEM, f"Audience: {item['audience']}\nSuggested: {suggested}\n"
+                                                           f"The user's version: {text}", "rule")
+                    rule = clean(str(label.get("rule") or ""))
+                except Unavailable:
+                    rule = ""
+                if rule:
+                    styles.add_preference(ctx.id, rule)
+                    rules.append(rule)
+        if rows:
+            styles.add_learned(ctx.id, rows)
+        styles.commit()
+        return {"learned": len(rows), "rules": rules}
 
     async def feedback(self, ctx, audience, format, answer, edited=None, liked=False):
         """The user liked an answer or wrote their own version: it becomes an example; an edit may teach a rule."""

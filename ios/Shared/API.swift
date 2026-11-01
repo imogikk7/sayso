@@ -117,10 +117,11 @@ struct Style: Codable, Hashable, Identifiable {
     var preferences: [String]? = nil
     var profile: [String: AudienceProfile]? = nil
     var examples: [String: [String]]? = nil
+    var learning: StyleLearning? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, name, status, stage, progress, error, source, counts, scores, lora, adapterReady = "adapter_ready",
-             needs, participants, chats, me, preferences, profile, examples
+             needs, participants, chats, me, preferences, profile, examples, learning
     }
 
     var isReady: Bool { status == "ready" }
@@ -128,6 +129,29 @@ struct Style: Codable, Hashable, Identifiable {
 }
 
 struct StyleList: Codable { let styles: [Style] }
+
+/// What the style learned from the user: messages sent with the keyboard, suggestions they changed, answers they liked.
+struct StyleLearning: Codable, Hashable {
+    var typed: Int = 0
+    var edited: Int = 0
+    var liked: Int = 0
+    var recent: [LearnedMessage] = []
+}
+
+struct LearnedMessage: Codable, Hashable, Identifiable {
+    let id: String
+    let audience: String
+    let text: String
+    var kind: String? = nil
+    var suggested: String? = nil
+}
+
+/// One message the user sent with the SaySo keyboard; suggested = the ✨ variant they changed before sending.
+struct LearnItem: Codable, Hashable {
+    let text: String
+    let audience: String
+    var suggested: String? = nil
+}
 
 /// One file to build a style from: a chat export, a screenshot or a frame of a screen recording.
 struct Upload {
@@ -252,6 +276,17 @@ enum SaySoAPI {
         return try await send("feedback", body: try JSONEncoder().encode(body), contentType: "application/json", timeout: 30)
     }
 
+    /// Messages the user sent with the keyboard: kept as their own examples (and edits may teach a rule).
+    static func learn(_ items: [LearnItem]) async throws {
+        struct Body: Encodable {
+            let style: String
+            let items: [LearnItem]
+        }
+        struct Result: Decodable { let learned: Int }
+        let _: Result = try await send("learn", body: try JSONEncoder().encode(Body(style: style, items: items)),
+                                       contentType: "application/json", timeout: 30)
+    }
+
     // MARK: Styles
 
     static func styles() async throws -> [Style] {
@@ -282,14 +317,17 @@ enum SaySoAPI {
 
     /// The answers to "Which one is you?" and each chat's audience, or a new name, or a learned rule to forget.
     static func updateStyle(_ id: String, name: String? = nil, me: String? = nil, chats: [String: String]? = nil,
-                            removePreference: Int? = nil) async throws -> Style {
+                            removePreference: Int? = nil, removeLearned: String? = nil) async throws -> Style {
         struct Body: Encodable {
             let name, me: String?
             let chats: [String: String]?
             let removePreference: Int?
-            enum CodingKeys: String, CodingKey { case name, me, chats, removePreference = "remove_preference" }
+            let removeLearned: String?
+            enum CodingKeys: String, CodingKey {
+                case name, me, chats, removePreference = "remove_preference", removeLearned = "remove_learned"
+            }
         }
-        let body = Body(name: name, me: me, chats: chats, removePreference: removePreference)
+        let body = Body(name: name, me: me, chats: chats, removePreference: removePreference, removeLearned: removeLearned)
         return try await send("styles/\(id)", method: "PATCH", body: try JSONEncoder().encode(body),
                               contentType: "application/json", timeout: 20)
     }

@@ -34,6 +34,13 @@ struct KeyboardSettingsView: View {
                         }
                     }
                 }
+                Section {
+                    Toggle("Learn from what I type", isOn: $settings.learns)
+                } header: {
+                    Text("Learning")
+                } footer: {
+                    Text("Messages you send with SaySo's letter keys (and how you change a ✨ suggestion before sending) become examples of your style right away. Only your own text; never password, email, link, code or search fields. See and delete them in My styles → your style → Learned from you.")
+                }
                 Section("Suggestions") {
                     Stepper("✨ gives \(settings.variants) variant\(settings.variants == 1 ? "" : "s")",
                             value: $settings.variants, in: 1...3)

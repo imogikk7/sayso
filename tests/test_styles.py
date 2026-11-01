@@ -102,6 +102,22 @@ class BuildStyle(unittest.TestCase):
         self.assertIn("Keep replies short", ctx.style_text)
         self.assertEqual(ctx.sample("friends")[0], "го в 8")
 
+    def test_learn_from_keyboard(self):
+        import asyncio
+        style_id = self.build()
+        w = writer.Writer(None, "http://unused", "", None, "", gpu="off")
+        out = asyncio.run(w.learn(writer.Context(style_id), [
+            {"audience": "friends", "text": "го в 8 у кино https://example.com"},
+            {"audience": "friends", "text": "   "},
+            {"audience": "nobody", "text": "x"},
+        ]))
+        self.assertEqual(out["learned"], 1)
+        rows = styles.learned(style_id)
+        self.assertEqual(rows[0]["text"], "го в 8 у кино")
+        self.assertIn("го в 8 у кино", writer.Context(style_id).sample("friends"))
+        styles.remove_learned(style_id, rows[0]["id"])
+        self.assertEqual(styles.learned(style_id), [])
+
     def test_unknown_me_fails_cleanly(self):
         style_id = self.build(me="Nobody")
         self.assertEqual(styles.meta(style_id)["status"], "failed")

@@ -32,7 +32,11 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     override func textDidChange(_ textInput: UITextInput?) {
-        model.readDraft()
-        model.autoShift()
+        model.fieldChanged()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        model.flush()
     }
 }

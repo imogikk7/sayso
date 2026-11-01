@@ -47,6 +47,13 @@ struct KeyboardSettings: Codable, Equatable {
     var variants = 3
     var haptics = true
     var accent: KeyboardAccent = .blue
+    var learnsFromTyping: Bool? = nil  // optional: older saved settings don't have it
+
+    /// The keyboard keeps what the user sends with it (their own text) as examples of their style.
+    var learns: Bool {
+        get { learnsFromTyping ?? true }
+        set { learnsFromTyping = newValue }
+    }
 }
 
 /// Shared between the app and the keyboard through the App Group (the keyboard needs Full Access to read it).

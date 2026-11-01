@@ -51,6 +51,15 @@ final class PanelModel: ObservableObject {
     @Published var returnLabel = "return"
     private var lastShiftTap = Date.distantPast
 
+    // Learning from what the user sends with this keyboard (their own text only)
+    private var lastText = ""  // the field's text at the last change
+    private var userDeleted = false  // the field was emptied with ⌫, not sent
+    private var suggestion: String?  // the ✨ variant put in the field, to see if the user changed it
+    private var queue: [LearnItem] {
+        get { UserDefaults.standard.data(forKey: "learnQueue").flatMap { try? JSONDecoder().decode([LearnItem].self, from: $0) } ?? [] }
+        set { UserDefaults.standard.set(try? JSONEncoder().encode(Array(newValue.suffix(200))), forKey: "learnQueue") }
+    }
+
     private weak var controller: UIInputViewController?
     private var proxy: UITextDocumentProxy? { controller?.textDocumentProxy }
     private let haptic = UIImpactFeedbackGenerator(style: .light)
@@ -75,6 +84,7 @@ final class PanelModel: ObservableObject {
         if !settings.formats.contains(format), let first = settings.formats.first { format = first }
         mode = settings.startsWithLetters ? .letters : .panel
         returnLabel = Self.label(for: proxy?.returnKeyType)
+        lastText = (proxy?.documentContextBeforeInput ?? "") + (proxy?.documentContextAfterInput ?? "")
         readDraft()
         autoShift()
     }
@@ -85,6 +95,55 @@ final class PanelModel: ObservableObject {
         draft = proxy?.documentContextBeforeInput ?? ""
     }
 
+    /// Called on every change of the field. A field that had text and is suddenly empty (and not because the user
+    /// erased it) was sent: that text is one of the user's messages.
+    func fieldChanged() {
+        let now = (proxy?.documentContextBeforeInput ?? "") + (proxy?.documentContextAfterInput ?? "")
+        let sent = lastText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if now.isEmpty && !sent.isEmpty && !userDeleted {
+            remember(sent)
+        }
+        if now.isEmpty { userDeleted = false }
+        lastText = now
+        readDraft()
+        autoShift()
+    }
+
+    private var canLearn: Bool {
+        guard settings.learns, hasFullAccess, let proxy else { return false }
+        // Not in email, link, number, code or search fields (passwords already get the system keyboard).
+        let skipped: Set<UIKeyboardType> = [.emailAddress, .URL, .webSearch, .numberPad, .phonePad, .decimalPad,
+                                             .asciiCapableNumberPad, .namePhonePad, .numbersAndPunctuation]
+        if let type = proxy.keyboardType, skipped.contains(type) { return false }
+        if proxy.textContentType != nil || proxy.isSecureTextEntry == true { return false }
+        if [.search, .google, .yahoo].contains(proxy.returnKeyType) { return false }
+        return true
+    }
+
+    private func remember(_ text: String) {
+        defer { suggestion = nil }
+        guard canLearn else { return }
+        if let suggestion, suggestion == text { return }  // sent a suggestion as it was: not the user's own wording
+        var items = queue
+        items.append(LearnItem(text: text, audience: audience.rawValue, suggested: suggestion))
+        queue = items
+        if items.count >= 3 { flush() }
+    }
+
+    /// Sends what was learned (on every few messages and when the keyboard closes); keeps it if the network fails.
+    func flush() {
+        let items = queue
+        guard !items.isEmpty, hasFullAccess else { return }
+        queue = []
+        Task {
+            do {
+                try await SaySoAPI.learn(items)
+            } catch {
+                queue = items + queue
+            }
+        }
+    }
+
     func nextKeyboard() {
         controller?.advanceToNextInputMode()
     }
@@ -93,6 +152,7 @@ final class PanelModel: ObservableObject {
 
     func type(_ key: String) {
         tap()
+        userDeleted = false
         proxy?.insertText(shift == .off ? key : key.uppercased())
         if shift == .on { shift = .off }
         afterTyping()
@@ -128,6 +188,7 @@ final class PanelModel: ObservableObject {
 
     func deleteBackward() {
         tap()
+        userDeleted = true
         proxy?.deleteBackward()
         afterTyping()
     }
@@ -145,6 +206,7 @@ final class PanelModel: ObservableObject {
     }
 
     private func afterTyping() {
+        lastText = (proxy?.documentContextBeforeInput ?? "") + (proxy?.documentContextAfterInput ?? "")
         readDraft()
         autoShift()
         if !options.isEmpty && series.isEmpty { options = [] }
@@ -251,6 +313,7 @@ final class PanelModel: ObservableObject {
     /// the first part now, the next one after the user has sent it.
     func insert(_ option: PanelOption) {
         guard let proxy else { return }
+        lastText = ""  // replacing the draft is not sending it
         if mode == .letters || tab != .replies {
             for _ in 0..<(proxy.documentContextBeforeInput ?? "").count { proxy.deleteBackward() }
         }
@@ -258,11 +321,15 @@ final class PanelModel: ObservableObject {
             series = option.parts
             seriesIndex = 0
             proxy.insertText(option.parts[0])
+            suggestion = option.parts[0]
             options = [option]
         } else {
             proxy.insertText(option.text)
+            suggestion = option.text
             options = []
         }
+        userDeleted = false
+        lastText = suggestion ?? ""
         readDraft()
     }
 
@@ -271,6 +338,8 @@ final class PanelModel: ObservableObject {
         guard seriesIndex + 1 < series.count, let proxy else { return }
         seriesIndex += 1
         proxy.insertText(series[seriesIndex])
+        suggestion = series[seriesIndex]
+        lastText = series[seriesIndex]
         if seriesIndex + 1 == series.count {
             options = []
             series = []

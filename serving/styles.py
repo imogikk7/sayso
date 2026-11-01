@@ -6,6 +6,8 @@
                   pairs/             training pairs for the style's LoRA (pairs_v4 format)
                   preferences.json   rules learned from the user's feedback in Chat ("shorter with family")
                   feedback.jsonl     texts the user liked or wrote themselves when fixing an answer: more examples
+                  learned.jsonl      messages the user typed and sent with the SaySo keyboard, and how they changed a
+                                     suggestion before sending it (their own text only)
 
 The main style is the author's Telegram model; its data stays where it was (data/pairs_v4, data/style_profile.json,
 adapter v4) and only its meta.json, preferences and feedback live under data/styles/main.
@@ -25,6 +27,7 @@ STYLES = DATA / "styles"
 MAIN = "main"
 MAX_PREFERENCES = 12
 MAX_FEEDBACK = 500
+MAX_LEARNED = 3000
 ID = re.compile(r"^[a-z0-9]{1,16}$")
 
 MAIN_META = {"id": MAIN, "name": "Me · Telegram", "status": "ready", "stage": "ready", "source": "Telegram export",
@@ -122,7 +125,7 @@ def delete(style_id):
 def version(style_id):
     """Changes whenever anything the writer reads for this style changes."""
     parts = []
-    for name in ("meta.json", "preferences.json", "feedback.jsonl", "profile.json"):
+    for name in ("meta.json", "preferences.json", "feedback.jsonl", "learned.jsonl", "profile.json"):
         path = folder(style_id) / name
         parts.append(path.stat().st_mtime if path.exists() else 0)
     return tuple(parts)
@@ -169,3 +172,21 @@ def add_feedback(style_id, record):
     """record = {audience, format, text, kind: liked | edited}: only text the user approved or wrote."""
     rows = (feedback(style_id) + [{**record, "at": time.time()}])[-MAX_FEEDBACK:]
     write_jsonl(folder(style_id) / "feedback.jsonl", rows)
+
+
+def learned(style_id):
+    return read_jsonl(folder(style_id) / "learned.jsonl")
+
+
+def add_learned(style_id, rows):
+    """rows = [{audience, text, kind: typed | edited, suggested?}]: what the user wrote with the keyboard."""
+    stamped = [{**row, "id": secrets.token_hex(4), "at": time.time()} for row in rows]
+    write_jsonl(folder(style_id) / "learned.jsonl", (learned(style_id) + stamped)[-MAX_LEARNED:])
+    return stamped
+
+
+def remove_learned(style_id, learned_id):
+    rows = learned(style_id)
+    kept = [r for r in rows if r.get("id") != learned_id]
+    if len(kept) != len(rows):
+        write_jsonl(folder(style_id) / "learned.jsonl", kept)

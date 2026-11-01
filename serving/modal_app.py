@@ -229,8 +229,18 @@ def api():
         edited: str | None = Field(None, max_length=3000)
         liked: bool = False
 
+    class Learned(BaseModel):
+        text: str = Field(max_length=2000)
+        audience: str = "friends"
+        suggested: str | None = Field(None, max_length=2000)
+
+    class LearnBody(BaseModel):
+        style: str = styles.MAIN
+        items: list[Learned] = Field(max_length=50)
+
     class StylePatch(BaseModel):
         name: str | None = Field(None, max_length=40)
+        remove_learned: str | None = Field(None, max_length=16)
         me: str | None = Field(None, max_length=200)
         chats: dict[str, str] | None = None
         remove_preference: int | None = None
@@ -316,6 +326,10 @@ def api():
         return await writer.chat(writer.context(body.style), body.mode, body.text, audience_of(body.audience),
                                  format_of(body.format), [t.model_dump() for t in body.history], body.instruction)
 
+    @web.post("/learn")
+    async def learn(body: LearnBody):
+        return await writer.learn(writer.context(body.style), [i.model_dump() for i in body.items])
+
     @web.post("/feedback")
     async def feedback(body: FeedbackBody):
         return await writer.feedback(writer.context(body.style), audience_of(body.audience), format_of(body.format),
@@ -328,6 +342,14 @@ def api():
         if full:
             sid = meta["id"]
             view["preferences"] = styles.preferences(sid)
+            learned, feedback = styles.learned(sid), styles.feedback(sid)
+            view["learning"] = {
+                "typed": sum(r.get("kind") == "typed" for r in learned),
+                "edited": sum(r.get("kind") == "edited" for r in learned) + sum(f.get("kind") == "edited" for f in feedback),
+                "liked": sum(f.get("kind") == "liked" for f in feedback),
+                "recent": [{k: r.get(k) for k in ("id", "audience", "text", "kind", "suggested", "at")}
+                           for r in reversed(learned[-30:])],
+            }
             profile = (styles.read_json(styles.DATA / "style_profile.json", {}) if sid == styles.MAIN
                        else styles.read_json(styles.folder(sid) / "profile.json", {}))
             view["profile"] = {a: {k: p.get(k) for k in ("turns", "acts", "tones", "median_chars", "lowercase_start",
@@ -391,6 +413,8 @@ def api():
             fields.update(me=me, chats=chats, confirmed=True)
         if body.remove_preference is not None:
             styles.remove_preference(style_id, body.remove_preference)
+        if body.remove_learned:
+            styles.remove_learned(style_id, body.remove_learned)
         meta = styles.update(style_id, **fields) if fields else meta
         data.commit()
         return style_view(meta, full=True)
