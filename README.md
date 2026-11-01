@@ -300,9 +300,9 @@ from a summary 2.4 s, from pasted messages 6 s, from a screenshot 9.7 s, `/compo
 - **Voice notes** are transcribed in memory and the audio is not stored.
 - Screenshots are processed in memory. The keyboard's "latest replies" cache holds the user's suggested replies and
   the situation tag, never the summary of the other person's messages.
-- The keyboard learns only from what the user sends with its letter keys, never from other people's text. It skips
-  password, email, URL, number, one-time-code and search fields (any field with a content type), and learning can be
-  paused in its settings. Typing works without Full Access; the network features need it.
+- The keyboard learns only when the user turns it on (off by default), and only from what they type and send with its
+  letter keys: pasted text is never learned, since it may be someone else's words. It skips password, email, URL,
+  number, one-time-code and search fields (any field with a content type). Typing works without Full Access; the network features need it.
 - **Where text goes.** Writing requests (the user's draft or notes, an email they are answering, their style and
   example messages) go to Muse Spark Open on Baseten; reading requests (screenshots, pasted chats, photos of the user's
   documents) and essays go to Muse Spark 1.3 on the Meta Model API. When one fails, the same request goes to the
