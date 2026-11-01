@@ -99,8 +99,12 @@ class Api:
         self.attempts, self.wait = attempts, wait
 
     def warmup(self):
-        status, _ = self.request("GET", self.url + "/warmup", self.token, timeout=900)
-        return status == 200
+        """→ "ready", "off" (the server runs with the GPU off: Muse Spark Open writes, which is the product as
+        deployed) or "cold"."""
+        status, out = self.request("GET", self.url + "/warmup", self.token, timeout=900)
+        if status == 200 and isinstance(out, dict) and out.get("gpu") == "off":
+            return "off"
+        return "ready" if status == 200 and (not isinstance(out, dict) or out.get("ready", True)) else "cold"
 
     def rewrite(self, draft, audience, situation, allow_unstyled=False):
         """SaySo's version of the draft, from the user's LoRA. While the GPU is cold the API answers with Muse Spark
@@ -185,7 +189,11 @@ def build(n=15, pairs_path=PAIRS, out_dir=OUT, api=None, seed=None, allow_unstyl
         log(f"only {len(candidates)} usable rewrite pairs, the test will have fewer than {n} questions")
     if warmup:
         log("waking the GPU (/warmup, a cold start takes minutes)…")
-        if not api.warmup():
+        state = api.warmup()
+        if state == "off":
+            log("  the server runs with the GPU off: testing what it writes now (Muse Spark Open in the user's style)")
+            allow_unstyled = True
+        elif state != "ready":
             log("  /warmup didn't answer 200; trying anyway")
     questions, seen = [], set()
     for pair in candidates:
