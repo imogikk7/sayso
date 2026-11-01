@@ -89,12 +89,19 @@ ESSAY_TASK = """The user needs an essay.
 Question or topic: {question}
 Length: up to about {words} words.
 The user's notes (the ONLY source of facts; maybe dictated): {notes}
-First plan it as the user would (4 to 6 points), then write it: first person, paragraphs separated by blank lines, a
+First plan it (4 to 6 points), then write it in the structure the question or notes ask for (an argumentative
+essay, a personal statement, a story, a letter...); if they say nothing, a natural flowing essay without headings. Never
+add labels like "Thesis:" or "Argument 1:" unless asked. A personal statement, a story or anything about the user is
+written in the first person ("I built…"), active voice; an argument about a topic can be impersonal. Paragraphs separated by blank lines, a
 concrete opening (a moment or a fact, not a general statement), every paragraph adds something new, never repeat a
-fact, never invent experiences, names, numbers or feelings that are not in the notes. If the notes are too thin for the
-length, write it shorter rather than padding, and ask what is missing. Write in the user's formal voice (below): their
-sentence length and plain wording; their linking words only where they fit naturally, never forced. Same language as
+fact, never invent experiences, names, numbers or feelings that are not in the notes. Reach the length by explaining
+and connecting the user's facts and saying what they showed or why they mattered, never by repeating or inventing; only
+if that is impossible, write it shorter and ask what is missing. Write in the user's formal voice (below): their
+sentence length (not choppy short sentences), plain wording, their linking words only where they fit naturally. Same language as
 the notes.
+Before you answer, check: (1) if it is about the user (a personal statement, their project, their story), every
+paragraph speaks as "I" in the active voice, never "the project was built"; (2) each linking word really links two
+ideas, or remove it; (3) nothing that is not in the notes.
 Return JSON only: {{"outline": ["...", ...], "text": "<the essay>", "questions": ["<up to 3 short questions whose answers
 would make the essay stronger, in the notes' language>", ...]}}."""
 
@@ -370,8 +377,11 @@ class Context:
             return sum(min(n, g[gram]) for gram, n in q.items()) / (sum(g.values()) ** 0.5 or 1)
         texts = sorted(self.documents, key=lambda r: (r.get("kind", "essay") != kind, -score(r["text"]) if q else 0))
         picked = [r["text"] for r in texts[:k]]
-        return ("\nThe user's own formal writing: match this voice (sentence length, linking words, how they open and "
-                "close), never its content:\n" + parse.profile_text(self.formal) + "\n"
+        rules = {"essay": "copy ONLY their voice: word choice, sentence length, linking words, how direct they are. "
+                          "Never copy its structure, headings, format or topic: follow the structure the task asks for",
+                 "email": "copy ONLY their manner: how they greet, ask and sign off, how formal and direct they are. "
+                          "Never copy what those emails say"}[kind if kind in ("essay", "email") else "email"]
+        return (f"\nThe user's own formal writing, to {rules}:\n" + parse.profile_text(self.formal) + "\n"
                 + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked))
 
     @property

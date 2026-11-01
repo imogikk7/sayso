@@ -35,6 +35,11 @@ CONNECTORS = [
 
 
 KINDS = ("email", "essay")
+# Section labels of the user's old assignments ("Argument 2:", "Thesis:", "Q3:"): cut off, so a new essay takes their
+# voice, never the structure of their homework.
+LABEL = re.compile(r"^\s*(thesis|argument\s*\d*|counter-?argument|conclusion|introduction|body|q\s*\d+|prep\s*\d*|"
+                   r"test\s*\d*|тезис|аргумент\s*\d*|контраргумент|вывод|заключение|введение|вопрос\s*\d*)\s*[:.\-–—]\s*",
+                   re.I)
 IMAGES = {".jpg", ".jpeg", ".png", ".heic", ".webp"}
 # Where an email starts quoting the message it answers (someone else's text): everything after it is dropped.
 QUOTE = re.compile(r"^\s*(>|On .{5,120} wrote:|.{0,80}(написал|написала|писал)\(?а?\)?:\s*$|-{2,}\s*Original Message|"
@@ -112,6 +117,8 @@ def paragraphs(text):
     for block in blocks:
         joined = " ".join(line.strip() for line in block.split("\n") if line.strip())
         cleaned = " ".join(scrub(joined).split())
+        while LABEL.match(cleaned):  # "Q3: Thesis: ..." → "..."
+            cleaned = LABEL.sub("", cleaned, count=1)
         if len(cleaned) >= MIN_CHARS:
             out.append(cleaned[:2000])
     return out
@@ -154,8 +161,7 @@ def profile_text(p):
         return ""
     lines = [f"- sentences of about {p['sentence_words']} words, paragraphs of about {p['paragraph_words']} words"]
     if p.get("connectors"):
-        lines.append("- linking words they use (only where natural): " + ", ".join(p["connectors"]))
-    lines.append(f"- first person (I/my) in {p['first_person']:.0%} of words")
+        lines.append("- linking words they sometimes use (never force them, never misuse them): " + ", ".join(p["connectors"]))
     if p.get("openings"):
         lines.append("- opens emails with: " + " / ".join(p["openings"]))
     if p.get("closings"):

@@ -155,7 +155,7 @@ class FormalWriting(unittest.TestCase):
         ctx = writer.Context(meta["id"])
         block = ctx.formal_block("хочу перенести сдачу курсовой")
         self.assertIn("курсов", block)
-        self.assertIn("linking words they use", block)
+        self.assertIn("linking words they sometimes use", block)
         styles.clear_documents(meta["id"])
         self.assertEqual(writer.Context(meta["id"]).formal_block("x"), "")
 
@@ -183,6 +183,14 @@ class FormalWriting(unittest.TestCase):
         formal = styles.add_documents(meta["id"], [("sent.txt", quoted)], kind="email")
         self.assertEqual(formal["counts"], {"email": 1, "essay": 0})
         self.assertFalse(any("опаздывайте" in r["text"] for r in styles.documents(meta["id"])))
+
+    def test_section_labels_cut(self):
+        import documents
+        text = ("Argument 2: Qazaqliq made ruling free - if the successor didn't receive a role, they could separate.\n\n"
+                "Q3: Thesis: Despite the adaptive changes in succession system over the time, inheriting was unstable.")
+        paras = documents.paragraphs(text)
+        self.assertTrue(paras[0].startswith("Qazaqliq made ruling free"))
+        self.assertTrue(paras[1].startswith("Despite the adaptive changes"))
 
     def test_cliches(self):
         self.assertTrue(writer.CLICHES.search("В современном мире технологии играют ключевую роль"))
