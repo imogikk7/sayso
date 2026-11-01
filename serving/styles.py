@@ -93,8 +93,14 @@ def save_meta(style_id, value):
     write_json(folder(style_id) / "meta.json", value)
 
 
+class Gone(Exception):
+    """The style was deleted while something was still working on it."""
+
+
 def update(style_id, **fields):
-    value = meta(style_id) or {}
+    value = meta(style_id)
+    if value is None:  # deleted meanwhile: don't bring a half meta.json back
+        raise Gone(style_id)
     value.update(fields, updated=time.time())
     save_meta(style_id, value)
     return value
@@ -105,7 +111,9 @@ def all_styles():
     if STYLES.exists():
         for path in STYLES.iterdir():
             if path.name != MAIN and ID.match(path.name) and (path / "meta.json").exists():
-                found.append(meta(path.name))
+                value = meta(path.name)
+                if isinstance(value, dict) and value.get("id") == path.name:
+                    found.append(value)
     return sorted(found, key=lambda m: (m["id"] != MAIN, m.get("created", 0)))
 
 

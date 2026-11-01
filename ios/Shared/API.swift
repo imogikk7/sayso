@@ -134,6 +134,7 @@ struct StyleList: Codable { let styles: [Style] }
 /// The user's own formal writing attached to a style: their formal voice for official messages, emails and essays.
 struct FormalWriting: Codable, Hashable {
     var documents: Int = 0
+    var counts: [String: Int]? = nil  // "email" / "essay" → how many documents
     var paragraphs: Int = 0
     var profile: FormalProfile? = nil
 }
@@ -297,7 +298,7 @@ enum SaySoAPI {
     }
 
     /// The user's own formal writing (files and/or pasted text) → their formal voice in this style.
-    static func addDocuments(to styleID: String, files: [Upload], text: String) async throws {
+    static func addDocuments(to styleID: String, files: [Upload], text: String, kind: String = "essay") async throws {
         struct Added: Decodable { let documents: Int }
         let boundary = "sayso-\(UUID().uuidString)"
         var body = Data()
@@ -307,13 +308,14 @@ enum SaySoAPI {
             body.append(Data("\r\n".utf8))
         }
         field("Content-Disposition: form-data; name=\"text\"", Data(text.utf8))
+        field("Content-Disposition: form-data; name=\"kind\"", Data(kind.utf8))
         for file in files {
             let safe = file.name.replacingOccurrences(of: "\"", with: "")
             field("Content-Disposition: form-data; name=\"files\"; filename=\"\(safe)\"\r\nContent-Type: \(file.mimeType)", file.data)
         }
         body.append(Data("--\(boundary)--\r\n".utf8))
         let _: Added = try await send("styles/\(styleID)/documents", body: body,
-                                      contentType: "multipart/form-data; boundary=\(boundary)", timeout: 120)
+                                      contentType: "multipart/form-data; boundary=\(boundary)", timeout: 300)
     }
 
     /// The user liked an answer, or wrote their own version: it becomes an example of the style (and maybe a rule).

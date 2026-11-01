@@ -406,6 +406,8 @@ def build(style_id, files, spark, meta_key, wait_for_me, commit=lambda: None, tr
         if lora:
             saved = train(style_id)
             stage("ready", 1.0, adapter_ready=bool(saved), lora="ready" if saved else "failed")
+    except styles.Gone:
+        return  # the user deleted the style while it was being built
     except Exception as error:  # the app shows it; nothing of the uploads is kept
         stage("failed", 0, status="failed", error=f"Build failed: {type(error).__name__}")
         raise

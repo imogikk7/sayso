@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// Your style: how you write to each kind of person, what SaySo learned from your corrections, a few real examples.
 struct StyleCardView: View {
@@ -10,9 +9,7 @@ struct StyleCardView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var style: Style?
     @State private var error: String?
-    @State private var importing = false
-    @State private var pasting = false
-    @State private var adding = false
+    @State private var formalKind: FormalKind?
 
     var body: some View {
         List {
@@ -44,7 +41,7 @@ struct StyleCardView: View {
                 }
                 Section {
                     if let formal = style.formal, formal.paragraphs > 0 {
-                        LabeledContent("Learned from", value: "\(formal.documents) documents · \(formal.paragraphs) paragraphs")
+                        LabeledContent("Learned from", value: "\(formal.counts?["email"] ?? 0) emails · \(formal.counts?["essay"] ?? 0) texts")
                         if let p = formal.profile {
                             if let words = p.sentenceWords { LabeledContent("Sentences", value: "~\(Int(words)) words") }
                             if let connectors = p.connectors, !connectors.isEmpty {
@@ -58,14 +55,10 @@ struct StyleCardView: View {
                             }
                         }
                     }
-                    if adding {
-                        ProgressView("Learning your formal voice…")
-                    } else {
-                        Button { importing = true } label: { Label("Add documents", systemImage: "doc.badge.plus") }
-                        Button { pasting = true } label: { Label("Paste text", systemImage: "doc.on.clipboard") }
-                        if (style.formal?.paragraphs ?? 0) > 0 {
-                            Button("Remove all formal writing", role: .destructive) { Task { await clearFormal() } }
-                        }
+                    Button { formalKind = .email } label: { Label("Add emails", systemImage: "envelope") }
+                    Button { formalKind = .essay } label: { Label("Add essays & documents", systemImage: "doc.text") }
+                    if (style.formal?.paragraphs ?? 0) > 0 {
+                        Button("Remove all formal writing", role: .destructive) { Task { await clearFormal() } }
                     }
                 } header: {
                     Text("Formal writing")
@@ -118,16 +111,8 @@ struct StyleCardView: View {
             }
         }
         .navigationTitle(style?.name ?? "Style")
-        .fileImporter(isPresented: $importing,
-                      allowedContentTypes: [.plainText, .pdf, UTType(filenameExtension: "docx") ?? .data, UTType(filenameExtension: "md") ?? .plainText],
-                      allowsMultipleSelection: true) { result in
-            if case .success(let urls) = result { Task { await addFormal(urls: urls, text: "") } }
-        }
-        .sheet(isPresented: $pasting) {
-            EditAnswerView(text: "") { text in
-                pasting = false
-                Task { await addFormal(urls: [], text: text) }
-            }
+        .sheet(item: $formalKind) { kind in
+            FormalImportView(kind: kind, styleID: styleID) { Task { await load() } }
         }
         .task { await load() }
         .refreshable { await load() }
@@ -140,27 +125,6 @@ struct StyleCardView: View {
     private func load() async {
         do {
             style = try await SaySoAPI.style(styleID)
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-
-    private func addFormal(urls: [URL], text: String) async {
-        var files: [Upload] = []
-        for url in urls {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            if let data = try? Data(contentsOf: url) {
-                files.append(Upload(name: url.lastPathComponent, data: data,
-                                    mimeType: UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"))
-            }
-        }
-        guard !files.isEmpty || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        adding = true
-        defer { adding = false }
-        do {
-            try await SaySoAPI.addDocuments(to: styleID, files: files, text: text)
-            await load()
         } catch {
             self.error = error.localizedDescription
         }

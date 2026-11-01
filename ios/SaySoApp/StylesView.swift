@@ -5,6 +5,7 @@ struct StylesView: View {
     @State private var styles: [Style] = []
     @State private var activeID = SharedStore.styleID
     @State private var adding = false
+    @State private var formal: FormalKind?
     @State private var error: String?
 
     var body: some View {
@@ -36,13 +37,24 @@ struct StylesView: View {
                 StyleCardView(styleID: style.id, activeID: $activeID) { Task { await load() } }
             }
             .toolbar {
-                Button { adding = true } label: { Label("Add style", systemImage: "plus") }
+                Menu {
+                    Button { adding = true } label: {
+                        Label("Messages (chats)", systemImage: "bubble.left.and.bubble.right")
+                    }
+                    Button { formal = .email } label: { Label("Emails", systemImage: "envelope") }
+                    Button { formal = .essay } label: { Label("Essays & documents", systemImage: "doc.text") }
+                } label: {
+                    Label("Add", systemImage: "plus")
+                }
             }
             .sheet(isPresented: $adding, onDismiss: { Task { await load() } }) {
                 AddStyleView { style in
                     use(style)
                     adding = false
                 }
+            }
+            .sheet(item: $formal) { kind in
+                FormalImportView(kind: kind) { Task { await load() } }
             }
             .refreshable { await load() }
             .task { await poll() }

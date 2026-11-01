@@ -39,6 +39,7 @@ struct AddStyleView: View {
             Section("Name") {
                 TextField("e.g. Me with friends, Work me", text: $name)
             }
+            Section("How to get your chats") { SourceGuideList(guides: SourceGuide.chats) }
             Section {
                 Button { importing = true } label: { Label("Add chat exports", systemImage: "doc.badge.plus") }
                 PhotosPicker(selection: $picked, matching: .any(of: [.screenshots, .images, .videos])) {
@@ -58,13 +59,7 @@ struct AddStyleView: View {
             } header: {
                 Text("Chats")
             } footer: {
-                Text("""
-                WhatsApp: open a chat → ⋯ → Export Chat → Without Media → Save to Files.
-                Telegram: Telegram Desktop → Export chat history (HTML).
-                Instagram: Accounts Center → Download your information → Messages, JSON.
-                Anything else (iMessage too): screenshots, or a screen recording while you scroll up a chat.
-                Only your own messages are kept; the other side is read once to learn how you react, then dropped.
-                """)
+                Text("Only your own messages are kept; the other side is read once to learn how you react, then dropped.")
             }
             if let error {
                 Section { Text(error).foregroundStyle(.red) }

@@ -118,6 +118,15 @@ class BuildStyle(unittest.TestCase):
         styles.remove_learned(style_id, rows[0]["id"])
         self.assertEqual(styles.learned(style_id), [])
 
+    def test_deleted_while_building(self):
+        meta = styles.create("Gone")
+        styles.delete(meta["id"])
+        with self.assertRaises(styles.Gone):
+            styles.update(meta["id"], stage="reading")
+        (styles.STYLES / "deadbeef").mkdir(parents=True)
+        (styles.STYLES / "deadbeef" / "meta.json").write_text('{"stage": "reading"}')
+        self.assertEqual([m["id"] for m in styles.all_styles()], ["main"])
+
     def test_unknown_me_fails_cleanly(self):
         style_id = self.build(me="Nobody")
         self.assertEqual(styles.meta(style_id)["status"], "failed")
