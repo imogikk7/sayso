@@ -49,9 +49,10 @@ READ_SYSTEM = """You transcribe the user's own writing from a photo or a screens
 email the user SENT. Return JSON only: {"text": "<the text>"}.
 Keep the user's text exactly as written (wording, spelling). A handwritten or printed line break is NOT a new
 paragraph: join the lines of one paragraph into one line, and separate paragraphs (a new indent, a heading like
-"Argument 2:", a gap) with a blank line. Leave out crossed-out words and scribbles. For an email: keep
-the greeting, body and sign-off; skip the mail app's interface, headers (to, from, date, subject line), and any quoted
-earlier message or reply from someone else below it. For a page: skip page numbers and headers. If there is no text
+"Argument 2:", a gap) with a blank line. Leave out crossed-out words and scribbles. Replace the names of other people
+and companies (the recipient in the greeting, people or firms mentioned) with [Name]. For an email: keep
+the greeting, body and sign-off; skip the mail app's interface, headers (to, from, date, subject line), the signature block
+(logo, address, links, confidentiality notice) after the sign-off, and any quoted earlier message from someone else. For a page: skip page numbers and headers. If there is no text
 by the user, return {"text": ""}."""
 
 
