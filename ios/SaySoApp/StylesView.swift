@@ -126,7 +126,7 @@ struct StyleRow: View {
         if let score = style.scores?.soundsLikeYou { parts.append("sounds like you \(Int(score * 100))%") }
         if let sense = style.scores?.makesSense { parts.append(String(format: "makes sense %.1f/5", sense)) }
         if style.stage == "training" { parts.append("training its own model…") }
-        else if style.adapterReady == true { parts.append("own model") }
+        else if style.adapterReady == true { parts.append("Muse Spark Open writes in this style") }
         if parts.isEmpty { parts.append(style.source ?? "ready") }
         return parts.joined(separator: " · ")
     }

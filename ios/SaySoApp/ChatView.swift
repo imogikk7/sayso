@@ -162,7 +162,8 @@ struct ChatView: View {
                        onFix: { fixing = true; focused = true },
                        onEdit: { editing = (answer.text, answer.text) },
                        onAudience: { picked in self.audience = picked; Task { await run(again: true) } },
-                       onQuestion: { q in answering = q; fixing = true; focused = true })
+                       onQuestion: { q in answering = q; fixing = true; focused = true },
+                       onCopySubject: { subject in UIPasteboard.general.string = subject; show("Subject copied") })
         }
     }
 
@@ -175,6 +176,7 @@ struct ChatView: View {
                     Button("Cancel") { fixing = false; answering = nil }.font(.caption)
                 }
                 .foregroundStyle(.secondary)
+                if answering == nil { reasons }
             }
             HStack(alignment: .bottom) {
                 TextField(placeholder, text: $text, axis: .vertical)
@@ -211,6 +213,31 @@ struct ChatView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+    }
+
+    /// After 👎: one tap says what's wrong, without typing. Typing or 🎙 still work for anything else.
+    private var reasons: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(fixReasons, id: \.self) { reason in
+                    Button(reason) {
+                        focused = false
+                        Task { await fix(reason) }
+                    }
+                    .font(.footnote)
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.small)
+                }
+            }
+        }
+        .disabled(busy || history.isEmpty)
+    }
+
+    private var fixReasons: [String] {
+        mode.isFormal
+            ? ["Shorter", "Longer", "More personal", "Simpler words", "Less formal"]
+            : ["Too long", "Too formal", "Too casual", "Not my words", "Wrong meaning", "Too rude"]
     }
 
     private var placeholder: String {
@@ -251,17 +278,23 @@ struct ChatView: View {
         let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
         text = ""
         if fixing, !history.isEmpty {
-            history[history.count - 1].feedback = answering.map { "Add (answering \"\($0)\"): \(input)" } ?? input
-            answering = nil
-            items.append(.input(UUID(), input))
-            fixing = false
-            await run(again: false)
+            await fix(answering.map { "Add (answering \"\($0)\"): \(input)" } ?? input, shown: input)
         } else {
             thread = input
             history = []
             items.append(.input(UUID(), input))
             await run(again: false)
         }
+    }
+
+    /// Revises the last answer with this feedback (typed, said, or a quick reason chip).
+    private func fix(_ feedback: String, shown: String? = nil) async {
+        guard !history.isEmpty else { return }
+        history[history.count - 1].feedback = feedback
+        answering = nil
+        items.append(.input(UUID(), shown ?? feedback))
+        fixing = false
+        await run(again: false)
     }
 
     /// again: the same input for another audience (a new thread of answers, no feedback).
@@ -326,15 +359,24 @@ struct AnswerView: View {
     let onEdit: () -> Void
     let onAudience: (Audience) -> Void
     var onQuestion: (String) -> Void = { _ in }
+    var onCopySubject: (String) -> Void = { UIPasteboard.general.string = $0 }
 
     @State private var liked = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let subject = answer.subject {
-                Label("Subject: \(subject)", systemImage: "envelope")
-                    .font(.subheadline.weight(.semibold))
-                    .onTapGesture { UIPasteboard.general.string = subject }
+                HStack(alignment: .firstTextBaseline) {
+                    Label("Subject: \(subject)", systemImage: "envelope")
+                        .font(.subheadline.weight(.semibold))
+                        .textSelection(.enabled)
+                    Spacer(minLength: 8)
+                    Button("Copy subject", systemImage: "doc.on.doc") { onCopySubject(subject) }
+                        .font(.caption)
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .controlSize(.mini)
+                }
             }
             ForEach(Array((answer.parts?.isEmpty == false ? answer.parts! : [answer.text]).enumerated()), id: \.offset) { _, part in
                 Text(part)
