@@ -139,7 +139,7 @@ class FormalWriting(unittest.TestCase):
         text = (ROOT / "tests" / "fixtures" / "formal_fake.txt").read_text()
         self.assertEqual(len(documents.paragraphs(text)), 2)  # greeting and sign-off are too short to keep
         meta = styles.create("Formal")
-        formal = styles.add_documents(meta["id"], [("letter.txt", text)])
+        formal = styles.add_documents(meta["id"], [("letter.txt", text)], kind="email")
         self.assertEqual(formal["documents"], 1)
         self.assertIn("кроме того", formal["profile"]["connectors"])
         self.assertEqual(formal["profile"]["openings"], ["Здравствуйте, Анна Сергеевна"])
@@ -158,6 +158,22 @@ class FormalWriting(unittest.TestCase):
                                                   "<w:p><w:r><w:t>Второй абзац тоже длинный и вполне содержательный.</w:t></w:r></w:p>")
         text = documents.text_of("essay.docx", buffer.getvalue())
         self.assertIn("Первый абзац", text)
+
+    def test_email_quotes_and_mbox(self):
+        import documents
+        mine = "Здравствуйте, Анна Сергеевна!\n\nПрошу перенести защиту на четверг, в среду у меня экзамен.\n\nС уважением,\nАлекс\n"
+        quoted = mine + "\nOn Mon, 3 Nov 2026 at 10:00 Anna <anna@example.com> wrote:\n> Защита в среду в 14:00, не опаздывайте.\n"
+        self.assertNotIn("не опаздывайте", documents.own_email(quoted))
+        box = ("From sender@example.com Mon Nov  3 10:00:00 2026\nSubject: Перенос\nContent-Type: text/plain; charset=utf-8\n\n"
+               + quoted).encode()
+        bodies = documents.mbox_texts(box)
+        self.assertEqual(len(bodies), 1)
+        self.assertIn("перенести защиту", bodies[0])
+        self.assertNotIn("не опаздывайте", bodies[0])
+        meta = styles.create("Formal")
+        formal = styles.add_documents(meta["id"], [("sent.txt", quoted)], kind="email")
+        self.assertEqual(formal["counts"], {"email": 1, "essay": 0})
+        self.assertFalse(any("опаздывайте" in r["text"] for r in styles.documents(meta["id"])))
 
     def test_cliches(self):
         self.assertTrue(writer.CLICHES.search("В современном мире технологии играют ключевую роль"))

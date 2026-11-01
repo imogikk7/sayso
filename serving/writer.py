@@ -306,7 +306,7 @@ class Context:
                 self.recent[row["audience"]].append(row["text"])
                 self.examples[(row["audience"], None)].append(row["text"])
         self.preferences = styles.preferences(style_id)
-        self.documents = [r["text"] for r in styles.documents(style_id)]  # the user's own formal writing
+        self.documents = styles.documents(style_id)  # the user's own formal writing: [{doc, kind, text}]
         self.formal = styles.formal(style_id).get("profile") or {}
         text = profile_text(profile)
         audiences = [a for a in AUDIENCES if self.examples.get((a, None))]
@@ -358,17 +358,18 @@ class Context:
                         scores[i] += wq * w
         return [self.pool[i][1] for i, _ in sorted(scores.items(), key=lambda kv: -kv[1])[:k]]
 
-    def formal_block(self, query=None, k=3):
+    def formal_block(self, query=None, k=3, kind=None):
         """The user's formal voice for official messages, emails and essays: their formal profile and the paragraphs of
-        their own writing most like `query`; empty if they haven't added any."""
+        their own writing most like `query`, of the same kind first; empty if they haven't added any."""
         if not self.documents:
             return ""
         import documents as parse
         q = grams(query or "")
         def score(text):
             g = grams(text)
-            return sum(min(n, g[k]) for k, n in q.items()) / (sum(g.values()) ** 0.5 or 1)
-        picked = sorted(self.documents, key=score, reverse=True)[:k] if q else self.documents[:k]
+            return sum(min(n, g[gram]) for gram, n in q.items()) / (sum(g.values()) ** 0.5 or 1)
+        texts = sorted(self.documents, key=lambda r: (r.get("kind", "essay") != kind, -score(r["text"]) if q else 0))
+        picked = [r["text"] for r in texts[:k]]
         return ("\nThe user's own formal writing: match this voice (sentence length, linking words, how they open and "
                 "close), never its content:\n" + parse.profile_text(self.formal) + "\n"
                 + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked))
@@ -553,7 +554,7 @@ class Writer:
         `query` (random without one); none for official messages and emails. Picking by similarity scored the same as
         random examples on Nov 1 (eval/style_gain.py), but costs nothing and keeps the topic close."""
         if format in FORMAL:
-            return ctx.formal_block(query)
+            return ctx.formal_block(query, kind="essay" if format == "essay" else "email")
         first = ctx.approved.get(audience, [])[-2:] + ctx.recent.get(audience, [])[-2:]
         if self.retrieval == "local" and (query or "").strip():
             nearest = ctx.nearest(audience, clean(query)[:500])
@@ -682,7 +683,7 @@ class Writer:
                     "email": "Write the user's email from these notes",
                     "essay": f"Write the user's essay ({question or 'from these notes'}) from these notes"}[mode]
             voice = ctx.style_text if format not in FORMAL else (
-                (ctx.formal_block(text) or "Write plainly and directly, like a real person, not like an AI.") + ctx.rules())
+                (ctx.formal_block(text, kind="essay" if format == "essay" else "email") or "Write plainly and directly, like a real person, not like an AI.") + ctx.rules())
             label = await self.spark(
                 REVISE_SYSTEM.format(style=voice),
                 f"{task}, to their {audience}.{self.format_line(format)}{await self.examples(ctx, format, audience, query=text)}\n\n"
@@ -713,9 +714,9 @@ class Writer:
                 "alternatives": [c for c in result["candidates"] if c != result["text"]][:2],
                 "audience": audience, "audiences": result["audiences"], "learned": None}
 
-    def formal_system(self, ctx, query):
+    def formal_system(self, ctx, query, kind="email"):
         return (STYLE_SYSTEM.split("Return JSON only")[0].format(style="")
-                + "\n" + (ctx.formal_block(query) or "The user hasn't added formal writing yet: write plainly and "
+                + "\n" + (ctx.formal_block(query, kind=kind) or "The user hasn't added formal writing yet: write plainly and "
                                                      "directly, like a real person, not like an AI.") + ctx.rules())
 
     async def email(self, ctx, notes, reply_to=""):
@@ -736,7 +737,7 @@ class Writer:
     async def essay(self, ctx, question, notes, words=250):
         """Plan from the user's own notes, write in their formal voice, then check length and AI clichés (one fix)."""
         words = max(80, min(int(words), 900))
-        system = self.formal_system(ctx, f"{question} {notes}")
+        system = self.formal_system(ctx, f"{question} {notes}", kind="essay")
         args = {"question": clean(question) or "(none given)", "notes": clean(notes)[:4000], "words": words}
         label = await self.spark(system, ESSAY_TASK.format(**args), "text", max_tokens=6000, timeout=90)
         outline = [clean(str(point)) for point in label.get("outline") or [] if clean(str(point))][:8]
@@ -785,6 +786,17 @@ class Writer:
             styles.add_learned(ctx.id, rows)
         styles.commit()
         return {"learned": len(rows), "rules": rules}
+
+    async def read_page(self, image, image_type="image/jpeg"):
+        """A photo of an essay page or a screenshot of a sent email → the user's own text (Muse Spark vision)."""
+        import documents as parse
+        content = [{"type": "text", "text": "Transcribe the user's own text."},
+                   {"type": "image_url", "image_url": {"url": f"data:{image_type};base64," + base64.b64encode(image).decode()}}]
+        try:
+            label = await self.spark(parse.READ_SYSTEM, content, "text", max_tokens=6000, timeout=90)
+        except Unavailable:
+            return ""
+        return label["text"]
 
     async def transcribe(self, wav):
         """The user's voice note (mono 16-bit WAV) → text, with Muse Voice Transcribe. The audio is not kept."""

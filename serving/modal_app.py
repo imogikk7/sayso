@@ -335,24 +335,43 @@ def api():
                                  body.question, body.words, body.reply_to)
 
     @web.post("/styles/{style_id}/documents")
-    async def add_documents(style_id: str, files: list[UploadFile] = File(default=[]), text: str = Form("")):
-        """The user's own formal writing (.txt/.md/.docx/.pdf files or pasted text) → their formal voice."""
+    async def add_documents(style_id: str, files: list[UploadFile] = File(default=[]), text: str = Form(""),
+                            kind: str = Form("essay")):
+        """The user's own emails or essays: files (.txt/.md/.docx/.pdf/.mbox), photos or screenshots (read by Muse Spark),
+        or pasted text → their formal voice. Other people's quoted messages are cut off; images are not kept."""
+        import asyncio as aio
         import documents as parse
         style_or_404(style_id)
-        uploads, total = [], 0
-        for f in files[:30]:
-            raw = await f.read(10 * 1024 * 1024 + 1)
+        if kind not in parse.KINDS:
+            raise HTTPException(422, "kind must be email or essay")
+        uploads, images, total = [], [], 0
+        for f in files[:40]:
+            raw = await f.read(20 * 1024 * 1024 + 1)
             total += len(raw)
-            if total > 20 * 1024 * 1024:
-                raise HTTPException(413, "documents are larger than 20 MB")
-            uploads.append((f.filename or "document", parse.text_of(f.filename or "", raw)))
+            if total > 25 * 1024 * 1024:
+                raise HTTPException(413, "uploads are larger than 25 MB")
+            name = f.filename or "document"
+            suffix = Path(name).suffix.lower()
+            if suffix in parse.IMAGES or (f.content_type or "").startswith("image/"):
+                images.append((name, raw, f.content_type if (f.content_type or "").startswith("image/") else "image/jpeg"))
+            elif suffix == ".mbox":
+                uploads += [(f"{name}#{i}", body) for i, body in enumerate(parse.mbox_texts(raw))]
+            else:
+                uploads.append((name, parse.text_of(name, raw)))
+        gate = aio.Semaphore(6)
+
+        async def read(item):
+            async with gate:
+                return item[0], await writer.read_page(item[1], item[2])
+        uploads += await aio.gather(*(read(i) for i in images[:30]))
         if text.strip():
             uploads.append(("pasted", text[:50_000]))
         if not any(t.strip() for _, t in uploads):
-            raise HTTPException(422, "send files or text")
-        formal = styles.add_documents(style_id, uploads)
+            raise HTTPException(422, "nothing readable: send files, photos or text")
+        formal = styles.add_documents(style_id, uploads, kind)
         data.commit()
-        return {"documents": formal["documents"], "paragraphs": formal["profile"]["paragraphs"], "profile": formal["profile"]}
+        return {"documents": formal["documents"], "counts": formal["counts"],
+                "paragraphs": formal["profile"]["paragraphs"], "profile": formal["profile"]}
 
     @web.post("/transcribe")
     async def transcribe(audio: UploadFile = File(...)):
@@ -382,7 +401,7 @@ def api():
             view["preferences"] = styles.preferences(sid)
             learned, feedback = styles.learned(sid), styles.feedback(sid)
             formal = styles.formal(sid)
-            view["formal"] = {"documents": formal.get("documents", 0),
+            view["formal"] = {"documents": formal.get("documents", 0), "counts": formal.get("counts") or {},
                               "paragraphs": (formal.get("profile") or {}).get("paragraphs", 0),
                               "profile": formal.get("profile")}
             view["learning"] = {

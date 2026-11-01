@@ -202,18 +202,24 @@ def formal(style_id):
     return read_json(folder(style_id) / "formal.json", {})
 
 
-def add_documents(style_id, uploads):
-    """uploads = [(name, text)] of the user's own formal writing → paragraphs appended, formal profile recomputed."""
+def add_documents(style_id, uploads, kind="essay"):
+    """uploads = [(name, text)] of the user's own writing of one kind ("email" or "essay") → paragraphs appended,
+    formal profile recomputed (greetings and sign-offs come from emails only)."""
     import documents as parse
-    rows, ends = documents(style_id), [tuple(e) for e in formal(style_id).get("ends", [])]
+    rows = documents(style_id)
+    ends = [tuple(e) for e in formal(style_id).get("ends", [])]
     for name, text in uploads:
+        if kind == "email":
+            text = parse.own_email(text)
         paragraphs = parse.paragraphs(text)
         if paragraphs:
-            rows += [{"doc": name[:80], "text": t} for t in paragraphs]
-            ends.append(parse.edges(text))
+            rows += [{"doc": name[:80], "kind": kind, "text": t} for t in paragraphs]
+            if kind == "email":
+                ends.append(parse.edges(text))
     rows = rows[-parse.MAX_PARAGRAPHS:]
     write_jsonl(folder(style_id) / "documents.jsonl", rows)
-    value = {"documents": len({r["doc"] for r in rows}), "ends": ends[-50:],
+    counts = {k: len({r["doc"] for r in rows if r.get("kind", "essay") == k}) for k in parse.KINDS}
+    value = {"documents": len({r["doc"] for r in rows}), "counts": counts, "ends": ends[-50:],
              "profile": parse.profile([r["text"] for r in rows], ends)}
     write_json(folder(style_id) / "formal.json", value)
     return value

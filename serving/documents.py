@@ -1,12 +1,16 @@
 """The user's formal writing (emails, essays, papers they wrote themselves) → paragraphs and a formal profile.
 
 Chats teach how the user writes to friends; this teaches how they write when it's official, so emails and essays come
-out in their formal voice instead of a generic polite one. Files: .txt / .md, .docx, .pdf, or pasted text. Links,
-emails, phone and card numbers are removed; only the paragraphs are kept (on the private volume).
+out in their formal voice instead of a generic polite one. Two kinds, kept apart: "email" (how they greet, ask and
+sign off) and "essay" (longer texts, papers). Sources: .txt / .md, .docx, .pdf, .mbox (Google Takeout, Sent only),
+pasted text, and photos or screenshots (read by Muse Spark in serving/writer.py). In emails, quoted earlier messages
+(other people's text) are cut off. Links, emails, phone and card numbers are removed; only paragraphs are kept.
 """
 
 import io
+import mailbox
 import re
+import tempfile
 import statistics
 import sys
 import zipfile
@@ -28,6 +32,47 @@ CONNECTORS = [
     "however", "moreover", "therefore", "for example", "for instance", "in addition", "as a result", "although",
     "because", "while", "first", "finally", "in fact", "that is why", "this is why",
 ]
+
+
+KINDS = ("email", "essay")
+IMAGES = {".jpg", ".jpeg", ".png", ".heic", ".webp"}
+# Where an email starts quoting the message it answers (someone else's text): everything after it is dropped.
+QUOTE = re.compile(r"^\s*(>|On .{5,120} wrote:|.{0,80}(написал|написала|писал)\(?а?\)?:\s*$|-{2,}\s*Original Message|"
+                   r"-{2,}\s*Пересылаемое|From:|От:|Sent from my|Отправлено с)", re.I | re.M)
+
+READ_SYSTEM = """You transcribe the user's own writing from a photo or a screenshot: a page of an essay or paper, or an
+email the user SENT. Return JSON only: {"text": "<the text>"}.
+Keep the user's text exactly as written (wording, spelling, paragraphs separated by blank lines). For an email: keep
+the greeting, body and sign-off; skip the mail app's interface, headers (to, from, date, subject line), and any quoted
+earlier message or reply from someone else below it. For a page: skip page numbers and headers. If there is no text
+by the user, return {"text": ""}."""
+
+
+def own_email(text):
+    """An email the user sent → only their own part (the quoted message they answered is cut off)."""
+    match = QUOTE.search(text)
+    return text[:match.start()] if match else text
+
+
+def mbox_texts(raw, limit=300):
+    """A Google Takeout .mbox (the Sent label) → the bodies of the user's emails, quotes cut off."""
+    out = []
+    with tempfile.NamedTemporaryFile(suffix=".mbox") as f:
+        f.write(raw)
+        f.flush()
+        for message in mailbox.mbox(f.name):
+            body = ""
+            for part in message.walk() if message.is_multipart() else [message]:
+                if part.get_content_type() == "text/plain":
+                    payload = part.get_payload(decode=True) or b""
+                    body = payload.decode(part.get_content_charset() or "utf-8", "ignore")
+                    break
+            body = own_email(body).strip()
+            if body:
+                out.append(body)
+            if len(out) >= limit:
+                break
+    return out
 
 
 def text_of(name, raw):
