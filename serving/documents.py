@@ -42,7 +42,9 @@ QUOTE = re.compile(r"^\s*(>|On .{5,120} wrote:|.{0,80}(написал|напис
 
 READ_SYSTEM = """You transcribe the user's own writing from a photo or a screenshot: a page of an essay or paper, or an
 email the user SENT. Return JSON only: {"text": "<the text>"}.
-Keep the user's text exactly as written (wording, spelling, paragraphs separated by blank lines). For an email: keep
+Keep the user's text exactly as written (wording, spelling). A handwritten or printed line break is NOT a new
+paragraph: join the lines of one paragraph into one line, and separate paragraphs (a new indent, a heading like
+"Argument 2:", a gap) with a blank line. Leave out crossed-out words and scribbles. For an email: keep
 the greeting, body and sign-off; skip the mail app's interface, headers (to, from, date, subject line), and any quoted
 earlier message or reply from someone else below it. For a page: skip page numbers and headers. If there is no text
 by the user, return {"text": ""}."""
@@ -93,10 +95,19 @@ def text_of(name, raw):
 
 
 def paragraphs(text):
-    """Text → the user's paragraphs, cleaned; a pdf's hard line breaks inside a paragraph are joined back."""
+    """Text → the user's paragraphs, cleaned. Paragraphs are separated by blank lines; without them (a pdf, a page
+    read line by line), lines are joined until one ends a sentence, so a wrapped line doesn't become a paragraph."""
     blocks = re.split(r"\n\s*\n", text.replace("\r", ""))
-    if len(blocks) < 3:  # no blank lines between paragraphs (pdf, plain paste): one line = one paragraph
-        blocks = text.split("\n")
+    if len(blocks) < 3:
+        blocks, current = [], []
+        for line in text.replace("\r", "").split("\n"):
+            if line.strip():
+                current.append(line.strip())
+                if re.search(r"[.!?…:]\s*$", line) and len(" ".join(current)) >= MIN_CHARS:
+                    blocks.append(" ".join(current))
+                    current = []
+        if current:
+            blocks.append(" ".join(current))
     out = []
     for block in blocks:
         joined = " ".join(line.strip() for line in block.split("\n") if line.strip())
