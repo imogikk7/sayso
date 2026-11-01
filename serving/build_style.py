@@ -48,6 +48,8 @@ CHECK_TURNS = 20
 MIN_LORA_TURNS = 150
 WAIT_FOR_ME = 30 * 60
 GAP = timedelta(minutes=10)
+ZIP_TOTAL = 500 * 1024 * 1024  # uncompressed size of one uploaded archive
+ZIP_MEMBER = 200 * 1024 * 1024
 CONTEXT_WINDOW = timedelta(minutes=30)
 
 SCREEN_SYSTEM = """You read a screenshot of a chat for the user who took it. Return JSON only:
@@ -176,6 +178,9 @@ def read_exports(exports):
                 path = folder
             elif path.suffix == ".zip":
                 with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                    sizes = [info.file_size for info in archive.infolist()]
+                    if sum(sizes) > ZIP_TOTAL or max(sizes, default=0) > ZIP_MEMBER:
+                        continue  # a zip bomb, or not a chat export: skipped before anything is unpacked
                     if any(n.endswith("messages.html") for n in archive.namelist()):
                         folder = Path(tmp) / f"telegram-{len(chats)}"
                         archive.extractall(folder)

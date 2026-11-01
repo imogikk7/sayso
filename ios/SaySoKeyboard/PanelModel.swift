@@ -54,6 +54,7 @@ final class PanelModel: ObservableObject {
     // Learning from what the user sends with this keyboard (their own text only)
     private var lastText = ""  // the field's text at the last change
     private var userDeleted = false  // the field was emptied with ⌫, not sent
+    private var pasted = false  // text arrived that wasn't typed here (a paste may be someone else's words)
     private var suggestion: String?  // the ✨ variant put in the field, to see if the user changed it
     private var queue: [LearnItem] {
         get { UserDefaults.standard.data(forKey: "learnQueue").flatMap { try? JSONDecoder().decode([LearnItem].self, from: $0) } ?? [] }
@@ -100,10 +101,14 @@ final class PanelModel: ObservableObject {
     func fieldChanged() {
         let now = (proxy?.documentContextBeforeInput ?? "") + (proxy?.documentContextAfterInput ?? "")
         let sent = lastText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if now.isEmpty && !sent.isEmpty && !userDeleted {
+        if now.count > lastText.count + 1 { pasted = true }  // more than one character at once: not typed with these keys
+        if now.isEmpty && !sent.isEmpty && !userDeleted && !pasted {
             remember(sent)
         }
-        if now.isEmpty { userDeleted = false }
+        if now.isEmpty {
+            userDeleted = false
+            pasted = false
+        }
         lastText = now
         readDraft()
         autoShift()

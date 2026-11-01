@@ -163,7 +163,7 @@ class FakeSpark:
     def __init__(self):
         self.calls = []
 
-    async def __call__(self, system, user, key, max_tokens=3000):
+    async def __call__(self, system, user, key, max_tokens=3000, **_):
         self.calls.append(key)
         if key == "summary":
             return {"summary": "asks about plans at 8", "situation": "invitation", "audience": "friends",
@@ -223,12 +223,10 @@ class Api(unittest.TestCase):
         for path in ("/docs", "/redoc", "/openapi.json"):
             self.assertIn(self.client.get(path, headers=self.auth).status_code, {401, 404}, path)
 
-    @unittest.expectedFailure  # REVIEW_FINAL S2: a JSON body is decoded before the token is checked (422, not 401)
     def test_bad_body_is_401_before_parsing(self):
         response = self.client.post("/rewrite", content=b"{not json", headers={"Content-Type": "application/json"})
         self.assertEqual(response.status_code, 401)
 
-    @unittest.expectedFailure  # REVIEW_FINAL S2: FastAPI parses a form body before app-wide dependencies run
     def test_unauthenticated_upload_is_not_parsed(self):
         from starlette.requests import Request
         parsed = []

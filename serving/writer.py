@@ -585,8 +585,11 @@ class Writer:
             # user's statistics matched their form no better (0.94) and their wording worse (chrF 51 → 42,
             # eval/style_gain.py), so it doesn't replace the answer.
             limit = FORMAT_WORDS.get(format, 40) * 2
-            written = [label["text"]] + [v for v in label.get("variants") or [] if isinstance(v, str)][:VARIANT_COUNT]
+            variants = label.get("variants") if isinstance(label.get("variants"), list) else []
+            written = [label["text"]] + [v for v in variants if isinstance(v, str)][:VARIANT_COUNT]
             candidates = list(dict.fromkeys(shape(clip(clean(v), limit), format)[0] for v in written if clean(v)))
+            if not candidates:  # only template tokens or blanks came back
+                raise Unavailable(502, "Muse Spark gave an empty answer, try again")
             out, parts = shape(candidates[0], format)
             return {"text": out, "parts": parts, "candidates": [out] + [c for c in candidates if c != out],
                     "styled": False, "audiences": audiences_of(label)}
@@ -664,7 +667,7 @@ class Writer:
         guessed = label.get("audience") if label.get("audience") in AUDIENCES else "friends"
         known = ctx.chats.get(str(label.get("chat_name") or "").casefold().strip())  # the title is not kept
         options = []
-        for option in label.get("options") or []:
+        for option in label.get("options") if isinstance(label.get("options"), list) else []:
             if isinstance(option, dict) and option.get("act") in ACTS and isinstance(option.get("draft"), str):
                 draft = clip(clean(option["draft"]), FORMAT_WORDS.get(format, 40))
                 if format not in {"series", "email"}:
@@ -779,9 +782,9 @@ class Writer:
             text = scrub(clean(item.get("text") or ""))
             if not text or len(text) > 1000 or PASTED_CODE.search(text) or item.get("audience") not in AUDIENCES:
                 continue
-            suggested = clean(item.get("suggested") or "") or None
+            suggested = scrub(clean(item.get("suggested") or "")) or None  # compared with the scrubbed text
             rows.append({"audience": item["audience"], "text": text, "kind": "edited" if suggested else "typed",
-                         **({"suggested": scrub(suggested)} if suggested else {})})
+                         **({"suggested": suggested} if suggested else {})})
             if suggested and suggested != text and len(rules) < 2:
                 try:
                     label = await self.spark(LEARN_SYSTEM, f"Audience: {item['audience']}\nSuggested: {suggested}\n"
@@ -822,7 +825,8 @@ class Writer:
 
     async def feedback(self, ctx, audience, format, answer, edited=None, liked=False):
         """The user liked an answer or wrote their own version: it becomes an example; an edit may teach a rule."""
-        text = clean(edited or answer)
+        from parse_telegram import clean as scrub
+        text = scrub(clean(edited or answer))  # links, emails, phones and cards removed, as in learn()
         if not text or audience not in AUDIENCES:
             return {"learned": None}
         styles.add_feedback(ctx.id, {"audience": audience, "format": format, "text": text,

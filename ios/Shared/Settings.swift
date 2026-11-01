@@ -50,9 +50,10 @@ struct KeyboardSettings: Codable, Equatable {
     var learnsFromTyping: Bool? = nil  // optional: older saved settings don't have it
     var autoCapitalizeStored: Bool? = nil  // optional: older saved settings don't have it
 
-    /// The keyboard keeps what the user sends with it (their own text) as examples of their style.
+    /// The keyboard keeps what the user sends with it (their own text) as examples of their style. Off until the user
+    /// turns it on: it is their typing.
     var learns: Bool {
-        get { learnsFromTyping ?? true }
+        get { learnsFromTyping ?? false }
         set { learnsFromTyping = newValue }
     }
 

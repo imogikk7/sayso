@@ -88,6 +88,8 @@ def text_of(name, raw):
     try:
         if suffix == ".docx":
             with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                if archive.getinfo("word/document.xml").file_size > 50 * 1024 * 1024:
+                    return ""  # not a real essay: a zip bomb
                 xml = archive.read("word/document.xml").decode("utf-8", "ignore")
             xml = re.sub(r"</w:p>", "\n", xml)
             return re.sub(r"<[^>]+>", "", xml).replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")

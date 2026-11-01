@@ -129,7 +129,7 @@ def build_style(style_id: str, files: list):
 @app.function(image=api_image, volumes={"/cache": cache, "/data": data},
               secrets=[modal.Secret.from_name(name) for name in ("sayso", "sayso-glimmer", "sayso-meta", "sayso-extra")]
               + ([modal.Secret.from_name("sayso-baseten")] if GPU == "baseten" else []),
-              scaledown_window=5 * 60, timeout=10 * 60, max_containers=2)
+              scaledown_window=5 * 60, timeout=10 * 60, max_containers=1)  # one writer to the volume's files
 @modal.concurrent(max_inputs=32)
 @modal.asgi_app()
 def api():
@@ -173,8 +173,25 @@ def api():
         if not authorization or not secrets.compare_digest(authorization.encode(), expected):
             raise HTTPException(status_code=401)
 
-    # Auth runs as an app-wide dependency, before any body is parsed or validated.
+    class TokenGate:
+        """Checks the token (and the declared size) before FastAPI reads or parses any body: an unauthenticated
+        request gets 401 at once, whatever it sends."""
+
+        def __init__(self, app):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            if scope["type"] == "http":
+                headers = dict(scope.get("headers") or [])
+                expected = f"Bearer {os.environ['SAYSO_API_TOKEN']}".encode()
+                if not secrets.compare_digest(headers.get(b"authorization", b""), expected):
+                    return await JSONResponse({"detail": "Unauthorized"}, status_code=401)(scope, receive, send)
+                if int(headers.get(b"content-length", b"0") or 0) > 60 * 1024 * 1024:
+                    return await JSONResponse({"detail": "request is larger than 60 MB"}, status_code=413)(scope, receive, send)
+            await self.app(scope, receive, send)
+
     web = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, dependencies=[Depends(check)])
+    web.add_middleware(TokenGate)
     client = httpx.AsyncClient(follow_redirects=True)  # Modal answers 303 to requests longer than 150 s
     GPU = os.environ.get("SAYSO_GPU", "off")
     styles.on_write = data.commit
@@ -385,10 +402,12 @@ def api():
 
     @web.post("/learn")
     async def learn(body: LearnBody):
+        await asyncio.to_thread(data.reload)  # the build function may have written since: don't write over it
         return await writer.learn(writer.context(body.style), [i.model_dump() for i in body.items])
 
     @web.post("/feedback")
     async def feedback(body: FeedbackBody):
+        await asyncio.to_thread(data.reload)  # the build function may have written since: don't write over it
         return await writer.feedback(writer.context(body.style), audience_of(body.audience), format_of(body.format),
                                      body.answer, body.edited, body.liked)
 
@@ -460,6 +479,7 @@ def api():
 
     @web.patch("/styles/{style_id}")
     async def patch_style(style_id: str, body: StylePatch):
+        await asyncio.to_thread(data.reload)  # the build function may have written since: don't write over it
         meta = style_or_404(style_id)
         fields = {}
         if body.name and body.name.strip():

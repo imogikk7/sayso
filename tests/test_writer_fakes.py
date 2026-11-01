@@ -59,7 +59,7 @@ class FakeSpark:
         self.answer = answer or {}
         self.calls = []
 
-    async def __call__(self, system, user, key, max_tokens=3000):
+    async def __call__(self, system, user, key, max_tokens=3000, **_):
         self.calls.append({"system": system, "user": user, "key": key})
         label = self.answer(system, user, key) if callable(self.answer) else dict(self.answer)
         if isinstance(label, Exception):
@@ -180,7 +180,7 @@ class Formats(WriterTestCase):
             self.assertEqual("Some of their real messages" in user, format not in writer.FORMAL, format)
             self.assertIn('"variants"', user)
         spark, _ = self.styled("compose", "message")
-        self.assertIn("Write the message the user would send for this instruction", spark.users()[0])
+        self.assertIn("Write the message itself", spark.users()[0])
 
     def test_long_answer_is_clipped(self):
         _, out = self.styled("rewrite", "message", text=" ".join(["слово"] * 500), variants=())
@@ -197,13 +197,11 @@ class Formats(WriterTestCase):
         run(self.writer.rewrite(self.ctx(), "да", "friends"))
         self.assertIsNone(self.writer.client)  # would have raised on any HTTP call
 
-    @unittest.expectedFailure  # REVIEW_FINAL C3: a string "variants" is iterated character by character
     def test_variants_as_a_string_are_not_split_into_letters(self):
         self.fake({"text": "го в 8", "variants": "давай в 8"})
         out = run(self.writer.rewrite(self.ctx(), "да, в 8", "friends"))
         self.assertTrue(all(len(c) > 1 for c in out["candidates"]), out["candidates"])
 
-    @unittest.expectedFailure  # REVIEW_FINAL C3: an answer that is only template tokens → IndexError → 500
     def test_answer_of_only_control_tokens_is_a_clean_502(self):
         self.fake({"text": "<|eot|>", "variants": []})
         with self.assertRaises(Unavailable):
@@ -289,7 +287,6 @@ class Learning(WriterTestCase):
         run(self.writer.feedback(self.ctx(), "friends", "message", "<|eot|>"))
         self.assertEqual(styles.feedback(STYLE), [])
 
-    @unittest.expectedFailure  # REVIEW_FINAL P4: /feedback keeps links and phone numbers that /learn removes
     def test_feedback_is_scrubbed_like_learn(self):
         self.fake({})
         run(self.writer.feedback(self.ctx(), "friends", "message", "звони +7 701 123 45 67 или https://x.example/a",
@@ -335,7 +332,6 @@ class Learning(WriterTestCase):
         run(self.writer.learn(self.ctx(), [{"audience": "family", "text": "мам я дома"}]))
         self.assertEqual(self.ctx().sample("family")[0], "мам я дома")
 
-    @unittest.expectedFailure  # REVIEW_FINAL C6: suggested is compared unscrubbed → a rule call for a removed link
     def test_no_rule_call_when_only_a_link_was_scrubbed(self):
         spark = self.fake({"rule": "Never send links"})
         run(self.writer.learn(self.ctx(), [{"audience": "friends", "text": "смотри https://x.example",
@@ -349,7 +345,6 @@ class Learning(WriterTestCase):
         styles.remove_learned(STYLE, first)
         self.assertEqual([r["text"] for r in styles.learned(STYLE)], ["б"])
 
-    @unittest.expectedFailure  # REVIEW_FINAL C2: one torn line in learned.jsonl makes the whole style unusable
     def test_a_torn_jsonl_line_does_not_break_the_style(self):
         path = styles.folder(STYLE) / "learned.jsonl"
         path.write_text(json.dumps({"audience": "friends", "text": "го", "id": "a"}) + "\n{\"audience\": \"fri",
@@ -390,7 +385,6 @@ class Read(WriterTestCase):
             _, options = run(self.writer.read(self.ctx(), messages="x"))
             self.assertEqual(options, [], bad)
 
-    @unittest.expectedFailure  # REVIEW_FINAL C3: "options": 3 → TypeError → 500 instead of no options
     def test_options_as_a_number_are_ignored(self):
         self.fake({"summary": "s", "options": 3})
         _, options = run(self.writer.read(self.ctx(), messages="x"))

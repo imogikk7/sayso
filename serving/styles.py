@@ -67,17 +67,26 @@ def write_json(path, value):
 def read_jsonl(path):
     try:  # closed right away: Modal can't reload the volume while a file is open
         with Path(path).open(encoding="utf-8") as f:
-            return [json.loads(line) for line in f if line.strip()]
+            lines = [line for line in f if line.strip()]
     except FileNotFoundError:
         return []
+    rows = []
+    for line in lines:  # a torn line (a write cut short) is skipped, not fatal for the whole style
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            pass
+    return rows
 
 
 def write_jsonl(path, rows):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    tmp.replace(path)  # atomic: readers see the old file or the new one, never half of it
 
 
 def meta(style_id):
