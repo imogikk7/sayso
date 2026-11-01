@@ -45,3 +45,6 @@ ios/Shared/Generated/
 
 # the user's LoRA, copied in for truss push (never committed)
 serving/baseten/data/
+
+# blind test: the key and the page hold the user's real messages (data/ is ignored anyway; explicit on purpose)
+data/blind/

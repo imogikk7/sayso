@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Угадай, где я</title>
+<style>
+  :root {
+    --bg: #f4f1ec; --card: #ffffff; --ink: #1d1b19; --muted: #77716a; --line: #e4ded5;
+    --accent: #ff6a3d; --accent-ink: #ffffff; --bubble: #ffffff; --chosen: #fff1eb;
+    --radius: 22px; --shadow: 0 1px 2px rgba(40, 30, 20, .06), 0 8px 24px rgba(40, 30, 20, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151413; --card: #1f1e1c; --ink: #f3efe9; --muted: #9a938a; --line: #2f2d2a;
+            --bubble: #262422; --chosen: #3a2419; --shadow: none; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { font: 17px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+         min-height: 100vh; min-height: 100dvh; display: flex; justify-content: center; }
+  main { width: 100%; max-width: 480px; padding: max(20px, env(safe-area-inset-top)) 18px
+         max(24px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; }
+  [hidden] { display: none !important; }
+  h1 { font-size: 34px; line-height: 1.1; letter-spacing: -.02em; margin: 28px 0 14px; }
+  h2 { font-size: 21px; margin: 0 0 4px; letter-spacing: -.01em; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); font-size: 15px; }
+  .logo { display: inline-flex; gap: 8px; align-items: center; font-weight: 600; font-size: 15px; color: var(--muted); }
+  .logo i { width: 22px; height: 22px; border-radius: 7px; background: var(--accent); display: inline-block; }
+  .card { background: var(--card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+  .demo { display: grid; gap: 8px; margin: 22px 0; }
+  .demo span { justify-self: start; background: var(--bubble); border: 1px solid var(--line); padding: 9px 14px;
+               border-radius: 18px 18px 18px 6px; font-size: 15px; }
+  .demo span:nth-child(2) { justify-self: end; border-radius: 18px 18px 6px 18px; }
+  label { display: block; font-size: 15px; color: var(--muted); margin: 8px 0 6px; }
+  input { width: 100%; font: inherit; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line);
+          background: var(--card); color: var(--ink); outline: none; }
+  input:focus { border-color: var(--accent); }
+  button { font: inherit; border: 0; cursor: pointer; color: inherit; background: none; }
+  .primary { width: 100%; background: var(--accent); color: var(--accent-ink); font-weight: 600; padding: 16px;
+             border-radius: 16px; margin-top: 16px; transition: transform .1s; }
+  .primary:active { transform: scale(.98); }
+  .secondary { width: 100%; padding: 14px; border-radius: 16px; margin-top: 10px; border: 1px solid var(--line);
+               font-weight: 600; background: var(--card); }
+  .spacer { flex: 1; }
+  .foot { margin-top: 18px; text-align: center; font-size: 13px; color: var(--muted); }
+
+  .top { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .back { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 20px;
+          background: var(--card); box-shadow: var(--shadow); }
+  .back:disabled { opacity: .3; }
+  .bar { flex: 1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .bar b { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .count { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); min-width: 44px; text-align: right; }
+  .context { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 16px; }
+  .chip { font-size: 14px; padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
+  .chip em { font-style: normal; color: var(--muted); }
+  .options { display: grid; gap: 14px; margin-top: 6px; }
+  .option { text-align: left; display: flex; gap: 12px; align-items: flex-start; padding: 16px; width: 100%;
+            background: var(--bubble); border: 2px solid transparent; border-radius: var(--radius);
+            box-shadow: var(--shadow); transition: border-color .15s, background .15s, transform .1s; }
+  .option:active { transform: scale(.985); }
+  .option.chosen { border-color: var(--accent); background: var(--chosen); }
+  .letter { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+            font-size: 14px; font-weight: 700; background: var(--bg); color: var(--muted); }
+  .option.chosen .letter { background: var(--accent); color: var(--accent-ink); }
+  .text { white-space: pre-wrap; overflow-wrap: anywhere; padding-top: 2px; }
+  .sep { color: var(--muted); padding: 0 2px; }
+  .hint { text-align: center; margin-top: 16px; }
+
+  .code { font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; padding: 14px;
+          border-radius: 14px; background: var(--bg); border: 1px dashed var(--line); user-select: all;
+          -webkit-user-select: all; margin: 12px 0 0; }
+  .done-mark { width: 64px; height: 64px; border-radius: 22px; background: var(--accent); color: var(--accent-ink);
+               display: grid; place-items: center; font-size: 34px; margin: 28px 0 6px; }
+  .toast { position: fixed; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+           background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 15px;
+           opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .fade { animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<main>
+  <section id="intro" class="fade">
+    <div class="logo"><i></i>SaySo · слепой тест</div>
+    <h1>Угадай, где я</h1>
+    <p>Один из двух вариантов написал я, другой — ИИ. Угадай, где я.</p>
+    <p class="muted"><span id="total"></span> коротких вопросов, пара минут. Над каждым — кому это написано и что
+      за ситуация. Не уверен(а) — выбирай по ощущению.</p>
+    <div class="demo" aria-hidden="true"><span>это я?</span><span>или это я?</span></div>
+    <label for="name">Как тебя зовут? <span class="muted">(необязательно)</span></label>
+    <input id="name" maxlength="40" autocomplete="given-name" placeholder="Имя">
+    <button class="primary" id="start">Начать</button>
+    <div class="foot">Страница работает без сервера: ответы никуда не уходят, пока ты сам(а) не отправишь код.</div>
+  </section>
+
+  <section id="quiz" hidden>
+    <div class="top">
+      <button class="back" id="back" aria-label="Назад">‹</button>
+      <div class="bar"><b id="bar"></b></div>
+      <div class="count" id="count"></div>
+    </div>
+    <div id="question" class="fade">
+      <div class="context">
+        <span class="chip"><em>Кому:</em> <span id="audience"></span></span>
+        <span class="chip"><em>Ситуация:</em> <span id="situation"></span></span>
+      </div>
+      <h2>Какое сообщение написал я?</h2>
+      <p class="muted">Нажми на вариант</p>
+      <div class="options">
+        <button class="option" data-choice="A"><span class="letter">A</span><span class="text" id="textA"></span></button>
+        <button class="option" data-choice="B"><span class="letter">B</span><span class="text" id="textB"></span></button>
+      </div>
+      <p class="muted hint">«/» — новое сообщение подряд</p>
+    </div>
+  </section>
+
+  <section id="done" hidden class="fade">
+    <div class="done-mark">✓</div>
+    <h1 style="margin-top:10px">Готово<span id="thanks-name"></span>!</h1>
+    <p>Скопируй код и отправь мне в чат — так я узнаю, сколько ты угадал(а). Правильные ответы расскажу потом.</p>
+    <div class="card">
+      <div class="muted">Твой код</div>
+      <div class="code" id="code"></div>
+      <button class="primary" id="copy">Скопировать код</button>
+      <button class="secondary" id="share" hidden>Отправить…</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="secondary" id="review">Изменить ответы</button>
+    <div class="foot">Пожалуйста, не рассказывай другим, что выбрал(а) — пусть угадывают сами.</div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = __BLIND_DATA__;
+const PREFIX = "SS1-";
+const KEY = "sayso-blind-" + DATA.test_id;
+const qs = DATA.questions;
+const $ = (id) => document.getElementById(id);
+let state = load() || { name: "", choices: {}, index: 0 };
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode: fine */ }
+}
+function show(id) {
+  for (const s of ["intro", "quiz", "done"]) $(s).hidden = s !== id;
+  window.scrollTo(0, 0);
+}
+function fill(el, text) {  // textContent only: message text is never parsed as HTML
+  el.replaceChildren();
+  text.split(" / ").forEach((part, i) => {
+    if (i) { const s = document.createElement("span"); s.className = "sep"; s.textContent = " / "; el.append(s); }
+    el.append(document.createTextNode(part));
+  });
+}
+function render() {
+  const i = state.index, q = qs[i];
+  $("count").textContent = (i + 1) + " / " + qs.length;
+  $("bar").style.width = (100 * Object.keys(state.choices).length / qs.length) + "%";
+  $("back").disabled = i === 0;
+  $("audience").textContent = q.audience;
+  $("situation").textContent = q.situation;
+  fill($("textA"), q.a);
+  fill($("textB"), q.b);
+  document.querySelectorAll(".option").forEach((b) => b.classList.toggle("chosen", state.choices[q.id] === b.dataset.choice));
+  const box = $("question");
+  box.classList.remove("fade"); void box.offsetWidth; box.classList.add("fade");
+}
+function code() {
+  const json = JSON.stringify({ v: 1, t: DATA.test_id, n: state.name, c: state.choices });
+  const bytes = new TextEncoder().encode(json);
+  let bin = "";
+  bytes.forEach((b) => { bin += String.fromCharCode(b); });
+  return PREFIX + btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function finish() {
+  $("code").textContent = code();
+  $("thanks-name").textContent = state.name ? ", " + state.name : "";
+  $("share").hidden = !navigator.share;
+  show("done");
+}
+function toast(text) {
+  const t = $("toast");
+  t.textContent = text; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 1600);
+}
+function next() {
+  const open = qs.findIndex((q, j) => j > state.index && !state.choices[q.id]);
+  const any = qs.findIndex((q) => !state.choices[q.id]);
+  if (open >= 0) state.index = open;
+  else if (any >= 0) state.index = any;
+  else if (state.index < qs.length - 1) state.index++;  // reviewing answers: step through
+  else { save(); finish(); return; }
+  save(); render();
+}
+
+$("total").textContent = qs.length;
+$("name").value = state.name || "";
+$("start").onclick = () => {
+  state.name = $("name").value.trim().slice(0, 40);
+  save(); show("quiz"); render();
+};
+$("back").onclick = () => { if (state.index > 0) { state.index--; save(); render(); } };
+document.querySelectorAll(".option").forEach((b) => b.onclick = () => {
+  state.choices[qs[state.index].id] = b.dataset.choice;
+  save();
+  document.querySelectorAll(".option").forEach((o) => o.classList.toggle("chosen", o === b));
+  $("bar").style.width = (100 * Object.keys(state.choices).length / qs.length) + "%";
+  setTimeout(next, 280);
+});
+$("copy").onclick = async () => {
+  const text = $("code").textContent;
+  try { await navigator.clipboard.writeText(text); toast("Код скопирован"); }
+  catch (e) {
+    const r = document.createRange(); r.selectNodeContents($("code"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    try { document.execCommand("copy"); toast("Код скопирован"); } catch (e2) { toast("Выдели код и скопируй"); }
+  }
+};
+$("share").onclick = () => navigator.share({ text: $("code").textContent }).catch(() => {});
+$("review").onclick = () => { state.index = 0; save(); show("quiz"); render(); };
+
+if (Object.keys(state.choices).length === qs.length) finish();
+else if (Object.keys(state.choices).length) { show("quiz"); render(); }
+</script>
+</body>
+</html>
