@@ -212,9 +212,13 @@ final class PanelModel: ObservableObject {
         if !options.isEmpty && series.isEmpty { options = [] }
     }
 
-    /// Capital letter at the start of the field and of a sentence.
+    /// Capital letter at the start of the field and of a sentence (if turned on in the app's Keyboard settings).
     func autoShift() {
         guard shift != .caps else { return }
+        guard settings.autoCapitalize else {
+            shift = .off
+            return
+        }
         let before = proxy?.documentContextBeforeInput ?? ""
         let ended = before.trimmingCharacters(in: .whitespaces).last.map { ".!?".contains($0) } ?? false
         shift = before.isEmpty || before.hasSuffix("\n") || (before.hasSuffix(" ") && ended) ? .on : .off

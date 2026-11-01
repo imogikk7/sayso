@@ -46,6 +46,13 @@ struct KeyboardSettingsView: View {
                             value: $settings.variants, in: 1...3)
                     Toggle("Haptics on keys", isOn: $settings.haptics)
                 }
+                Section {
+                    Toggle("Capital letter at sentence start", isOn: $settings.autoCapitalize)
+                } header: {
+                    Text("Typing")
+                } footer: {
+                    Text("Off: letters stay lowercase unless you tap ⇧ (double-tap for caps lock).")
+                }
                 Section("Accent") {
                     HStack(spacing: 14) {
                         ForEach(KeyboardAccent.allCases) { accent in
