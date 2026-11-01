@@ -24,6 +24,10 @@ struct ChatView: View {
     @State private var thread = ""  // the input the current answers are for
     @State private var history: [ChatTurn] = []
     @State private var fixing = false
+    @State private var answering: String?  // an essay question the user is answering
+    @State private var question = ""  // essay: the question or topic
+    @State private var words = 250  // essay: about how many words
+    @State private var replyTo = ""  // email: the email being answered
     @State private var busy = false
     @State private var editing: (answer: String, text: String)?
     @State private var toast: String?
@@ -82,6 +86,25 @@ struct ChatView: View {
                 ForEach(ChatMode.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
+            if mode == .essay {
+                TextField("Essay question or topic", text: $question, axis: .vertical)
+                    .lineLimit(1...3)
+                    .padding(8)
+                    .background(.background.secondary, in: .rect(cornerRadius: 10))
+                Stepper("About \(words) words", value: $words, in: 100...650, step: 50).font(.subheadline)
+            } else if mode == .email {
+                HStack(alignment: .top) {
+                    TextField("The email you're answering (optional)", text: $replyTo, axis: .vertical)
+                        .lineLimit(1...4)
+                        .padding(8)
+                        .background(.background.secondary, in: .rect(cornerRadius: 10))
+                    PasteButton(payloadType: String.self) { strings in
+                        Task { @MainActor in replyTo = strings.joined(separator: "\n") }
+                    }
+                    .labelStyle(.iconOnly)
+                    .buttonBorderShape(.circle)
+                }
+            } else {
             HStack {
                 Menu {
                     Picker("For", selection: $audience) { ForEach(Audience.allCases) { Text($0.label).tag($0) } }
@@ -96,6 +119,7 @@ struct ChatView: View {
                 } label: {
                     Label(format.label, systemImage: format.systemImage).font(.subheadline)
                 }
+            }
             }
         }
         .padding(.horizontal)
@@ -117,6 +141,8 @@ struct ChatView: View {
         case .write: "Say what to write: \u{201C}tell her I'm 20 min late\u{201D}"
         case .rewrite: "Paste or type a draft to say it your way"
         case .reply: "Paste their message to get your reply"
+        case .email: "Say or type what the email should say; paste the one you're answering above"
+        case .essay: "Add the question above, then your notes: facts, moments, what you think. 🎙 works great here"
         }
     }
 
@@ -135,7 +161,8 @@ struct ChatView: View {
                        onLike: { Task { await like(answer, audience: audience, format: format) } },
                        onFix: { fixing = true; focused = true },
                        onEdit: { editing = (answer.text, answer.text) },
-                       onAudience: { picked in self.audience = picked; Task { await run(again: true) } })
+                       onAudience: { picked in self.audience = picked; Task { await run(again: true) } },
+                       onQuestion: { q in answering = q; fixing = true; focused = true })
         }
     }
 
@@ -145,7 +172,7 @@ struct ChatView: View {
                 HStack {
                     Label("Fixing the last answer", systemImage: "wand.and.stars").font(.caption)
                     Spacer()
-                    Button("Cancel") { fixing = false }.font(.caption)
+                    Button("Cancel") { fixing = false; answering = nil }.font(.caption)
                 }
                 .foregroundStyle(.secondary)
             }
@@ -188,11 +215,14 @@ struct ChatView: View {
 
     private var placeholder: String {
         if recorder.isRecording { return "Listening… \(recorder.seconds)s — tap ■ when done" }
-        if fixing { return "What to change? e.g. shorter, warmer, no emoji" }
+        if let answering { return "Answer: \(answering)" }
+        if fixing { return mode.isFormal ? "What to change or add?" : "What to change? e.g. shorter, warmer, no emoji" }
         switch mode {
         case .write: return "What should it say?"
         case .rewrite: return "Your draft"
         case .reply: return "Their message"
+        case .email: return "What should the email say?"
+        case .essay: return "Your notes: facts, stories, thoughts"
         }
     }
 
@@ -221,7 +251,8 @@ struct ChatView: View {
         let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
         text = ""
         if fixing, !history.isEmpty {
-            history[history.count - 1].feedback = input
+            history[history.count - 1].feedback = answering.map { "Add (answering \"\($0)\"): \(input)" } ?? input
+            answering = nil
             items.append(.input(UUID(), input))
             fixing = false
             await run(again: false)
@@ -240,9 +271,10 @@ struct ChatView: View {
         busy = true
         defer { busy = false }
         do {
-            let answer = try await SaySoAPI.chat(mode: mode, text: thread, audience: audience, format: format, history: history)
+            let answer = try await SaySoAPI.chat(mode: mode, text: thread, audience: audience, format: format, history: history,
+                                                 question: question, words: words, replyTo: replyTo)
             history.append(ChatTurn(answer: answer.text))
-            items.append(.answer(UUID(), answer, audience, format))
+            items.append(.answer(UUID(), answer, audience, mode.isFormal ? .email : format))
             if let learned = answer.learned { show("Learned: \(learned)") }
         } catch {
             items.append(.note(UUID(), error.localizedDescription))
@@ -278,6 +310,7 @@ struct ChatView: View {
         history = []
         thread = ""
         fixing = false
+        answering = nil
     }
 }
 
@@ -292,16 +325,36 @@ struct AnswerView: View {
     let onFix: () -> Void
     let onEdit: () -> Void
     let onAudience: (Audience) -> Void
+    var onQuestion: (String) -> Void = { _ in }
 
     @State private var liked = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if let subject = answer.subject {
+                Label("Subject: \(subject)", systemImage: "envelope")
+                    .font(.subheadline.weight(.semibold))
+                    .onTapGesture { UIPasteboard.general.string = subject }
+            }
             ForEach(Array((answer.parts?.isEmpty == false ? answer.parts! : [answer.text]).enumerated()), id: \.offset) { _, part in
                 Text(part)
                     .textSelection(.enabled)
                     .padding(10)
                     .background(.background.secondary, in: .rect(cornerRadius: 14))
+            }
+            if let count = answer.words, answer.outline != nil {
+                Text("\(count) words").font(.caption).foregroundStyle(.secondary)
+            }
+            if isLast, let questions = answer.questions, !questions.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Make it stronger: answer one").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    ForEach(questions, id: \.self) { q in
+                        Button { onQuestion(q) } label: {
+                            Label(q, systemImage: "questionmark.bubble").font(.footnote).multilineTextAlignment(.leading)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
             }
             if let alternatives = answer.alternatives, !alternatives.isEmpty {
                 ForEach(alternatives, id: \.self) { alternative in

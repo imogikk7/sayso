@@ -118,10 +118,11 @@ struct Style: Codable, Hashable, Identifiable {
     var profile: [String: AudienceProfile]? = nil
     var examples: [String: [String]]? = nil
     var learning: StyleLearning? = nil
+    var formal: FormalWriting? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, name, status, stage, progress, error, source, counts, scores, lora, adapterReady = "adapter_ready",
-             needs, participants, chats, me, preferences, profile, examples, learning
+             needs, participants, chats, me, preferences, profile, examples, learning, formal
     }
 
     var isReady: Bool { status == "ready" }
@@ -129,6 +130,25 @@ struct Style: Codable, Hashable, Identifiable {
 }
 
 struct StyleList: Codable { let styles: [Style] }
+
+/// The user's own formal writing attached to a style: their formal voice for official messages, emails and essays.
+struct FormalWriting: Codable, Hashable {
+    var documents: Int = 0
+    var paragraphs: Int = 0
+    var profile: FormalProfile? = nil
+}
+
+struct FormalProfile: Codable, Hashable {
+    var sentenceWords: Double? = nil
+    var paragraphWords: Double? = nil
+    var connectors: [String]? = nil
+    var openings: [String]? = nil
+    var closings: [String]? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case sentenceWords = "sentence_words", paragraphWords = "paragraph_words", connectors, openings, closings
+    }
+}
 
 /// What the style learned from the user: messages sent with the keyboard, suggestions they changed, answers they liked.
 struct StyleLearning: Codable, Hashable {
@@ -163,10 +183,12 @@ struct Upload {
 // MARK: - Chat
 
 enum ChatMode: String, CaseIterable, Identifiable {
-    case write, rewrite, reply
+    case write, rewrite, reply, email, essay
 
     var id: String { rawValue }
     var label: String { rawValue.capitalized }
+    /// Email and essay are written in the user's formal voice (their own documents), with their own fields.
+    var isFormal: Bool { self == .email || self == .essay }
 }
 
 struct ChatTurn: Codable, Hashable {
@@ -181,6 +203,10 @@ struct ChatAnswer: Codable, Hashable {
     var audience: String? = nil
     var audiences: [String]? = nil
     var learned: String? = nil
+    var subject: String? = nil  // email
+    var outline: [String]? = nil  // essay: the plan it followed
+    var questions: [String]? = nil  // essay: what to tell it to make the essay stronger
+    var words: Int? = nil
 }
 
 struct FeedbackResult: Codable { var learned: String? = nil }
@@ -253,14 +279,41 @@ enum SaySoAPI {
 
     /// history: the answers so far with the user's feedback; feedback on the last one revises it.
     static func chat(mode: ChatMode, text: String, audience: Audience, format: ReplyFormat,
-                     history: [ChatTurn] = []) async throws -> ChatAnswer {
+                     history: [ChatTurn] = [], question: String = "", words: Int = 250,
+                     replyTo: String = "") async throws -> ChatAnswer {
         struct Body: Encodable {
-            let mode, text, audience, format, style: String
+            let mode, text, audience, format, style, question: String
             let history: [ChatTurn]
+            let words: Int
+            let replyTo: String
+            enum CodingKeys: String, CodingKey {
+                case mode, text, audience, format, style, question, history, words, replyTo = "reply_to"
+            }
         }
         let body = Body(mode: mode.rawValue, text: text, audience: audience.rawValue, format: format.rawValue,
-                        style: style, history: history)
-        return try await send("chat", body: try JSONEncoder().encode(body), contentType: "application/json", timeout: 30)
+                        style: style, question: question, history: history, words: words, replyTo: replyTo)
+        return try await send("chat", body: try JSONEncoder().encode(body), contentType: "application/json",
+                              timeout: mode == .essay ? 120 : 45)
+    }
+
+    /// The user's own formal writing (files and/or pasted text) → their formal voice in this style.
+    static func addDocuments(to styleID: String, files: [Upload], text: String) async throws {
+        struct Added: Decodable { let documents: Int }
+        let boundary = "sayso-\(UUID().uuidString)"
+        var body = Data()
+        func field(_ header: String, _ content: Data) {
+            body.append(Data("--\(boundary)\r\n\(header)\r\n\r\n".utf8))
+            body.append(content)
+            body.append(Data("\r\n".utf8))
+        }
+        field("Content-Disposition: form-data; name=\"text\"", Data(text.utf8))
+        for file in files {
+            let safe = file.name.replacingOccurrences(of: "\"", with: "")
+            field("Content-Disposition: form-data; name=\"files\"; filename=\"\(safe)\"\r\nContent-Type: \(file.mimeType)", file.data)
+        }
+        body.append(Data("--\(boundary)--\r\n".utf8))
+        let _: Added = try await send("styles/\(styleID)/documents", body: body,
+                                      contentType: "multipart/form-data; boundary=\(boundary)", timeout: 120)
     }
 
     /// The user liked an answer, or wrote their own version: it becomes an example of the style (and maybe a rule).
@@ -329,17 +382,21 @@ enum SaySoAPI {
 
     /// The answers to "Which one is you?" and each chat's audience, or a new name, or a learned rule to forget.
     static func updateStyle(_ id: String, name: String? = nil, me: String? = nil, chats: [String: String]? = nil,
-                            removePreference: Int? = nil, removeLearned: String? = nil) async throws -> Style {
+                            removePreference: Int? = nil, removeLearned: String? = nil,
+                            clearDocuments: Bool = false) async throws -> Style {
         struct Body: Encodable {
             let name, me: String?
             let chats: [String: String]?
             let removePreference: Int?
             let removeLearned: String?
+            let clearDocuments: Bool
             enum CodingKeys: String, CodingKey {
-                case name, me, chats, removePreference = "remove_preference", removeLearned = "remove_learned"
+                case name, me, chats, removePreference = "remove_preference", removeLearned = "remove_learned",
+                     clearDocuments = "clear_documents"
             }
         }
-        let body = Body(name: name, me: me, chats: chats, removePreference: removePreference, removeLearned: removeLearned)
+        let body = Body(name: name, me: me, chats: chats, removePreference: removePreference, removeLearned: removeLearned,
+                        clearDocuments: clearDocuments)
         return try await send("styles/\(id)", method: "PATCH", body: try JSONEncoder().encode(body),
                               contentType: "application/json", timeout: 20)
     }
