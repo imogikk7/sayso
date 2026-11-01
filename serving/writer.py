@@ -23,6 +23,7 @@ volume, mounted so that pipeline/ modules find it at their usual data/ path.
 
 import asyncio
 import base64
+import math
 import json
 import random
 import re
@@ -30,6 +31,7 @@ import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
+
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "pipeline"), str(ROOT / "eval"), str(ROOT / "serving")]
@@ -87,6 +89,10 @@ CONTRASTS = {
 DEFAULT_CONTRASTS = ["agree", "ask_back", "joke"]
 
 META_URL = "https://api.meta.ai/v1/chat/completions"
+# If the Meta API fails (or hits a limit during the demo), Muse Spark Open answers instead (Baseten, hackathon key).
+FALLBACK_URL = "https://inference.baseten.co/v1/chat/completions"
+FALLBACK_MODEL = "meta-models/muse-spark-open-1026"
+
 REWRITE_TEMPERATURE = 0.8  # rewriting a given draft: less drift into made-up words than free writing at 1.0
 
 
@@ -151,6 +157,15 @@ LEARN_SYSTEM = """You compare a suggested chat message with the version the user
 like to write. Return JSON only: {"rule": "<text>"} — if the edit shows a general habit (length, tone, words, emoji,
 punctuation, formality), one short English instruction, at most 12 words ("Write 'ок' instead of 'хорошо'"); if it
 only changes what this one message says, an empty string. Never put names or facts from the conversation in it."""
+
+
+def grams(text):
+    """Character trigrams of the words (spelling, endings, slang) plus the words themselves."""
+    tokens = words(text)
+    joined = f" {' '.join(tokens)} "
+    found = Counter(joined[i:i + 3] for i in range(len(joined) - 2))
+    found.update(f"w:{t}" for t in tokens)
+    return found
 
 
 def clip(text, limit):
@@ -274,10 +289,39 @@ class Context:
         first = self.approved.get(audience, [])[-3:] + self.recent.get(audience, [])[-3:]
         return list(dict.fromkeys(first + picked))[:k]
 
-    def examples_for(self, audience, situation=None):
-        found = self.sample(audience, situation)
+    def examples_for(self, audience, situation=None, found=None):
+        found = self.sample(audience, situation) if found is None else found
         return ("\nSome of their real messages to " + audience + ": "
                 + " · ".join(f"«{one_message(e)}»" for e in found)) if found else ""
+
+    def nearest(self, audience, query, k=EXAMPLES):
+        """The user's messages to this audience most like `query` in words and spelling (TF-IDF over character
+        trigrams and words, computed here: nothing leaves the server)."""
+        if not hasattr(self, "_postings"):
+            docs = [grams(t) for _, t in self.pool]
+            df = Counter(g for d in docs for g in d)
+            self._idf = {g: math.log(len(docs) / n) + 1 for g, n in df.items()}
+            self._postings = defaultdict(list)
+            for i, d in enumerate(docs):
+                weights = {g: (1 + math.log(tf)) * self._idf[g] for g, tf in d.items()}
+                norm = math.sqrt(sum(w * w for w in weights.values())) or 1.0
+                for g, w in weights.items():
+                    self._postings[g].append((i, w / norm))
+        scores = defaultdict(float)
+        for g, tf in grams(query).items():
+            if g in self._idf:
+                wq = (1 + math.log(tf)) * self._idf[g]
+                for i, w in self._postings[g]:
+                    if self.pool[i][0] == audience:
+                        scores[i] += wq * w
+        return [self.pool[i][1] for i, _ in sorted(scores.items(), key=lambda kv: -kv[1])[:k]]
+
+    @property
+    def pool(self):
+        """Every distinct own message with its audience, in a fixed order (what `nearest` searches)."""
+        if not hasattr(self, "_pool"):
+            self._pool = list(dict.fromkeys((a, t) for (a, s), texts in self.examples.items() if s is None for t in texts))
+        return self._pool
 
     def cell(self, audience, situation):
         cell = self.moves.get((audience, situation), [])
@@ -297,13 +341,16 @@ class Context:
 
 
 class Writer:
-    def __init__(self, client, glimmer_url, token, tokenizer, meta_key, gpu="modal", reload=None, baseten_model=None):
+    def __init__(self, client, glimmer_url, token, tokenizer, meta_key, gpu="modal", reload=None, baseten_model=None,
+                 fallback_key=None, retrieval="local"):
         """gpu: "modal" (our vLLM on Modal, glimmer_url + its key), "baseten" (the same vLLM on Baseten: token is the
         Baseten API key, baseten_model its model id), or "off": never touch a GPU, Muse Spark writes alone."""
         self.client, self.url, self.token, self.meta_key = client, glimmer_url.rstrip("/"), token, meta_key
         self.tokenizer = tokenizer
         self.gpu = gpu
         self.baseten = baseten_model
+        self.fallback_key = fallback_key  # Muse Spark Open on Baseten, used when the Meta API fails
+        self.retrieval = retrieval  # "local" (TF-IDF here) or "random"
         self.reload = reload or (lambda: None)  # sees styles written by other containers (the build function)
         self.contexts = {}
         self.loaded = {"v2", "v4"}  # LoRAs vLLM loads at startup; a new style's is loaded on first use
@@ -415,12 +462,15 @@ class Writer:
         return ctx.stats.pick(usable, audience, situation, lexical_weight=ctx.lexical_weight)
 
     async def spark(self, system, user, key, max_tokens=3000):
-        """One Muse Spark call that returns a JSON object (one retry, then 502)."""
-        for attempt in range(2):
+        """One Muse Spark call that returns a JSON object: Muse Spark 1.3 twice, then Muse Spark Open once, then 502."""
+        tries = [(META_URL, self.meta_key, {"model": "muse-spark-1.3", "reasoning_effort": "low"})] * 2
+        if self.fallback_key:
+            tries.append((FALLBACK_URL, self.fallback_key, {"model": FALLBACK_MODEL}))
+        for url, api_key, model in tries:
             try:
                 response = await self.client.post(
-                    META_URL, timeout=30, headers={"Authorization": f"Bearer {self.meta_key}"},
-                    json={"model": "muse-spark-1.3", "reasoning_effort": "low", "max_tokens": max_tokens,
+                    url, timeout=30, headers={"Authorization": f"Bearer {api_key}"},
+                    json={**model, "max_tokens": max_tokens,
                           "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]})
                 response.raise_for_status()
                 text = response.json()["choices"][0]["message"].get("content") or ""
@@ -436,8 +486,18 @@ class Writer:
     def format_line(self, format):
         return f"\nFormat: write it {FORMATS.get(format, FORMATS['message'])}."
 
-    def examples(self, ctx, format, audience, situation=None):
-        return "" if format in FORMAL else ctx.examples_for(audience, situation)
+    async def examples(self, ctx, format, audience, situation=None, query=None):
+        """The user's real messages for this audience: their approved and newest ones first, then the ones most like
+        `query` (random without one); none for official messages and emails. Picking by similarity scored the same as
+        random examples on Nov 1 (eval/style_gain.py), but costs nothing and keeps the topic close."""
+        if format in FORMAL:
+            return ""
+        first = ctx.approved.get(audience, [])[-2:] + ctx.recent.get(audience, [])[-2:]
+        if self.retrieval == "local" and (query or "").strip():
+            nearest = ctx.nearest(audience, clean(query)[:500])
+            if nearest:
+                return ctx.examples_for(audience, found=list(dict.fromkeys(first + nearest))[:EXAMPLES])
+        return ctx.examples_for(audience, situation)
 
     async def styled(self, ctx, task, field, text, audience, situation, format="message"):
         if not await self.uses_model(ctx, format):  # no LoRA for this, or it's asleep: Muse Spark writes in the style
@@ -445,7 +505,7 @@ class Writer:
                    "compose": "Write the message the user would send for this instruction"}[task]
             label = await self.spark(STYLE_SYSTEM.format(style=ctx.style_text),
                                      f"{ask} to their {audience} ({situation}).{self.format_line(format)}"
-                                     f"{self.examples(ctx, format, audience, situation)}{VARIANTS}\n\n{clean(text)}",
+                                     f"{await self.examples(ctx, format, audience, situation, text)}{VARIANTS}\n\n{clean(text)}",
                                      "text")
             # Spark's own answer comes first; the variants are alternatives for ✨. Picking the variant closest to the
             # user's statistics matched their form no better (0.94) and their wording worse (chrF 51 → 42,
@@ -514,7 +574,8 @@ class Writer:
         ask = "Describe this chat screenshot." if image is not None else "Messages (latest last):\n" + clean(messages)
         ask += self.format_line(format)
         if audience in AUDIENCES:
-            ask += f"\nThe user says the other person is their {audience}." + self.examples(ctx, format, audience)
+            ask += (f"\nThe user says the other person is their {audience}."
+                    + await self.examples(ctx, format, audience, query=messages or instruction))
         if instruction and instruction.strip():
             ask += (f"\nThe user's own note about how to reply: \"{clean(instruction)[:300]}\". All three options "
                     "must follow it (use it as context if it is not an instruction); vary wording, tone and act.")
@@ -553,7 +614,7 @@ class Writer:
                     "reply": "Write the user's reply to these messages"}[mode]
             label = await self.spark(
                 REVISE_SYSTEM.format(style=ctx.style_text),
-                f"{task}, to their {audience}.{self.format_line(format)}{self.examples(ctx, format, audience)}\n\n"
+                f"{task}, to their {audience}.{self.format_line(format)}{await self.examples(ctx, format, audience, query=text)}\n\n"
                 f"Input:\n{clean(text)}\n\nYour last answer:\n{clean(history[-1].get('answer', ''))}\n\n"
                 f"The user's feedback so far:\n{clean(feedback)}", "text")
             out, parts = shape(clip(clean(label["text"]), FORMAT_WORDS.get(format, 40) * 2), format)

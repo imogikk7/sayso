@@ -2,23 +2,23 @@
  "pairs": 40,
  "results": {
   "generic": {
-   "form": 0.68,
-   "chrf": 39.5,
+   "form": 0.69,
+   "chrf": 41.8,
    "n": 40
   },
   "profile": {
-   "form": 0.91,
-   "chrf": 46.4,
+   "form": 0.92,
+   "chrf": 47.4,
    "n": 40
   },
   "examples": {
-   "form": 0.92,
-   "chrf": 53.3,
-   "n": 40
+   "form": 0.94,
+   "chrf": 54.0,
+   "n": 39
   },
-  "variants": {
-   "form": 0.93,
-   "chrf": 53.7,
+  "production": {
+   "form": 0.94,
+   "chrf": 53.5,
    "n": 40
   }
  }

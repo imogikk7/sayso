@@ -3,8 +3,9 @@ really wrote), written four ways, scored against the user's real messages.
 
   generic    Muse Spark, no style at all
   profile    + the user's style profile (how the API worked before Oct 31)
-  examples   + the user's real messages for that audience
-  variants   production: + asking for 4 more variants (alternatives for ✨); Spark's own answer is kept.
+  examples   + the user's real messages for that audience (random ones)
+  production + the user's messages most like the draft in words and spelling (TF-IDF, computed on our server; on
+             Nov 1 Fireworks embeddings scored the same within noise: form 0.93, chrF 53.2), and + asking for 4 more variants (alternatives for ✨); Spark's own answer is kept.
              Picking the variant closest to the user's statistics instead (best-of-5) scored form 0.94, chrF 41.5 on
              Nov 1, so production doesn't.
 
@@ -53,7 +54,7 @@ async def main(limit):
     env = dict(line.strip().split("=", 1) for line in (ROOT / ".env").open() if "=" in line and not line.startswith("#"))
     rows = held_out(limit)
     async with httpx.AsyncClient(verify=VERIFY, timeout=60) as client:
-        w = writer.Writer(client, "http://unused", "", None, env["META_API_KEY"], gpu="off")
+        w = writer.Writer(client, "http://unused", "", None, env["META_API_KEY"], gpu="off", retrieval="local")
         ctx = writer.Context("main")
         gate = asyncio.Semaphore(6)
         style = writer.STYLE_SYSTEM.format(style=ctx.style_text)
@@ -78,7 +79,7 @@ async def main(limit):
 
         results = {}
         real = [writer.one_message(r["real"]) for r in rows]
-        for how in ("generic", "profile", "examples", "variants"):
+        for how in ("generic", "profile", "examples", "production"):
             written = await asyncio.gather(*(write(r, how) for r in rows))
             pairs = [(o, t) for o, t in zip(written, real) if o]
             results[how] = {"form": similarity([o for o, _ in pairs], real),
