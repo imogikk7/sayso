@@ -19,5 +19,6 @@ Needs Node (`npx` fetches marp-cli). If Chrome isn't found, set `CHROME_PATH` to
 For a live preview run `npx @marp-team/marp-cli@4 -s docs/deck --config-file docs/deck/.marprc.yml --theme-set docs/deck/theme/sayso.css --html`.
 
 ## Numbers
-Every number comes from the repo: `eval/results/style_gain.json` (slide 5), `docs/PLAN_v4_thinking.md` and
-`eval/results/bench_v4.json` (slides 2, 6). Cost and price on slide 8 are estimates. Blind test is still TODO.
+Every number comes from the repo: `eval/results/style_gain.json` and `style_gain_open.json` (slide 6, "Results · the
+live path"), `docs/PLAN_v4_thinking.md` and `eval/results/bench_v4.json` (slides 2, 7). Cost and price on the scaling
+slide are estimates. Blind test is still TODO.
