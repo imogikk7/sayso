@@ -68,8 +68,9 @@ TRANSLATE_SYSTEM = ("You translate short neutral summaries of chat messages into
                     "other person wrote (e.g. «Спрашивает, в силе ли встреча завтра»). "
                     'Return JSON only: {"ru": "..."}')
 GENERIC_SYSTEM = "You are a helpful assistant."
-GENERIC_USER = ("Write a short casual chat reply in Russian to this situation: {summary}\n"
-                "You are replying to {who}. Return only the reply text.")
+GENERIC_USER = ("Someone ({who}) wrote to you; here is what they said, retold: {summary}\n"
+                "Write your short casual reply to them in Russian, as yourself answering them (not as them). "
+                "Return only the reply text.")
 
 
 # ---------------------------------------------------------------- config and API
@@ -166,6 +167,20 @@ class Spark:
                 self.sleep(2 * (attempt + 1))
         raise RuntimeError(f"Muse Spark failed (last status {status})")
 
+    def fair(self, summary, real):
+        """Whether the user's real reply answers this situation (a summary can describe a different message than the one
+        the user answered) and has no names or private details (the test goes to their friends)."""
+        system = ('You check one question of a blind test. Return JSON only: {"fits": true|false, "private": true|false}. '
+                  "fits: the reply plausibly answers the situation (same topic or a natural reaction to it). "
+                  "private: the reply contains a person's name, a place a friend could identify, a phone, an address "
+                  "or another private detail.")
+        try:
+            text = self.ask(system, f"Situation: {summary}\nReply: {real}", max_tokens=500)
+            label = json.loads(re.search(r"\{.*\}", text, re.S).group(0))
+            return bool(label.get("fits")) and not label.get("private", True)
+        except (RuntimeError, AttributeError, ValueError):
+            return False
+
     def translate(self, summary):
         """The neutral English summary → natural Russian, for the friends who take the test."""
         text = self.ask(TRANSLATE_SYSTEM, summary)
@@ -255,7 +270,7 @@ def balanced(pairs, rng):
     return out
 
 
-def build(n=15, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, warmup=True, log=print):
+def build(n=15, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, warmup=True, log=print, fair=False):
     rng = random.Random(seed)
     candidates = balanced([p for p in load_pairs(pairs_path) if usable(p)], rng)
     if not candidates:
@@ -276,6 +291,9 @@ def build(n=15, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, 
             break
         real = parts_of(pair["real"])
         if " ".join(real).casefold() in seen:
+            continue
+        if fair and not spark.fair(pair["summary"], " / ".join(real)):
+            log("  skipped a pair: the real reply doesn't fit the situation or has names")
             continue
         try:
             sayso = parts_of(api.reply(pair["summary"], pair["audience"]))
@@ -467,7 +485,7 @@ def main(argv=None):
     if args.command == "build":
         keys = env()
         build(args.n, args.pairs, OUT, Api(keys["SAYSO_API_URL"], keys["SAYSO_API_TOKEN"]),
-              Spark(keys["META_API_KEY"]), args.seed, not args.no_warmup)
+              Spark(keys["META_API_KEY"]), args.seed, not args.no_warmup, fair=True)
     else:
         codes = list(args.codes)
         if args.codes_file:

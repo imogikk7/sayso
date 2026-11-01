@@ -146,7 +146,7 @@ class Build(unittest.TestCase):
         self.assertEqual(len(generic), 5)
         for body in generic:  # plain prompt: no style, no examples, no profile
             user = body["messages"][1]["content"]
-            self.assertTrue(user.startswith("Write a short casual chat reply in Russian to this situation: "))
+            self.assertTrue(user.startswith("Someone (") and "as yourself answering them" in user)
             self.assertNotIn("style", user.lower())
 
         self.assertEqual(Counter(q["audience"] for q in key["questions"]),
