@@ -142,6 +142,7 @@ def api():
     POST /chat    {mode: write | rewrite | reply, text, audience, history: [{answer, feedback}]} → {text, parts,
                   alternatives, audience, audiences, learned}; feedback on the last answer revises it
     POST /feedback {audience, answer, edited?, liked?} → {learned}: the user's approved or own text becomes an example
+    POST /transcribe multipart audio (WAV) → {text}: the user's voice note, by Muse Voice Transcribe
     GET  /styles, GET /styles/{id}, POST /styles (multipart: name + files), PATCH /styles/{id} {name?, me?, chats?,
                   remove_preference?}, DELETE /styles/{id}
     GET  /latest  the last /reply options (for the keyboard panel)
@@ -326,6 +327,16 @@ def api():
             raise HTTPException(422, "mode must be write, rewrite or reply, and text can't be empty")
         return await writer.chat(writer.context(body.style), body.mode, body.text, audience_of(body.audience),
                                  format_of(body.format), [t.model_dump() for t in body.history], body.instruction)
+
+    @web.post("/transcribe")
+    async def transcribe(audio: UploadFile = File(...)):
+        """A voice note (mono 16-bit WAV, ≤ 10 MB, ≤ 10 min) → {text}; read in memory, not stored."""
+        wav = await audio.read(10 * 1024 * 1024 + 1)
+        if len(wav) > 10 * 1024 * 1024:
+            raise HTTPException(413, "the recording is larger than 10 MB")
+        if wav[:4] != b"RIFF":
+            raise HTTPException(422, "send a WAV recording")
+        return {"text": await writer.transcribe(wav)}
 
     @web.post("/learn")
     async def learn(body: LearnBody):

@@ -276,6 +276,18 @@ enum SaySoAPI {
         return try await send("feedback", body: try JSONEncoder().encode(body), contentType: "application/json", timeout: 30)
     }
 
+    /// A voice note (mono 16-bit WAV) → text, by Muse Voice Transcribe; the recording isn't kept.
+    static func transcribe(wav: Data) async throws -> String {
+        struct Transcript: Decodable { let text: String }
+        let boundary = "sayso-\(UUID().uuidString)"
+        var body = Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"voice.wav\"\r\nContent-Type: audio/wav\r\n\r\n".utf8)
+        body.append(wav)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        let result: Transcript = try await send("transcribe", body: body, contentType: "multipart/form-data; boundary=\(boundary)",
+                                                timeout: 60)
+        return result.text
+    }
+
     /// Messages the user sent with the keyboard: kept as their own examples (and edits may teach a rule).
     static func learn(_ items: [LearnItem]) async throws {
         struct Body: Encodable {

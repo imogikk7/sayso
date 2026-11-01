@@ -94,6 +94,7 @@ CONTRASTS = {
 DEFAULT_CONTRASTS = ["agree", "ask_back", "joke"]
 
 META_URL = "https://api.meta.ai/v1/chat/completions"
+TRANSCRIBE_URL = "https://api.meta.ai/v1/asr/transcribe"  # Muse Voice Transcribe: WAV in, text out
 # If the Meta API fails (or hits a limit during the demo), Muse Spark Open answers instead (Baseten, hackathon key).
 FALLBACK_URL = "https://inference.baseten.co/v1/chat/completions"
 FALLBACK_MODEL = "meta-models/muse-spark-open-1026"
@@ -674,6 +675,18 @@ class Writer:
             styles.add_learned(ctx.id, rows)
         styles.commit()
         return {"learned": len(rows), "rules": rules}
+
+    async def transcribe(self, wav):
+        """The user's voice note (mono 16-bit WAV) → text, with Muse Voice Transcribe. The audio is not kept."""
+        request = {"mode": "PUSH_TO_TALK", "model": "muse-voice-transcribe-1.0", "audioEncoding": "WAV"}
+        try:
+            response = await self.client.post(
+                TRANSCRIBE_URL, timeout=60, headers={"Authorization": f"Bearer {self.meta_key}"},
+                files={"request": (None, json.dumps(request), "application/json"), "audio": ("voice.wav", wav, "audio/wav")})
+            response.raise_for_status()
+            return clean(response.json().get("transcript") or "")
+        except Exception:
+            raise Unavailable(502, "Muse Voice Transcribe did not answer")
 
     async def feedback(self, ctx, audience, format, answer, edited=None, liked=False):
         """The user liked an answer or wrote their own version: it becomes an example; an edit may teach a rule."""

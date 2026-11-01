@@ -28,6 +28,7 @@ struct ChatView: View {
     @State private var editing: (answer: String, text: String)?
     @State private var toast: String?
     @FocusState private var focused: Bool
+    @StateObject private var recorder = VoiceRecorder()
 
     var body: some View {
         NavigationStack {
@@ -161,12 +162,24 @@ struct ChatView: View {
                     .labelStyle(.iconOnly)
                     .buttonBorderShape(.circle)
                 }
-                Button {
-                    Task { await send() }
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill").font(.system(size: 32))
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || recorder.isRecording {
+                    Button {
+                        Task { await voice() }
+                    } label: {
+                        Image(systemName: recorder.isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(recorder.isRecording ? Color.red : Color.accentColor)
+                            .symbolEffect(.pulse, isActive: recorder.isRecording)
+                    }
+                    .disabled(busy)
+                } else {
+                    Button {
+                        Task { await send() }
+                    } label: {
+                        Image(systemName: "arrow.up.circle.fill").font(.system(size: 32))
+                    }
+                    .disabled(busy)
                 }
-                .disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
         .padding(.horizontal)
@@ -174,11 +187,33 @@ struct ChatView: View {
     }
 
     private var placeholder: String {
+        if recorder.isRecording { return "Listening… \(recorder.seconds)s — tap ■ when done" }
         if fixing { return "What to change? e.g. shorter, warmer, no emoji" }
         switch mode {
         case .write: return "What should it say?"
         case .rewrite: return "Your draft"
         case .reply: return "Their message"
+        }
+    }
+
+    /// 🎙: say it, Muse Voice Transcribe writes it down, and it goes out like typed text (an instruction, a draft,
+    /// their message in Reply, or what to change while fixing).
+    private func voice() async {
+        if !recorder.isRecording {
+            if await !recorder.start() { show("Allow the microphone in Settings → SaySo") }
+            return
+        }
+        guard let wav = recorder.stop() else { return }
+        busy = true
+        do {
+            let said = try await SaySoAPI.transcribe(wav: wav)
+            busy = false
+            guard !said.isEmpty else { return show("Didn't catch that, try again") }
+            text = said
+            await send()
+        } catch {
+            busy = false
+            items.append(.note(UUID(), error.localizedDescription))
         }
     }
 
