@@ -66,7 +66,10 @@ FORMATS = {
 }
 FORMAT_WORDS = {"message": 40, "series": 50, "official": 60, "email": 200}
 CHAT_FORMATS = {"message", "series"}  # the LoRA was trained on chats: it rewrites only these
-FORMAL = {"official", "email"}  # the user's casual examples would pull these back to lowercase chat
+FORMAL = {"official", "email"}
+VARIANT_COUNT = 4
+VARIANTS = ("\nAlso put 4 other ways this user could write the same message (same meaning and facts, different wording, "
+            "length or punctuation, all within their habits) in \"variants\": [\"...\", ...] next to \"text\".")  # the user's casual examples would pull these back to lowercase chat
 
 # The three options for /reply: the user's most likely move first, then contrasting ones that fit the situation.
 CONTRASTS = {
@@ -442,10 +445,17 @@ class Writer:
                    "compose": "Write the message the user would send for this instruction"}[task]
             label = await self.spark(STYLE_SYSTEM.format(style=ctx.style_text),
                                      f"{ask} to their {audience} ({situation}).{self.format_line(format)}"
-                                     f"{self.examples(ctx, format, audience, situation)}\n\n{clean(text)}", "text")
-            out, parts = shape(clip(clean(label["text"]), FORMAT_WORDS.get(format, 40) * 2), format)
-            return {"text": out, "parts": parts, "candidates": [out], "styled": False,
-                    "audiences": audiences_of(label)}
+                                     f"{self.examples(ctx, format, audience, situation)}{VARIANTS}\n\n{clean(text)}",
+                                     "text")
+            # Spark's own answer comes first; the variants are alternatives for ✨. Picking the variant closest to the
+            # user's statistics matched their form no better (0.94) and their wording worse (chrF 51 → 42,
+            # eval/style_gain.py), so it doesn't replace the answer.
+            limit = FORMAT_WORDS.get(format, 40) * 2
+            written = [label["text"]] + [v for v in label.get("variants") or [] if isinstance(v, str)][:VARIANT_COUNT]
+            candidates = list(dict.fromkeys(shape(clip(clean(v), limit), format)[0] for v in written if clean(v)))
+            out, parts = shape(candidates[0], format)
+            return {"text": out, "parts": parts, "candidates": [out] + [c for c in candidates if c != out],
+                    "styled": False, "audiences": audiences_of(label)}
         prompt = self.prompt(audience, situation, task, field, text) + REPLY
         candidates = (await self.complete(ctx.adapter, [prompt], n=CANDIDATES + 2))[0]
         out, parts = shape(self.best(ctx, candidates, audience, situation), format)

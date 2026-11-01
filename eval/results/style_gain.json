@@ -1,0 +1,25 @@
+{
+ "pairs": 40,
+ "results": {
+  "generic": {
+   "form": 0.68,
+   "chrf": 39.5,
+   "n": 40
+  },
+  "profile": {
+   "form": 0.91,
+   "chrf": 46.4,
+   "n": 40
+  },
+  "examples": {
+   "form": 0.92,
+   "chrf": 53.3,
+   "n": 40
+  },
+  "variants": {
+   "form": 0.93,
+   "chrf": 53.7,
+   "n": 40
+  }
+ }
+}
