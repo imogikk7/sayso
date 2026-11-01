@@ -1,0 +1,161 @@
+1
+00:00:00,300 --> 00:00:04,500
+Every AI reply sounds the same.
+Polite, tidy, and nothing like you.
+
+2
+00:00:04,600 --> 00:00:09,500
+My friends would spot it in a second.
+
+3
+00:00:10,000 --> 00:00:14,500
+This is SaySo, a keyboard
+that writes the way you'd say it.
+
+4
+00:00:14,600 --> 00:00:18,500
+I type a plain draft…
+tap the sparkle…
+
+5
+00:00:18,600 --> 00:00:23,500
+and get three versions in my own voice.
+
+6
+00:00:24,000 --> 00:00:29,000
+And I don't send one long paragraph,
+I send bursts.
+
+7
+00:00:29,100 --> 00:00:34,500
+So SaySo does too: a series,
+stacked like notifications.
+
+8
+00:00:35,000 --> 00:00:40,000
+Tap, send. Next. Send.
+
+9
+00:00:40,500 --> 00:00:44,500
+Same meaning, my rhythm.
+
+10
+00:00:45,000 --> 00:00:49,000
+A friend asks for help on Saturday,
+and I can't.
+
+11
+00:00:49,100 --> 00:00:52,500
+I double-tap the back of my phone.
+
+12
+00:00:52,600 --> 00:00:56,500
+SaySo grabs the screen
+and asks who it's for.
+
+13
+00:00:56,600 --> 00:01:01,000
+I add a note:
+politely decline, I'm busy.
+
+14
+00:01:01,500 --> 00:01:07,000
+Muse Spark reads the chat,
+my own model writes the replies.
+
+15
+00:01:07,500 --> 00:01:11,000
+Pick one, paste, send.
+
+16
+00:01:11,500 --> 00:01:14,500
+I never left Telegram.
+
+17
+00:01:15,000 --> 00:01:19,000
+Where does my voice come from?
+My own chats.
+
+18
+00:01:19,100 --> 00:01:23,000
+I export one from WhatsApp
+and drop it in.
+
+19
+00:01:23,100 --> 00:01:28,000
+SaySo asks which one is me:
+it only learns from my side.
+
+20
+00:01:28,100 --> 00:01:33,000
+It reads how I react, builds my profile,
+
+21
+00:01:33,100 --> 00:01:37,500
+then tests itself on messages
+it hasn't seen.
+
+22
+00:01:38,000 --> 00:01:44,500
+Sounds like me: 78%.
+Generic AI: 41%.
+
+23
+00:01:45,000 --> 00:01:48,500
+And it keeps learning.
+
+24
+00:01:48,600 --> 00:01:52,500
+Too long? Thumbs down: "shorter."
+
+25
+00:01:52,600 --> 00:01:57,500
+It rewrites, and remembers the rule
+for next time.
+
+26
+00:01:58,000 --> 00:02:04,500
+Every message I send with SaySo's keyboard
+becomes a new example right away.
+
+27
+00:02:04,600 --> 00:02:09,500
+And I can delete any of them.
+
+28
+00:02:10,000 --> 00:02:15,000
+Under the hood: Meta's Muse Spark 1.3
+reads the chat and drafts.
+
+29
+00:02:15,100 --> 00:02:20,000
+My own LoRA on Muse Glimmer 30B
+puts it in my words,
+
+30
+00:02:20,100 --> 00:02:23,500
+guided by my style profile
+and real examples.
+
+31
+00:02:23,600 --> 00:02:29,500
+Form similarity goes from 0.67 to 0.94;
+chrF from 41 to 51.
+
+32
+00:02:30,000 --> 00:02:33,500
+Only my own messages are stored.
+
+33
+00:02:33,600 --> 00:02:39,500
+Other people's messages and screenshots
+are read in memory, then dropped.
+
+34
+00:02:40,500 --> 00:02:44,500
+SaySo.
+Your words, your voice.
+
+35
+00:02:44,600 --> 00:02:49,500
+And you always press send.
