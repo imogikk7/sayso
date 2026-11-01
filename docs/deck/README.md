@@ -1,0 +1,23 @@
+# SaySo pitch deck
+
+Marp slides for the video intro, the submission page and judge Q&A.
+
+- `sayso.md` — the slides (Marp markdown)
+- `theme/sayso.css` — the theme; **recolor by editing the variables in `:root`** at the top
+- `sayso.pdf` — exported deck
+- `img/` — put screenshots here
+
+## Screenshots
+Slide 3 has two dashed placeholders. Drop `img/keyboard.png` and `img/backtap.png` here, then in `sayso.md`
+replace each `<div class="ph">…</div>` with the image line given in the comment above it, e.g. `![h:400](img/keyboard.png)`.
+
+## Rebuild the PDF
+```bash
+docs/deck/build.sh
+```
+Needs Node (`npx` fetches marp-cli). If Chrome isn't found, set `CHROME_PATH` to a Chrome/Chromium binary.
+For a live preview run `npx @marp-team/marp-cli@4 -s docs/deck --config-file docs/deck/.marprc.yml --theme-set docs/deck/theme/sayso.css --html`.
+
+## Numbers
+Every number comes from the repo: `eval/results/style_gain.json` (slide 5), `docs/PLAN_v4_thinking.md` and
+`eval/results/bench_v4.json` (slides 2, 6). Cost and price on slide 8 are estimates. Blind test is still TODO.

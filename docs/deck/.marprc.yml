@@ -1,0 +1,5 @@
+# marp-cli config: render emoji with the system font instead of fetching Twemoji images.
+options:
+  emoji:
+    shortcode: false
+    unicode: false
