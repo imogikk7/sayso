@@ -76,7 +76,7 @@ def glimmer():
 
 api_image = (
     modal.Image.debian_slim(python_version="3.12")
-    .pip_install("fastapi[standard]", "httpx", "transformers", "jinja2")
+    .pip_install("fastapi[standard]", "httpx", "transformers", "jinja2", "pypdf")
     .env({"HF_HOME": "/cache/hf", "TRANSFORMERS_VERBOSITY": "error", "SAYSO_GPU": GPU, "SAYSO_TRAIN": TRAIN})
     # pipeline/ modules read the user's data from <repo>/data; here that is the private volume
     .run_commands("mkdir -p /root/sayso && ln -s /data /root/sayso/data")
@@ -85,6 +85,7 @@ api_image = (
     .add_local_file(REPO / "serving" / "writer.py", "/root/sayso/serving/writer.py")
     .add_local_file(REPO / "serving" / "styles.py", "/root/sayso/serving/styles.py")
     .add_local_file(REPO / "serving" / "build_style.py", "/root/sayso/serving/build_style.py")
+    .add_local_file(REPO / "serving" / "documents.py", "/root/sayso/serving/documents.py")
 )
 
 
@@ -222,6 +223,9 @@ def api():
         format: str = "message"
         instruction: str = Field("", max_length=300)
         history: list[Turn] = Field([], max_length=12)
+        question: str = Field("", max_length=1000)  # essay: the question or topic
+        words: int = Field(250, ge=50, le=900)  # essay: about how many words
+        reply_to: str = Field("", max_length=6000)  # email: the email being answered
 
     class FeedbackBody(BaseModel):
         audience: str = "friends"
@@ -243,6 +247,7 @@ def api():
     class StylePatch(BaseModel):
         name: str | None = Field(None, max_length=40)
         remove_learned: str | None = Field(None, max_length=16)
+        clear_documents: bool = False
         me: str | None = Field(None, max_length=200)
         chats: dict[str, str] | None = None
         remove_preference: int | None = None
@@ -323,10 +328,31 @@ def api():
 
     @web.post("/chat")
     async def chat(body: ChatBody):
-        if body.mode not in {"write", "rewrite", "reply"} or not body.text.strip():
-            raise HTTPException(422, "mode must be write, rewrite or reply, and text can't be empty")
+        if body.mode not in {"write", "rewrite", "reply", "email", "essay"} or not body.text.strip():
+            raise HTTPException(422, "mode must be write, rewrite, reply, email or essay, and text can't be empty")
         return await writer.chat(writer.context(body.style), body.mode, body.text, audience_of(body.audience),
-                                 format_of(body.format), [t.model_dump() for t in body.history], body.instruction)
+                                 format_of(body.format), [t.model_dump() for t in body.history], body.instruction,
+                                 body.question, body.words, body.reply_to)
+
+    @web.post("/styles/{style_id}/documents")
+    async def add_documents(style_id: str, files: list[UploadFile] = File(default=[]), text: str = Form("")):
+        """The user's own formal writing (.txt/.md/.docx/.pdf files or pasted text) → their formal voice."""
+        import documents as parse
+        style_or_404(style_id)
+        uploads, total = [], 0
+        for f in files[:30]:
+            raw = await f.read(10 * 1024 * 1024 + 1)
+            total += len(raw)
+            if total > 20 * 1024 * 1024:
+                raise HTTPException(413, "documents are larger than 20 MB")
+            uploads.append((f.filename or "document", parse.text_of(f.filename or "", raw)))
+        if text.strip():
+            uploads.append(("pasted", text[:50_000]))
+        if not any(t.strip() for _, t in uploads):
+            raise HTTPException(422, "send files or text")
+        formal = styles.add_documents(style_id, uploads)
+        data.commit()
+        return {"documents": formal["documents"], "paragraphs": formal["profile"]["paragraphs"], "profile": formal["profile"]}
 
     @web.post("/transcribe")
     async def transcribe(audio: UploadFile = File(...)):
@@ -355,6 +381,10 @@ def api():
             sid = meta["id"]
             view["preferences"] = styles.preferences(sid)
             learned, feedback = styles.learned(sid), styles.feedback(sid)
+            formal = styles.formal(sid)
+            view["formal"] = {"documents": formal.get("documents", 0),
+                              "paragraphs": (formal.get("profile") or {}).get("paragraphs", 0),
+                              "profile": formal.get("profile")}
             view["learning"] = {
                 "typed": sum(r.get("kind") == "typed" for r in learned),
                 "edited": sum(r.get("kind") == "edited" for r in learned) + sum(f.get("kind") == "edited" for f in feedback),
@@ -427,6 +457,8 @@ def api():
             styles.remove_preference(style_id, body.remove_preference)
         if body.remove_learned:
             styles.remove_learned(style_id, body.remove_learned)
+        if body.clear_documents:
+            styles.clear_documents(style_id)
         meta = styles.update(style_id, **fields) if fields else meta
         data.commit()
         return style_view(meta, full=True)

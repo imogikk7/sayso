@@ -8,6 +8,8 @@
                   feedback.jsonl     texts the user liked or wrote themselves when fixing an answer: more examples
                   learned.jsonl      messages the user typed and sent with the SaySo keyboard, and how they changed a
                                      suggestion before sending it (their own text only)
+                  documents.jsonl    paragraphs of the user's own formal writing (emails, essays) and formal.json, its
+                                     profile: their formal voice for official messages, emails and essays
 
 The main style is the author's Telegram model; its data stays where it was (data/pairs_v4, data/style_profile.json,
 adapter v4) and only its meta.json, preferences and feedback live under data/styles/main.
@@ -125,7 +127,7 @@ def delete(style_id):
 def version(style_id):
     """Changes whenever anything the writer reads for this style changes."""
     parts = []
-    for name in ("meta.json", "preferences.json", "feedback.jsonl", "learned.jsonl", "profile.json"):
+    for name in ("meta.json", "preferences.json", "feedback.jsonl", "learned.jsonl", "profile.json", "formal.json"):
         path = folder(style_id) / name
         parts.append(path.stat().st_mtime if path.exists() else 0)
     return tuple(parts)
@@ -190,3 +192,33 @@ def remove_learned(style_id, learned_id):
     kept = [r for r in rows if r.get("id") != learned_id]
     if len(kept) != len(rows):
         write_jsonl(folder(style_id) / "learned.jsonl", kept)
+
+
+def documents(style_id):
+    return read_jsonl(folder(style_id) / "documents.jsonl")
+
+
+def formal(style_id):
+    return read_json(folder(style_id) / "formal.json", {})
+
+
+def add_documents(style_id, uploads):
+    """uploads = [(name, text)] of the user's own formal writing → paragraphs appended, formal profile recomputed."""
+    import documents as parse
+    rows, ends = documents(style_id), [tuple(e) for e in formal(style_id).get("ends", [])]
+    for name, text in uploads:
+        paragraphs = parse.paragraphs(text)
+        if paragraphs:
+            rows += [{"doc": name[:80], "text": t} for t in paragraphs]
+            ends.append(parse.edges(text))
+    rows = rows[-parse.MAX_PARAGRAPHS:]
+    write_jsonl(folder(style_id) / "documents.jsonl", rows)
+    value = {"documents": len({r["doc"] for r in rows}), "ends": ends[-50:],
+             "profile": parse.profile([r["text"] for r in rows], ends)}
+    write_json(folder(style_id) / "formal.json", value)
+    return value
+
+
+def clear_documents(style_id):
+    for name in ("documents.jsonl", "formal.json"):
+        (folder(style_id) / name).unlink(missing_ok=True)

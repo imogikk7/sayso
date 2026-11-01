@@ -66,9 +66,43 @@ FORMATS = {
              "line; capitalized sentences, proper punctuation, no slang or emoji (this overrides their casual habits), "
              "but the user's own plain wording",
 }
-FORMAT_WORDS = {"message": 40, "series": 50, "official": 60, "email": 200}
+FORMATS["essay"] = ("as an essay: paragraphs separated by blank lines, first person, the user's own facts only, in their "
+                    "formal voice")
+FORMAT_WORDS = {"message": 40, "series": 50, "official": 60, "email": 200, "essay": 900}
 CHAT_FORMATS = {"message", "series"}  # the LoRA was trained on chats: it rewrites only these
-FORMAL = {"official", "email"}
+FORMAL = {"official", "email", "essay"}  # written in the user's formal voice (their own documents), not their chat one
+# Phrases that make a text read as AI-written; an essay or email that has them is rewritten once.
+CLICHES = re.compile(
+    r"в современном мире|в наше время|играет (важную|ключевую) роль|не секрет, что|неотъемлемой частью|"
+    r"в заключение хочется|данная тема|является актуальн|на сегодняшний день|широкий спектр|уникальн(ая|ый) возможност|"
+    r"\bdelve|tapestry|in today's (fast-paced )?world|plays a (crucial|vital|pivotal) role|a testament to|"
+    r"navigat(e|ing) the complexities|in conclusion,|ever-evolving|unlock (the|my) potential|embark on", re.I)
+
+EMAIL_TASK = """Write an email from the user{reply}.
+What the user wants to say (their notes, maybe dictated): {notes}
+Write it in their formal voice (below): greeting and sign-off the way they do it, plain and direct, every fact from the
+notes, nothing invented. Same language as the notes{reply_lang}.
+Return JSON only: {{"subject": "<short subject line>", "text": "<the email: greeting, paragraphs, sign-off, separated
+by blank lines>"}}."""
+
+ESSAY_TASK = """The user needs an essay.
+Question or topic: {question}
+Length: up to about {words} words.
+The user's notes (the ONLY source of facts; maybe dictated): {notes}
+First plan it as the user would (4 to 6 points), then write it: first person, paragraphs separated by blank lines, a
+concrete opening (a moment or a fact, not a general statement), every paragraph adds something new, never repeat a
+fact, never invent experiences, names, numbers or feelings that are not in the notes. If the notes are too thin for the
+length, write it shorter rather than padding, and ask what is missing. Write in the user's formal voice (below): their
+sentence length and plain wording; their linking words only where they fit naturally, never forced. Same language as
+the notes.
+Return JSON only: {{"outline": ["...", ...], "text": "<the essay>", "questions": ["<up to 3 short questions whose answers
+would make the essay stronger, in the notes' language>", ...]}}."""
+
+ESSAY_FIX = """Fix this essay: {problems}. Keep its plan, facts and voice; change only what is needed.
+Essay:
+{text}
+Return JSON only: {{"text": "<the essay>"}}."""
+
 # The input is an instruction ("tell her I'm 20 min late"), not a draft: never send it back as the message.
 COMPOSE = ("The input below is the user's instruction about what to say, not the message. Write the message itself, "
            "as the user would send it (\"напиши что буду дома в 9\" → \"буду дома в 9\"); never repeat the instruction's "
@@ -200,7 +234,7 @@ def shape(text, format="message"):
     if format == "series" and len(lines) > 1:
         parts = lines[:4]
         return "\n".join(parts), parts
-    if format == "email":
+    if format in {"email", "essay"}:
         return "\n\n".join(lines), ["\n\n".join(lines)]
     one = " ".join(lines)
     return one, [one]
@@ -272,6 +306,8 @@ class Context:
                 self.recent[row["audience"]].append(row["text"])
                 self.examples[(row["audience"], None)].append(row["text"])
         self.preferences = styles.preferences(style_id)
+        self.documents = [r["text"] for r in styles.documents(style_id)]  # the user's own formal writing
+        self.formal = styles.formal(style_id).get("profile") or {}
         text = profile_text(profile)
         audiences = [a for a in AUDIENCES if self.examples.get((a, None))]
         shown = "\n".join(f"- {a}: " + " · ".join(f"«{one_message(e)}»" for e in self.sample(a, k=4, seed=0))
@@ -321,6 +357,21 @@ class Context:
                     if self.pool[i][0] == audience:
                         scores[i] += wq * w
         return [self.pool[i][1] for i, _ in sorted(scores.items(), key=lambda kv: -kv[1])[:k]]
+
+    def formal_block(self, query=None, k=3):
+        """The user's formal voice for official messages, emails and essays: their formal profile and the paragraphs of
+        their own writing most like `query`; empty if they haven't added any."""
+        if not self.documents:
+            return ""
+        import documents as parse
+        q = grams(query or "")
+        def score(text):
+            g = grams(text)
+            return sum(min(n, g[k]) for k, n in q.items()) / (sum(g.values()) ** 0.5 or 1)
+        picked = sorted(self.documents, key=score, reverse=True)[:k] if q else self.documents[:k]
+        return ("\nThe user's own formal writing: match this voice (sentence length, linking words, how they open and "
+                "close), never its content:\n" + parse.profile_text(self.formal) + "\n"
+                + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked))
 
     @property
     def pool(self):
@@ -468,7 +519,7 @@ class Writer:
             return usable[0]
         return ctx.stats.pick(usable, audience, situation, lexical_weight=ctx.lexical_weight)
 
-    async def spark(self, system, user, key, max_tokens=3000, writes=False):
+    async def spark(self, system, user, key, max_tokens=3000, writes=False, timeout=30):
         """One Muse Spark call that returns a JSON object: Muse Spark 1.3 twice, then Muse Spark Open once, then 502.
         writes=True (text in the user's style, no image): Muse Spark Open first when the writer is "open"."""
         meta = [(META_URL, self.meta_key, {"model": "muse-spark-1.3", "reasoning_effort": "low"})] * 2
@@ -479,7 +530,7 @@ class Writer:
         for url, api_key, model in tries:
             try:
                 response = await self.client.post(
-                    url, timeout=30, headers={"Authorization": f"Bearer {api_key}"},
+                    url, timeout=timeout, headers={"Authorization": f"Bearer {api_key}"},
                     json={**model, "max_tokens": max_tokens,
                           "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]})
                 response.raise_for_status()
@@ -488,7 +539,8 @@ class Writer:
                 label = json.loads(match.group(0)) if match else {}
             except Exception:  # 429/5xx, timeout, non-JSON
                 label = {}
-            if isinstance(label, dict) and isinstance(label.get(key), str) and (label[key].strip() or key == "rule"):
+            value = label.get(key) if isinstance(label, dict) else None
+            if (isinstance(value, str) and (value.strip() or key == "rule")) or (isinstance(value, list) and value):
                 return label
             await asyncio.sleep(1)
         raise Unavailable(502, "Muse Spark did not answer")
@@ -501,7 +553,7 @@ class Writer:
         `query` (random without one); none for official messages and emails. Picking by similarity scored the same as
         random examples on Nov 1 (eval/style_gain.py), but costs nothing and keeps the topic close."""
         if format in FORMAL:
-            return ""
+            return ctx.formal_block(query)
         first = ctx.approved.get(audience, [])[-2:] + ctx.recent.get(audience, [])[-2:]
         if self.retrieval == "local" and (query or "").strip():
             nearest = ctx.nearest(audience, clean(query)[:500])
@@ -615,19 +667,28 @@ class Writer:
 
     # ---- the app's chat ----------------------------------------------------------------------------
 
-    async def chat(self, ctx, mode, text, audience, format="message", history=(), instruction=""):
-        """mode: write | rewrite | reply (text = their messages). history: earlier answers with the user's feedback
+    async def chat(self, ctx, mode, text, audience, format="message", history=(), instruction="", question="", words=0,
+                   reply_to=""):
+        """mode: write | rewrite | reply (text = their messages) | email (text = what to say, reply_to = the email being
+        answered) | essay (text = the user's notes, question, words). history: earlier answers with the user's feedback
         on each, oldest first; with feedback on the last one, the answer is revised instead."""
+        if mode in {"email", "essay"}:
+            format = mode
         if history and history[-1].get("feedback"):
             feedback = "\n".join(f"- {h['feedback']}" for h in history if h.get("feedback"))
             task = {"write": COMPOSE,
                     "rewrite": "Rewrite this draft the way the user would write it",
-                    "reply": "Write the user's reply to these messages"}[mode]
+                    "reply": "Write the user's reply to these messages",
+                    "email": "Write the user's email from these notes",
+                    "essay": f"Write the user's essay ({question or 'from these notes'}) from these notes"}[mode]
+            voice = ctx.style_text if format not in FORMAL else (
+                (ctx.formal_block(text) or "Write plainly and directly, like a real person, not like an AI.") + ctx.rules())
             label = await self.spark(
-                REVISE_SYSTEM.format(style=ctx.style_text),
+                REVISE_SYSTEM.format(style=voice),
                 f"{task}, to their {audience}.{self.format_line(format)}{await self.examples(ctx, format, audience, query=text)}\n\n"
                 f"Input:\n{clean(text)}\n\nYour last answer:\n{clean(history[-1].get('answer', ''))}\n\n"
-                f"The user's feedback so far:\n{clean(feedback)}", "text", writes=True)
+                f"The user's feedback so far:\n{clean(feedback)}", "text", writes=mode not in {"essay"},
+                max_tokens=6000 if mode == "essay" else 3000, timeout=90 if mode == "essay" else 30)
             out, parts = shape(clip(clean(label["text"]), FORMAT_WORDS.get(format, 40) * 2), format)
             rule = clean(str(label.get("rule") or ""))
             if rule:
@@ -635,6 +696,10 @@ class Writer:
                 styles.commit()
             return {"text": out, "parts": parts, "alternatives": [], "audience": audience, "audiences": [audience],
                     "learned": rule or None}
+        if mode == "email":
+            return await self.email(ctx, text, reply_to)
+        if mode == "essay":
+            return await self.essay(ctx, question, text, words or 250)
         if mode == "reply":
             context, options = await self.read(ctx, messages=text, audience=audience, instruction=instruction,
                                                format=format)
@@ -647,6 +712,51 @@ class Writer:
         return {"text": result["text"], "parts": result["parts"],
                 "alternatives": [c for c in result["candidates"] if c != result["text"]][:2],
                 "audience": audience, "audiences": result["audiences"], "learned": None}
+
+    def formal_system(self, ctx, query):
+        return (STYLE_SYSTEM.split("Return JSON only")[0].format(style="")
+                + "\n" + (ctx.formal_block(query) or "The user hasn't added formal writing yet: write plainly and "
+                                                     "directly, like a real person, not like an AI.") + ctx.rules())
+
+    async def email(self, ctx, notes, reply_to=""):
+        reply = f", answering this email:\n{clean(reply_to)[:3000]}\n" if reply_to.strip() else ""
+        label = await self.spark(self.formal_system(ctx, f"{reply_to} {notes}"),
+                                 EMAIL_TASK.format(reply=reply, notes=clean(notes),
+                                                   reply_lang=" (or of the email being answered)" if reply else ""),
+                                 "text", writes=True, timeout=60)
+        text, parts = shape(clip(clean(label["text"]), FORMAT_WORDS["email"] * 2), "email")
+        if CLICHES.search(text):
+            label = await self.spark(self.formal_system(ctx, notes), ESSAY_FIX.format(
+                problems="remove phrases that sound AI-written: " + ", ".join(sorted({m.group(0) for m in CLICHES.finditer(text)})),
+                text=text), "text", timeout=60)
+            text, parts = shape(clean(label["text"]), "email")
+        return {"text": text, "parts": parts, "subject": clean(str(label.get("subject") or "")) or None,
+                "alternatives": [], "audience": "elder_informal", "audiences": ["elder_informal"], "learned": None}
+
+    async def essay(self, ctx, question, notes, words=250):
+        """Plan from the user's own notes, write in their formal voice, then check length and AI clichés (one fix)."""
+        words = max(80, min(int(words), 900))
+        system = self.formal_system(ctx, f"{question} {notes}")
+        args = {"question": clean(question) or "(none given)", "notes": clean(notes)[:4000], "words": words}
+        label = await self.spark(system, ESSAY_TASK.format(**args), "text", max_tokens=6000, timeout=90)
+        outline = [clean(str(point)) for point in label.get("outline") or [] if clean(str(point))][:8]
+        questions = [clean(str(q)) for q in label.get("questions") or [] if clean(str(q))][:3]
+        text = clean(label["text"])
+        problems = []
+        count = len(text.split())
+        if count > words * 1.15:  # shorter is allowed: thin notes make a shorter essay, not a padded one
+            problems.append(f"it has {count} words, cut it to about {words} without losing facts")
+        found = sorted({m.group(0) for m in CLICHES.finditer(text)})
+        if found:
+            problems.append("remove phrases that sound AI-written: " + ", ".join(found))
+        if problems:
+            fixed = await self.spark(system, ESSAY_FIX.format(problems="; ".join(problems), text=text), "text",
+                                     max_tokens=6000, timeout=90)
+            text = clean(fixed["text"])
+        text, parts = shape(text, "essay")
+        return {"text": text, "parts": parts, "outline": outline, "questions": questions, "words": len(text.split()),
+                "cliches": sorted({m.group(0) for m in CLICHES.finditer(text)}), "alternatives": [],
+                "audience": "elder_informal", "audiences": ["elder_informal"], "learned": None}
 
     async def learn(self, ctx, items):
         """What the user sent with the SaySo keyboard: [{audience, text, suggested?}]. Kept as their own messages

@@ -123,6 +123,47 @@ class BuildStyle(unittest.TestCase):
         self.assertEqual(styles.meta(style_id)["status"], "failed")
 
 
+class FormalWriting(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.saved = styles.DATA, styles.STYLES
+        styles.DATA = Path(self.tmp.name)
+        styles.STYLES = styles.DATA / "styles"
+
+    def tearDown(self):
+        styles.DATA, styles.STYLES = self.saved
+        self.tmp.cleanup()
+
+    def test_documents_profile_and_block(self):
+        import documents
+        text = (ROOT / "tests" / "fixtures" / "formal_fake.txt").read_text()
+        self.assertEqual(len(documents.paragraphs(text)), 2)  # greeting and sign-off are too short to keep
+        meta = styles.create("Formal")
+        formal = styles.add_documents(meta["id"], [("letter.txt", text)])
+        self.assertEqual(formal["documents"], 1)
+        self.assertIn("кроме того", formal["profile"]["connectors"])
+        self.assertEqual(formal["profile"]["openings"], ["Здравствуйте, Анна Сергеевна"])
+        ctx = writer.Context(meta["id"])
+        block = ctx.formal_block("хочу перенести сдачу курсовой")
+        self.assertIn("курсов", block)
+        self.assertIn("linking words they use", block)
+        styles.clear_documents(meta["id"])
+        self.assertEqual(writer.Context(meta["id"]).formal_block("x"), "")
+
+    def test_docx(self):
+        import io, zipfile, documents
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("word/document.xml", "<w:p><w:r><w:t>Первый абзац достаточно длинный, чтобы его оставить.</w:t></w:r></w:p>"
+                                                  "<w:p><w:r><w:t>Второй абзац тоже длинный и вполне содержательный.</w:t></w:r></w:p>")
+        text = documents.text_of("essay.docx", buffer.getvalue())
+        self.assertIn("Первый абзац", text)
+
+    def test_cliches(self):
+        self.assertTrue(writer.CLICHES.search("В современном мире технологии играют ключевую роль"))
+        self.assertFalse(writer.CLICHES.search("Я закончил второй раздел курсовой"))
+
+
 class Helpers(unittest.TestCase):
     def test_merge_frames(self):
         a = [{"side": "them", "text": "привет"}, {"side": "me", "text": "го"}, {"side": "them", "text": "в 8?"}]
