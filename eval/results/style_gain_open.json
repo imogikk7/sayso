@@ -1,0 +1,10 @@
+{
+ "pairs": 40,
+ "results": {
+  "production": {
+   "form": 0.93,
+   "chrf": 47.5,
+   "n": 40
+  }
+ }
+}

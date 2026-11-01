@@ -33,6 +33,7 @@ import writer  # noqa: E402
 from build_style import similarity  # noqa: E402
 from metrics import chrf  # noqa: E402
 
+WRITER = "meta"  # --writer open: Muse Spark Open (Baseten) writes first
 GENERIC = 'Rewrite this draft as a casual chat message in the language of the draft. Return JSON only: {"text": "<message>"}.'
 
 try:  # python.org builds on macOS ship without root certificates
@@ -54,7 +55,8 @@ async def main(limit):
     env = dict(line.strip().split("=", 1) for line in (ROOT / ".env").open() if "=" in line and not line.startswith("#"))
     rows = held_out(limit)
     async with httpx.AsyncClient(verify=VERIFY, timeout=60) as client:
-        w = writer.Writer(client, "http://unused", "", None, env["META_API_KEY"], gpu="off", retrieval="local")
+        w = writer.Writer(client, "http://unused", "", None, env["META_API_KEY"], gpu="off", retrieval="local",
+                          fallback_key=env.get("BASETEN_API_KEY"), writer=WRITER)
         ctx = writer.Context("main")
         gate = asyncio.Semaphore(6)
         style = writer.STYLE_SYSTEM.format(style=ctx.style_text)
@@ -79,13 +81,13 @@ async def main(limit):
 
         results = {}
         real = [writer.one_message(r["real"]) for r in rows]
-        for how in ("generic", "profile", "examples", "production"):
+        for how in ONLY:
             written = await asyncio.gather(*(write(r, how) for r in rows))
             pairs = [(o, t) for o, t in zip(written, real) if o]
             results[how] = {"form": similarity([o for o, _ in pairs], real),
                             "chrf": round(statistics.mean(chrf(o, t) for o, t in pairs), 1), "n": len(pairs)}
             print(f"{how:<10} form {results[how]['form']:.2f}   chrF {results[how]['chrf']:.1f}   (n={len(pairs)})")
-    out = ROOT / "eval" / "results" / "style_gain.json"
+    out = ROOT / "eval" / "results" / ("style_gain.json" if WRITER == "meta" else f"style_gain_{WRITER}.json")
     out.write_text(json.dumps({"pairs": len(rows), "results": results}, indent=1))
     print("→", out.relative_to(ROOT))
 
@@ -93,4 +95,8 @@ async def main(limit):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=40)
-    asyncio.run(main(parser.parse_args().limit))
+    parser.add_argument("--writer", choices=["meta", "open"], default="meta")
+    parser.add_argument("--only", nargs="*", default=["generic", "profile", "examples", "production"])
+    args = parser.parse_args()
+    WRITER, ONLY = args.writer, args.only
+    asyncio.run(main(args.limit))

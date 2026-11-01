@@ -69,6 +69,11 @@ FORMATS = {
 FORMAT_WORDS = {"message": 40, "series": 50, "official": 60, "email": 200}
 CHAT_FORMATS = {"message", "series"}  # the LoRA was trained on chats: it rewrites only these
 FORMAL = {"official", "email"}
+# The input is an instruction ("tell her I'm 20 min late"), not a draft: never send it back as the message.
+COMPOSE = ("The input below is the user's instruction about what to say, not the message. Write the message itself, "
+           "as the user would send it (\"напиши что буду дома в 9\" → \"буду дома в 9\"); never repeat the instruction's "
+           "wording like \"скажи\" / \"напиши\" / \"tell her\". Write it")
+ECHO = re.compile(r"^\s*(скажи|напиши|спроси|ответь|предложи|передай|tell|write|ask|say)\b", re.I)
 VARIANT_COUNT = 4
 VARIANTS = ("\nAlso put 4 other ways this user could write the same message (same meaning and facts, different wording, "
             "length or punctuation, all within their habits) in \"variants\": [\"...\", ...] next to \"text\".")  # the user's casual examples would pull these back to lowercase chat
@@ -342,7 +347,7 @@ class Context:
 
 class Writer:
     def __init__(self, client, glimmer_url, token, tokenizer, meta_key, gpu="modal", reload=None, baseten_model=None,
-                 fallback_key=None, retrieval="local"):
+                 fallback_key=None, retrieval="local", writer="meta"):
         """gpu: "modal" (our vLLM on Modal, glimmer_url + its key), "baseten" (the same vLLM on Baseten: token is the
         Baseten API key, baseten_model its model id), or "off": never touch a GPU, Muse Spark writes alone."""
         self.client, self.url, self.token, self.meta_key = client, glimmer_url.rstrip("/"), token, meta_key
@@ -351,6 +356,7 @@ class Writer:
         self.baseten = baseten_model
         self.fallback_key = fallback_key  # Muse Spark Open on Baseten, used when the Meta API fails
         self.retrieval = retrieval  # "local" (TF-IDF here) or "random"
+        self.writer = writer  # who writes text: "meta" (Muse Spark 1.3) or "open" (Muse Spark Open first)
         self.reload = reload or (lambda: None)  # sees styles written by other containers (the build function)
         self.contexts = {}
         self.loaded = {"v2", "v4"}  # LoRAs vLLM loads at startup; a new style's is loaded on first use
@@ -461,11 +467,14 @@ class Writer:
             return usable[0]
         return ctx.stats.pick(usable, audience, situation, lexical_weight=ctx.lexical_weight)
 
-    async def spark(self, system, user, key, max_tokens=3000):
-        """One Muse Spark call that returns a JSON object: Muse Spark 1.3 twice, then Muse Spark Open once, then 502."""
-        tries = [(META_URL, self.meta_key, {"model": "muse-spark-1.3", "reasoning_effort": "low"})] * 2
-        if self.fallback_key:
-            tries.append((FALLBACK_URL, self.fallback_key, {"model": FALLBACK_MODEL}))
+    async def spark(self, system, user, key, max_tokens=3000, writes=False):
+        """One Muse Spark call that returns a JSON object: Muse Spark 1.3 twice, then Muse Spark Open once, then 502.
+        writes=True (text in the user's style, no image): Muse Spark Open first when the writer is "open"."""
+        meta = [(META_URL, self.meta_key, {"model": "muse-spark-1.3", "reasoning_effort": "low"})] * 2
+        # Spark Open always reasons; "low" keeps a short thought (2.7 s instead of 5.5 s, a fifth of the tokens).
+        open_ = ([(FALLBACK_URL, self.fallback_key, {"model": FALLBACK_MODEL, "reasoning_effort": "low"})]
+                 if self.fallback_key else [])
+        tries = open_ + meta if writes and self.writer == "open" else meta + open_
         for url, api_key, model in tries:
             try:
                 response = await self.client.post(
@@ -502,11 +511,12 @@ class Writer:
     async def styled(self, ctx, task, field, text, audience, situation, format="message"):
         if not await self.uses_model(ctx, format):  # no LoRA for this, or it's asleep: Muse Spark writes in the style
             ask = {"rewrite": "Rewrite this draft the way the user would write it",
-                   "compose": "Write the message the user would send for this instruction"}[task]
-            label = await self.spark(STYLE_SYSTEM.format(style=ctx.style_text),
-                                     f"{ask} to their {audience} ({situation}).{self.format_line(format)}"
-                                     f"{await self.examples(ctx, format, audience, situation, text)}{VARIANTS}\n\n{clean(text)}",
-                                     "text")
+                   "compose": COMPOSE}[task]
+            prompt = (f"{ask} to their {audience} ({situation}).{self.format_line(format)}"
+                      f"{await self.examples(ctx, format, audience, situation, text)}{VARIANTS}\n\n{clean(text)}")
+            label = await self.spark(STYLE_SYSTEM.format(style=ctx.style_text), prompt, "text", writes=True)
+            if task == "compose" and ECHO.match(label["text"]):  # sent the instruction back: Muse Spark 1.3 writes it
+                label = await self.spark(STYLE_SYSTEM.format(style=ctx.style_text), prompt, "text")
             # Spark's own answer comes first; the variants are alternatives for ✨. Picking the variant closest to the
             # user's statistics matched their form no better (0.94) and their wording worse (chrF 51 → 42,
             # eval/style_gain.py), so it doesn't replace the answer.
@@ -609,14 +619,14 @@ class Writer:
         on each, oldest first; with feedback on the last one, the answer is revised instead."""
         if history and history[-1].get("feedback"):
             feedback = "\n".join(f"- {h['feedback']}" for h in history if h.get("feedback"))
-            task = {"write": "Write the message the user would send for this instruction",
+            task = {"write": COMPOSE,
                     "rewrite": "Rewrite this draft the way the user would write it",
                     "reply": "Write the user's reply to these messages"}[mode]
             label = await self.spark(
                 REVISE_SYSTEM.format(style=ctx.style_text),
                 f"{task}, to their {audience}.{self.format_line(format)}{await self.examples(ctx, format, audience, query=text)}\n\n"
                 f"Input:\n{clean(text)}\n\nYour last answer:\n{clean(history[-1].get('answer', ''))}\n\n"
-                f"The user's feedback so far:\n{clean(feedback)}", "text")
+                f"The user's feedback so far:\n{clean(feedback)}", "text", writes=True)
             out, parts = shape(clip(clean(label["text"]), FORMAT_WORDS.get(format, 40) * 2), format)
             rule = clean(str(label.get("rule") or ""))
             if rule:

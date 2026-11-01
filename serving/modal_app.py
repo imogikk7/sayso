@@ -179,7 +179,8 @@ def api():
     baseten = GPU == "baseten"  # the user's model on Baseten (serving/baseten), key in the `sayso-baseten` secret
     writer = Writer(client, glimmer.get_web_url(), os.environ["BASETEN_API_KEY"] if baseten else os.environ["GLIMMER_KEY"],
                     AutoTokenizer.from_pretrained(MODEL), os.environ["META_API_KEY"], gpu=GPU, reload=data.reload,
-                    baseten_model=os.environ.get("BASETEN_MODEL_ID"), fallback_key=os.environ.get("BASETEN_API_KEY"))
+                    baseten_model=os.environ.get("BASETEN_MODEL_ID"), fallback_key=os.environ.get("BASETEN_API_KEY"),
+                    writer=os.environ.get("SAYSO_WRITER", "open"))  # Muse Spark Open writes, Muse Spark 1.3 reads
     max_upload = 50 * 1024 * 1024
     max_image = 4 * 1024 * 1024
 
