@@ -117,8 +117,17 @@ Return JSON only: {{"text": "<the essay>"}}."""
 # The input is an instruction ("tell her I'm 20 min late"), not a draft: never send it back as the message.
 COMPOSE = ("The input below is the user's instruction about what to say, not the message. Write the message itself, "
            "as the user would send it (\"напиши что буду дома в 9\" → \"буду дома в 9\"); never repeat the instruction's "
-           "wording like \"скажи\" / \"напиши\" / \"tell her\". Write it")
+           "wording like \"скажи\" / \"напиши\" / \"tell her\". When it names who it's for (\"tell Mira I'm 20 min "
+           "late\"), the message goes to that person (\"sorry, running 20 min late\"), it never says \"tell Mira\". Write it")
 ECHO = re.compile(r"^\s*(скажи|напиши|спроси|ответь|предложи|передай|tell|write|ask|say)\b", re.I)
+
+
+def echoes(message, instruction):
+    """The message sends the instruction back ("yo tell mira im late") instead of being the message itself."""
+    if ECHO.match(message):
+        return True
+    head = " ".join(clean(instruction).casefold().split()[:2])
+    return bool(ECHO.match(head)) and head in clean(message).casefold()
 VARIANT_COUNT = 4
 VARIANTS = ("\nAlso put 4 other ways this user could write the same message (same meaning and facts, different wording, "
             "length or punctuation, all within their habits) in \"variants\": [\"...\", ...] next to \"text\".")  # the user's casual examples would pull these back to lowercase chat
@@ -586,7 +595,7 @@ class Writer:
             prompt = (f"{ask} to their {audience} ({situation}).{self.format_line(format)}"
                       f"{await self.examples(ctx, format, audience, situation, text)}{VARIANTS}\n\n{clean(text)}")
             label = await self.spark(STYLE_SYSTEM.format(style=ctx.style_text), prompt, "text", writes=True)
-            if task == "compose" and ECHO.match(label["text"]):  # sent the instruction back: Muse Spark 1.3 writes it
+            if task == "compose" and echoes(label["text"], text):  # sent the instruction back: Muse Spark 1.3 writes it
                 label = await self.spark(STYLE_SYSTEM.format(style=ctx.style_text), prompt, "text")
             # Spark's own answer comes first; the variants are alternatives for ✨. Picking the variant closest to the
             # user's statistics matched their form no better (0.94) and their wording worse (chrF 51 → 42,
@@ -594,6 +603,8 @@ class Writer:
             limit = FORMAT_WORDS.get(format, 40) * 2
             variants = label.get("variants") if isinstance(label.get("variants"), list) else []
             written = [label["text"]] + [v for v in variants if isinstance(v, str)][:VARIANT_COUNT]
+            if task == "compose":  # drop the ones that still repeat the instruction, unless that's all there is
+                written = [w for w in written if not echoes(w, text)] or written
             candidates = list(dict.fromkeys(shape(clip(clean(v), limit), format)[0] for v in written if clean(v)))
             if not candidates:  # only template tokens or blanks came back
                 raise Unavailable(502, "Muse Spark gave an empty answer, try again")

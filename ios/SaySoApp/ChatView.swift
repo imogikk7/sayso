@@ -710,9 +710,10 @@ struct AnswerView: View {
     var onCopySubject: (String) -> Void = { UIPasteboard.general.string = $0 }
 
     @State private var liked = false
+    @State private var copied: String?
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
             Avatar()
             content
             Spacer(minLength: 24)
@@ -756,20 +757,37 @@ struct AnswerView: View {
                 }
             }
             if let alternatives = answer.alternatives, !alternatives.isEmpty {
+                Text("Or say it like this").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.leading, 4)
                 ForEach(alternatives, id: \.self) { alternative in
-                    Text(alternative).font(.footnote).foregroundStyle(.secondary)
-                        .padding(.horizontal, 10)
-                        .onTapGesture { UIPasteboard.general.string = alternative }
+                    Button {
+                        UIPasteboard.general.string = alternative
+                        withAnimation { copied = alternative }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(alternative).font(.subheadline).multilineTextAlignment(.leading)
+                            Image(systemName: copied == alternative ? "checkmark" : "doc.on.doc").font(.caption2)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .foregroundStyle(.primary)
+                        .background(Color(.tertiarySystemBackground).opacity(0.6), in: BubbleShape(mine: false))
+                        .overlay(BubbleShape(mine: false).stroke(Color.accentColor.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            HStack(spacing: 16) {
-                Button(action: onCopy) { Image(systemName: "doc.on.doc") }
-                Button { liked = true; onLike() } label: { Image(systemName: liked ? "hand.thumbsup.fill" : "hand.thumbsup") }
-                if isLast {
-                    Button(action: onFix) { Image(systemName: "hand.thumbsdown") }
-                    Button(action: onEdit) { Image(systemName: "pencil") }
+            HStack(spacing: 8) {
+                HStack(spacing: 18) {
+                    Button(action: onCopy) { Image(systemName: "doc.on.doc") }
+                    Button { liked = true; onLike() } label: {
+                        Image(systemName: liked ? "hand.thumbsup.fill" : "hand.thumbsup").foregroundStyle(liked ? Color.accentColor : Color.secondary)
+                    }
+                    if isLast {
+                        Button(action: onFix) { Image(systemName: "hand.thumbsdown") }
+                        Button(action: onEdit) { Image(systemName: "pencil") }
+                    }
                 }
-                Spacer()
+                .padding(.horizontal, 14).padding(.vertical, 7)
+                .background(.regularMaterial, in: .capsule)
                 if isLast, let suggestions = answer.audiences?.compactMap(Audience.init(rawValue:)), suggestions.count > 1 {
                     Menu {
                         ForEach(suggestions) { suggestion in
@@ -778,14 +796,13 @@ struct AnswerView: View {
                             }
                         }
                     } label: {
-                        Label("AI: \(suggestions.first!.label)", systemImage: "sparkles").font(.caption)
+                        MenuPill(title: "For \(audience.label)?", icon: "sparkles")
                     }
                 }
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
             .font(.subheadline)
-            .padding(.horizontal, 4)
         }
     }
 }
