@@ -10,7 +10,7 @@ SCALE = 4
 big = im.resize((im.width * SCALE, im.height * SCALE), Image.LANCZOS)
 a = np.asarray(big).astype(int)
 r, g, b, alpha = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
-blue = (b - r > 50) & (alpha > 110)
+blue = (alpha > 40) & (((b - r) > 30) | ((r + g + b >= 300) & ((b - r) > 6)))  # semi-transparent brush; grey letter edges stay out
 dark = (alpha > 128) & ~blue & (r + g + b < 300)
 
 def smooth(mask):

@@ -182,15 +182,51 @@ struct PrimaryButtonStyle: ButtonStyle {
     }
 }
 
-/// Splash: the logo on the soft gradient, then onboarding the first time.
+/// Splash: "SAY" lands, then "So" is drawn across like the brush stroke, on a breathing blue glow.
 struct SplashView: View {
+    @State private var glow = false
+
     var body: some View {
         ZStack {
             Theme.backdrop
-            VStack(spacing: 18) {
-                LogoView().frame(width: 230)
-                Text("Your writing. Our match.").font(.footnote).foregroundStyle(.secondary)
-            }
+            Circle()
+                .fill(RadialGradient(colors: [Theme.glow.opacity(0.55), .clear], center: .center, startRadius: 0, endRadius: 220))
+                .frame(width: 440, height: 440)
+                .scaleEffect(glow ? 1.15 : 0.8)
+                .opacity(glow ? 1 : 0.4)
+            AnimatedLogo().frame(width: 250)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) { glow = true }
+        }
+    }
+}
+
+/// The logo, written in: "SAY" pops in, then the "So" stroke is revealed from its tail to its end.
+struct AnimatedLogo: View {
+    @State private var landed = false
+    @State private var drawn: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            Image("LogoSay").resizable().scaledToFit().foregroundStyle(.primary)
+                .opacity(landed ? 1 : 0)
+                .scaleEffect(landed ? 1 : 1.25)
+                .blur(radius: landed ? 0 : 6)
+            Image("LogoSo").resizable().scaledToFit().foregroundStyle(Theme.stroke)
+                .mask(alignment: .leading) {
+                    GeometryReader { geo in
+                        LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.85),
+                                               .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: geo.size.width * drawn * 1.2)
+                    }
+                }
+                .shadow(color: Color.accentColor.opacity(drawn > 0.9 ? 0.45 : 0), radius: 12)
+        }
+        .accessibilityLabel("SaySo")
+        .onAppear {
+            withAnimation(.spring(duration: 0.45, bounce: 0.35)) { landed = true }
+            withAnimation(.easeInOut(duration: 0.75).delay(0.35)) { drawn = 1 }
         }
     }
 }

@@ -33,7 +33,7 @@ struct RootView: View {
             }
         }
         .task {
-            try? await Task.sleep(for: .seconds(1.2))
+            try? await Task.sleep(for: .seconds(1.8))
             withAnimation(.easeOut(duration: 0.4)) { splash = false }
         }
     }

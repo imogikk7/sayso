@@ -1,9 +1,12 @@
 import Foundation
 
-/// The last screenshot's replies, shown in the app. The summary of the other person's messages is not kept.
+/// The last screenshot's replies, from the Back Tap shortcut: shown in the app and in the keyboard, so they can be
+/// inserted even when the clipboard didn't take them. Kept in the App Group; the summary of the other person's
+/// messages is not kept.
 enum ReplyStore {
-    private static let defaults = UserDefaults.standard
+    private static let defaults = SharedStore.defaults
     private static let latestKey = "latestReply"
+    private static let savedKey = "latestReplyAt"
 
     static var latest: ReplyResponse? {
         get { defaults.data(forKey: latestKey).flatMap { try? JSONDecoder().decode(ReplyResponse.self, from: $0) } }
@@ -13,6 +16,14 @@ enum ReplyStore {
                               replies: $0.replies)
             }
             defaults.set(try? JSONEncoder().encode(kept), forKey: latestKey)
+            defaults.set(Date().timeIntervalSince1970, forKey: savedKey)
         }
+    }
+
+    /// The replies if the shortcut made them in the last few minutes (the keyboard offers only fresh ones).
+    static func fresh(within seconds: TimeInterval = 600) -> [String] {
+        let saved = defaults.double(forKey: savedKey)
+        guard saved > 0, Date().timeIntervalSince1970 - saved < seconds else { return [] }
+        return latest?.replies.map(\.text) ?? []
     }
 }
