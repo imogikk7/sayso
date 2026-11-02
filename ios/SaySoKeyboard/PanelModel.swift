@@ -84,10 +84,23 @@ final class PanelModel: ObservableObject {
         if !settings.audiences.contains(audience), let first = settings.audiences.first { audience = first }
         if !settings.formats.contains(format), let first = settings.formats.first { format = first }
         mode = settings.startsWithLetters ? .letters : .panel
+        checkShortcutReplies()
         returnLabel = Self.label(for: proxy?.returnKeyType)
         lastText = proxy?.documentContextBeforeInput ?? ""
         readDraft()
         autoShift()
+    }
+
+    /// Replies the Back Tap shortcut just made come up here, once: a tap puts one in the chat (the shortcut can't
+    /// paste, and iOS drops its clipboard writes while SaySo runs in the background). Checked on open and every
+    /// couple of seconds while the keyboard is up, since the shortcut runs over it.
+    func checkShortcutReplies() {
+        guard hasFullAccess, !busy, options.isEmpty, let latest = ReplyStore.takeFresh() else { return }
+        tab = .replies
+        if let audience = Audience(rawValue: latest.context.audience) { self.audience = audience }
+        options = latest.replies.map { PanelOption(label: $0.intent, text: $0.text, parts: $0.parts ?? []) }
+        message = "Replies from your screenshot. Tap one to put it in the chat."
+        haptic.impactOccurred()
     }
 
     /// The text in the field before the cursor is the user's draft (or instruction).

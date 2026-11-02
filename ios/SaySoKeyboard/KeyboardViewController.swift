@@ -5,6 +5,7 @@ import UIKit
 /// another keyboard, write from an instruction, replies from the last screenshot or copied messages).
 final class KeyboardViewController: UIInputViewController {
     private lazy var model = PanelModel(controller: self)
+    private var watch: Timer?  // picks up the Back Tap shortcut's replies while the keyboard is up
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,6 +30,10 @@ final class KeyboardViewController: UIInputViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         model.appear(fullAccess: hasFullAccess, needsGlobe: needsInputModeSwitchKey)
+        watch?.invalidate()
+        watch = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.model.checkShortcutReplies() }
+        }
     }
 
     override func textDidChange(_ textInput: UITextInput?) {
@@ -37,6 +42,7 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        watch?.invalidate()
         model.flush()
     }
 }

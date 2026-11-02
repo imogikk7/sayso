@@ -13,12 +13,15 @@ r, g, b, alpha = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
 blue = (alpha > 40) & (((b - r) > 30) | ((r + g + b >= 300) & ((b - r) > 6)))  # semi-transparent brush; grey letter edges stay out
 dark = (alpha > 128) & ~blue & (r + g + b < 300)
 
-def smooth(mask):
-    img = Image.fromarray((mask * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(2))
-    return np.asarray(img) > 127
+def smooth(mask, close=0, blur=2):
+    """close: fills holes and nicks up to about that size (in 4x pixels) before the edges are smoothed."""
+    img = Image.fromarray((mask * 255).astype(np.uint8))
+    if close:
+        img = img.filter(ImageFilter.MaxFilter(close)).filter(ImageFilter.MinFilter(close))
+    return np.asarray(img.filter(ImageFilter.GaussianBlur(blur))) > 127
 
-def svg(mask, name):
-    curves = potrace.Bitmap(~smooth(mask)).trace(turdsize=40, alphamax=1.0, opticurve=True, opttolerance=0.3)
+def svg(mask, name, close=0, blur=2):
+    curves = potrace.Bitmap(~smooth(mask, close, blur)).trace(turdsize=200, alphamax=1.1, opticurve=True, opttolerance=0.6)
     d = []
     f = lambda p: f"{p.x / SCALE:.2f} {p.y / SCALE:.2f}"
     for c in curves:
@@ -34,4 +37,4 @@ def svg(mask, name):
     print(name, len(curves), "curves", len(path), "chars")
 
 svg(dark, "logo-say")
-svg(blue, "logo-so")
+svg(blue, "logo-so-trace", close=21, blur=7)

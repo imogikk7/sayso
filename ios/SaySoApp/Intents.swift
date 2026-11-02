@@ -66,12 +66,14 @@ struct ReplyFromScreenshotIntent: AppIntent {
         if let first = replies.first {
             await MainActor.run { UIPasteboard.general.string = first }
         }
-        let dialog: IntentDialog = replies.isEmpty ? "No reply this time. Try again with a note." : "Copied the first one. Paste it in the chat."
+        let dialog: IntentDialog = replies.isEmpty
+            ? "No reply this time. Try again with a note."
+            : "Switch to the SaySo keyboard: your replies are there, tap one to put it in the chat."
         return .result(value: replies, dialog: dialog, view: RepliesSnippet(replies: replies))
     }
 }
 
-/// The replies, shown inside the shortcut: the first one is already on the clipboard.
+/// The replies, shown inside the shortcut; the SaySo keyboard offers the same ones to insert with a tap.
 struct RepliesSnippet: View {
     let replies: [String]
 
@@ -79,7 +81,7 @@ struct RepliesSnippet: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(replies.enumerated()), id: \.offset) { index, reply in
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: index == 0 ? "doc.on.clipboard.fill" : "bubble.left")
+                    Image(systemName: "bubble.left.fill")
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 18)
                     Text(reply).font(.subheadline)

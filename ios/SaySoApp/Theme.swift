@@ -202,31 +202,23 @@ struct SplashView: View {
     }
 }
 
-/// The logo, written in: "SAY" pops in, then the "So" stroke is revealed from its tail to its end.
+/// The logo, written in: "SAY" is there, then a pen writes "So" stroke by stroke (the S, then the o and the flourish).
 struct AnimatedLogo: View {
-    @State private var landed = false
-    @State private var drawn: CGFloat = 0
+    @State private var shown = false
+    @State private var written: CGFloat = 0
 
     var body: some View {
         ZStack {
             Image("LogoSay").resizable().scaledToFit().foregroundStyle(.primary)
-                .opacity(landed ? 1 : 0)
-                .scaleEffect(landed ? 1 : 1.25)
-                .blur(radius: landed ? 0 : 6)
+                .opacity(shown ? 1 : 0)
             Image("LogoSo").resizable().scaledToFit().foregroundStyle(Theme.stroke)
-                .mask(alignment: .leading) {
-                    GeometryReader { geo in
-                        LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.85),
-                                               .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing)
-                            .frame(width: geo.size.width * drawn * 1.2)
-                    }
-                }
-                .shadow(color: Color.accentColor.opacity(drawn > 0.9 ? 0.45 : 0), radius: 12)
+                .mask(SoPenMask(progress: written))
         }
+        .aspectRatio(SoPen.size.width / SoPen.size.height, contentMode: .fit)
         .accessibilityLabel("SaySo")
         .onAppear {
-            withAnimation(.spring(duration: 0.45, bounce: 0.35)) { landed = true }
-            withAnimation(.easeInOut(duration: 0.75).delay(0.35)) { drawn = 1 }
+            withAnimation(.easeOut(duration: 0.3)) { shown = true }
+            withAnimation(.timingCurve(0.45, 0.05, 0.35, 1, duration: 1.3).delay(0.35)) { written = 1 }
         }
     }
 }
