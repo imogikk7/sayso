@@ -294,13 +294,12 @@ struct SelfCheckSection: View {
     var body: some View {
         Section {
             if let you = scores.soundsLikeYou {
-                LabeledContent("Sounds like you") {
-                    Text("\(Int(you * 100))%").bold() + Text(scores.generic.map { "  (generic AI \(Int($0 * 100))%)" } ?? "")
-                        .foregroundStyle(.secondary)
-                }
+                ScoreRing(value: you, detail: scores.generic.map { "(generic AI \(Int($0 * 100))%)" })
+                    .listRowBackground(Color.clear)
             }
             if let sense = scores.makesSense {
-                LabeledContent("Makes sense", value: String(format: "%.1f / 5", sense))
+                ScoreCard(title: "Makes sense", value: String(format: "%.1f / 5", sense), trend: false)
+                    .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             }
             ForEach(scores.samples ?? [], id: \.self) { sample in
                 VStack(alignment: .leading, spacing: 4) {

@@ -24,6 +24,8 @@ struct StyleCardView: View {
                             SharedStore.styleName = style.name
                             activeID = style.id
                         }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .listRowBackground(Color.clear)
                     }
                     if let counts = style.counts {
                         LabeledContent("Learned from", value: "\(counts["turns"] ?? 0) messages in \(counts["chats"] ?? 0) chats")

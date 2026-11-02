@@ -53,9 +53,16 @@ struct ChatView: View {
                 }
                 inputBar
             }
-            .navigationTitle("Chat")
-            .navigationSubtitle("in \(SharedStore.styleName)")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 2) {
+                        Text("S").font(.subheadline.weight(.bold)).foregroundStyle(.white)
+                            .frame(width: 28, height: 28).background(Color.accentColor, in: .circle)
+                        Text("SaySo · \(SharedStore.styleName)").font(.caption2.weight(.medium)).foregroundStyle(.secondary)
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("New", systemImage: "square.and.pencil") { reset() }.disabled(items.isEmpty)
@@ -150,9 +157,11 @@ struct ChatView: View {
         switch item {
         case .input(_, let text):
             Text(text)
-                .padding(10)
-                .background(Color.accentColor.opacity(0.15), in: .rect(cornerRadius: 14))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .background(Color.accentColor, in: .rect(cornerRadius: Theme.bubble))
                 .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.leading, 48)
         case .note(_, let text):
             Text(text).font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
         case .answer(let id, let answer, let audience, let format):
@@ -387,8 +396,8 @@ struct AnswerView: View {
             ForEach(Array((answer.parts?.isEmpty == false ? answer.parts! : [answer.text]).enumerated()), id: \.offset) { _, part in
                 Text(part)
                     .textSelection(.enabled)
-                    .padding(10)
-                    .background(.background.secondary, in: .rect(cornerRadius: 14))
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: Theme.bubble))
             }
             if let count = answer.words, answer.outline != nil {
                 Text("\(count) words").font(.caption).foregroundStyle(.secondary)
