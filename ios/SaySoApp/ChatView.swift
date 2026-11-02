@@ -10,20 +10,30 @@ enum WriteKind: String, CaseIterable, Identifiable {
     var label: String { rawValue.capitalized }
     var icon: String {
         switch self {
-        case .message: "bubble.left"
-        case .series: "square.stack"
-        case .official: "briefcase"
-        case .email: "envelope"
-        case .essay: "doc.text"
+        case .message: "bubble.left.fill"
+        case .series: "square.stack.fill"
+        case .official: "briefcase.fill"
+        case .email: "envelope.fill"
+        case .essay: "doc.text.fill"
         }
     }
     var format: ReplyFormat { ReplyFormat(rawValue: rawValue) ?? .email }
     var isFormal: Bool { self == .email || self == .essay }
 }
 
-/// Chat with your style: write from an instruction, rewrite a draft, or reply to someone's message, as a message,
-/// a series, an official message, an email or an essay. Fix any answer ("shorter", "no emoji", or your own version)
-/// and the style remembers what you prefer.
+extension ChatMode {
+    var icon: String {
+        switch self {
+        case .write: "square.and.pencil"
+        case .rewrite: "arrow.triangle.2.circlepath"
+        default: "arrowshape.turn.up.left.fill"
+        }
+    }
+}
+
+/// A conversation with SaySo, like a messenger: tell it what to write, paste a draft to rewrite, or paste their
+/// message to reply; as a message, a series, an official message, an email or an essay. Fix any answer
+/// ("shorter", "no emoji", or your own version) and the style remembers what you prefer.
 struct ChatView: View {
     private enum Item: Identifiable {
         case input(UUID, String)
@@ -37,8 +47,13 @@ struct ChatView: View {
         }
     }
 
-    private static let modes: [(ChatMode, String)] = [(.write, "square.and.pencil"), (.rewrite, "arrow.triangle.2.circlepath"),
-                                                       (.reply, "arrowshape.turn.up.left")]
+    /// The quick actions SaySo offers in its welcome message.
+    private static let starts: [(String, String, ChatMode, WriteKind)] = [
+        ("Message", "bubble.left.fill", .write, .message), ("Email", "envelope.fill", .write, .email),
+        ("Essay", "doc.text.fill", .write, .essay), ("Series", "square.stack.fill", .write, .series),
+        ("Rewrite", "arrow.triangle.2.circlepath", .rewrite, .message),
+        ("Reply", "arrowshape.turn.up.left.fill", .reply, .message),
+    ]
 
     @State private var mode: ChatMode = .write
     @State private var kind: WriteKind = .message
@@ -72,32 +87,22 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.backdrop
+                ChatWallpaper()
                 VStack(spacing: 0) {
-                    controls
+                    header
                     conversation
-                    inputBar
+                    composer
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 1) {
-                        LogoView().frame(height: 22)
-                        Text("in \(SharedStore.styleName)").font(.caption2.weight(.medium)).foregroundStyle(.secondary)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("New", systemImage: "square.and.pencil") { reset() }.disabled(items.isEmpty)
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .overlay(alignment: .top) {
                 if let toast {
                     Label(toast, systemImage: "sparkles")
-                        .font(.footnote.weight(.medium))
+                        .font(.footnote.weight(.semibold))
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(.thinMaterial, in: .capsule)
-                        .padding(.top, 8)
+                        .shadow(color: .black.opacity(0.1), radius: 8, y: 3)
+                        .padding(.top, 70)
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
@@ -107,98 +112,39 @@ struct ChatView: View {
                     editing = nil
                 }
             }
+            .onChange(of: mode) { _, _ in
+                if !kinds.contains(kind) { kind = .message }
+            }
         }
     }
 
-    // MARK: Controls: what to do, what to write, for whom
+    // MARK: Header, like a chat with a person
 
-    private var controls: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            modePicker
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(kinds) { k in
-                        Pill(title: k.label, icon: k.icon, selected: kind == k) { kind = k }
-                    }
+    private var header: some View {
+        HStack(spacing: 12) {
+            Avatar(size: 42)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("SaySo").font(Theme.display(19))
+                HStack(spacing: 5) {
+                    Circle().fill(busy ? Color.accentColor : Color.green).frame(width: 7, height: 7)
+                    Text(busy ? "typing like you…" : "writes as \(SharedStore.styleName)")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, -16)
-            details
+            Spacer()
+            Button { withAnimation { reset() } } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 38, height: 38)
+                    .background(.regularMaterial, in: .circle)
+            }
+            .disabled(items.isEmpty)
+            .accessibilityLabel("New chat")
         }
         .padding(.horizontal, 16)
-        .padding(.top, 6)
-        .padding(.bottom, 10)
-        .onChange(of: mode) { _, _ in
-            if !kinds.contains(kind) { kind = .message }
-            reset()
-        }
-        .onChange(of: kind) { _, _ in reset() }
-    }
-
-    /// Write / Rewrite / Reply as one segmented capsule.
-    private var modePicker: some View {
-        HStack(spacing: 4) {
-            ForEach(Self.modes, id: \.0) { m, icon in
-                Button {
-                    withAnimation(.snappy(duration: 0.25)) { mode = m }
-                } label: {
-                    Label(m.label, systemImage: icon)
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                        .foregroundStyle(mode == m ? Color.white : Color.primary)
-                        .background { if mode == m { Capsule().fill(Theme.accentGradient) } }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(4)
-        .background(.regularMaterial, in: .capsule)
-        .overlay(Capsule().stroke(Color.primary.opacity(0.06)))
-    }
-
-    /// The fields that depend on what is written: who it's for, the email being answered, the essay question.
-    @ViewBuilder private var details: some View {
-        switch kind {
-        case .essay:
-            VStack(alignment: .leading, spacing: 8) {
-                TextField("Essay question or topic", text: $question, axis: .vertical)
-                    .lineLimit(1...3)
-                    .font(.subheadline.weight(.medium))
-                Divider()
-                Stepper(value: $words, in: 100...650, step: 50) {
-                    Label("About \(words) words", systemImage: "text.alignleft").font(.subheadline)
-                }
-            }
-            .glassCard(padding: 12)
-        case .email where mode == .write:
-            HStack(alignment: .top) {
-                Image(systemName: "arrowshape.turn.up.left").foregroundStyle(.secondary).padding(.top, 2)
-                TextField("Answering an email? Paste it here (optional)", text: $replyTo, axis: .vertical)
-                    .lineLimit(1...4)
-                    .font(.subheadline)
-                PasteButton(payloadType: String.self) { strings in
-                    Task { @MainActor in replyTo = strings.joined(separator: "\n") }
-                }
-                .labelStyle(.iconOnly)
-                .buttonBorderShape(.circle)
-                .controlSize(.small)
-            }
-            .glassCard(padding: 12)
-        case .email:
-            EmptyView()
-        default:
-            HStack(spacing: 6) {
-                Text("To").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(Audience.allCases) { a in
-                            Pill(title: a.label, selected: audience == a) { audience = a }
-                        }
-                    }
-                }
-            }
-        }
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
     }
 
     // MARK: The conversation
@@ -206,12 +152,13 @@ struct ChatView: View {
     private var conversation: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 14) {
-                    if items.isEmpty { empty }
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    welcome
                     ForEach(items) { item in row(item).id(item.id) }
                     if busy { typing }
                 }
-                .padding(16)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 16)
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: items.count) { _, _ in
@@ -220,80 +167,97 @@ struct ChatView: View {
         }
     }
 
-    private var typing: some View {
-        HStack(spacing: 8) {
-            Avatar()
-            ProgressView().controlSize(.small)
-            Text(kind == .essay ? "Writing your essay…" : "Writing like you…").font(.footnote).foregroundStyle(.secondary)
-        }
-    }
-
-    private var empty: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(emptyTitle).font(.system(size: 26, weight: .bold))
-                Text(emptySubtitle).font(.subheadline).foregroundStyle(.secondary)
-            }
-            .padding(.top, 8)
-            VStack(spacing: 10) {
-                ForEach(examples, id: \.self) { example in
-                    Button {
-                        text = example
-                        focused = true
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "sparkles").foregroundStyle(Color.accentColor)
-                            Text(example).font(.subheadline).foregroundStyle(.primary).multilineTextAlignment(.leading)
-                            Spacer(minLength: 0)
-                            Image(systemName: "arrow.up.left").font(.caption).foregroundStyle(.tertiary)
+    /// SaySo's first messages: who it is, the difference it makes, and what it can write.
+    private var welcome: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SaySoBubble { Text("Hey! I'm SaySo 👋 I write like **you**, not like an AI.") }
+            SaySoBubble(avatar: false) { contrast }
+            SaySoBubble(avatar: false) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("What are we writing?")
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                        ForEach(Self.starts, id: \.0) { title, icon, m, k in
+                            QuickAction(title: title, icon: icon, selected: mode == m && kind == k) {
+                                withAnimation(.snappy) {
+                                    mode = m
+                                    kind = k
+                                }
+                                focused = k != .essay
+                            }
                         }
-                        .glassCard(padding: 12)
                     }
-                    .buttonStyle(.plain)
                 }
             }
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "hand.thumbsdown").foregroundStyle(Color.accentColor)
-                Text("Not quite you? Tap 👎 and say what to change (\u{201C}shorter\u{201D}, \u{201C}no emoji\u{201D}) or edit it yourself. SaySo remembers.")
-                    .font(.footnote).foregroundStyle(.secondary)
+            if items.isEmpty { tryThese }
+        }
+    }
+
+    /// The same message from a generic AI and from SaySo in the user's style.
+    private var contrast: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Same message, two ways:").font(.subheadline.weight(.semibold))
+            HStack(alignment: .top, spacing: 8) {
+                Text("AI").font(.system(size: 10, weight: .heavy).width(.expanded)).foregroundStyle(.white)
+                    .frame(width: 26, height: 26).background(Color.gray, in: .circle)
+                Text("I apologize, but I won't be able to make it today.")
+                    .font(.subheadline).strikethrough().foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 4)
+            HStack(alignment: .top, spacing: 8) {
+                Avatar(size: 26)
+                Text("сорян, сегодня не успею 😅 давай завтра?")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .foregroundStyle(.white)
+                    .background(Theme.accentGradient, in: .rect(cornerRadius: 12))
+            }
         }
     }
 
-    private var emptyTitle: String {
-        switch (mode, kind) {
-        case (.write, .essay): "Your essay, in your voice"
-        case (_, .email): mode == .reply ? "Answer an email" : "Write an email"
-        case (.write, _): "What should it say?"
-        case (.rewrite, _): "Say it your way"
-        default: "Reply like you would"
+    /// Examples for the current mode and kind, as tappable chips.
+    private var tryThese: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Try one").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.leading, 44)
+            ForEach(examples, id: \.self) { example in
+                Button {
+                    if kind == .essay && question.isEmpty { question = example } else { text = example }
+                    focused = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles").font(.caption)
+                        Text(example).font(.subheadline).multilineTextAlignment(.leading)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .foregroundStyle(Color.accentColor)
+                    .background(Color.accentColor.opacity(0.1), in: .capsule)
+                    .overlay(Capsule().stroke(Color.accentColor.opacity(0.25)))
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 44)
+            }
         }
+        .padding(.top, 4)
     }
 
-    private var emptySubtitle: String {
-        switch (mode, kind) {
-        case (.write, .essay): "Add the question above, then your notes: facts, moments, what you think. 🎙 works great here."
-        case (.write, .email): "Say what the email should say. SaySo writes it the way you write emails."
-        case (.reply, .email): "Paste the email you got. SaySo answers it in your formal voice."
-        case (.write, _): "Tell SaySo what to say, it writes it the way you text."
-        case (.rewrite, _): "Paste a draft, SaySo rewrites it in your words."
-        default: "Paste their message, SaySo answers it like you."
+    private var typing: some View {
+        HStack(spacing: 8) {
+            Avatar(size: 32)
+            TypingDots()
+                .padding(.horizontal, 14).padding(.vertical, 12)
+                .background(Color(.tertiarySystemBackground), in: BubbleShape(mine: false))
+            if kind == .essay { Text("Writing your essay…").font(.caption).foregroundStyle(.secondary) }
         }
     }
 
     private var examples: [String] {
         switch (mode, kind) {
-        case (.write, .essay): ["I grew up fixing my grandpa's radios, that's how I got into engineering",
-                                "Moving to a new city alone taught me to ask for help"]
+        case (.write, .essay): ["Why do you want to study engineering?", "A challenge you overcame"]
         case (.write, .email): ["Ask Professor Kim to move my defense to Thursday",
-                                "Follow up on my internship application from last week"]
+                                "Follow up on my internship application"]
         case (.reply, .email): ["Hi, we'd like to invite you to an interview on Monday at 10. Please confirm."]
         case (.write, .official): ["Ask my manager for Friday off", "Tell the landlord the heating is broken again"]
-        case (.write, .series): ["Tell the guys about my weekend in the mountains", "Explain to mom why I'll be late tonight"]
-        case (.write, _): ["Tell Mira I'm 20 min late", "Ask if anyone wants pizza tonight", "Say happy birthday to Dan"]
-        case (.rewrite, _): ["Dear friend, I regret to inform you that I will not be able to attend today.",
-                             "I'm sorry but I think I need a bit more time for the project"]
+        case (.write, .series): ["Tell the guys about my weekend in the mountains"]
+        case (.write, _): ["Tell Mira I'm 20 min late", "Ask who wants pizza tonight", "Say happy birthday to Dan"]
+        case (.rewrite, _): ["Dear friend, I regret to inform you that I will not be able to attend today."]
         default: ["Are you coming tonight? We start at 8", "Can you send me the notes from today's lecture?"]
         }
     }
@@ -304,11 +268,15 @@ struct ChatView: View {
             Text(text)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 14).padding(.vertical, 10)
-                .background(Theme.accentGradient, in: .rect(cornerRadius: Theme.bubble))
+                .background(Theme.accentGradient, in: BubbleShape(mine: true))
+                .shadow(color: Color.accentColor.opacity(0.25), radius: 6, y: 2)
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.leading, 48)
+                .padding(.leading, 56)
         case .note(_, let text):
-            Label(text, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.secondary)
+            Label(text, systemImage: "exclamationmark.triangle")
+                .font(.footnote).foregroundStyle(.secondary)
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(.regularMaterial, in: .capsule)
                 .frame(maxWidth: .infinity)
         case .answer(let id, let answer, let audience, let format):
             AnswerView(answer: answer, format: format, audience: audience, isLast: items.last?.id == id,
@@ -322,19 +290,15 @@ struct ChatView: View {
         }
     }
 
-    // MARK: Input
+    // MARK: Composer
 
-    private var inputBar: some View {
-        VStack(spacing: 8) {
+    private var composer: some View {
+        VStack(alignment: .leading, spacing: 8) {
             if fixing {
-                HStack {
-                    Label(answering == nil ? "What should change?" : "Answering a question", systemImage: "wand.and.stars")
-                        .font(.caption.weight(.semibold))
-                    Spacer()
-                    Button("Cancel") { fixing = false; answering = nil }.font(.caption)
-                }
-                .foregroundStyle(.secondary)
-                if answering == nil { reasons }
+                fixingBar
+            } else {
+                settingsRow
+                details
             }
             HStack(alignment: .bottom, spacing: 8) {
                 if mode == .reply && !fixing {
@@ -349,14 +313,85 @@ struct ChatView: View {
                     .lineLimit(1...6)
                     .focused($focused)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(.regularMaterial, in: .rect(cornerRadius: 22))
+                    .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 22))
                     .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.primary.opacity(0.08)))
                 actionButton
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) { Divider().opacity(0.5) }
+    }
+
+    /// Write / Rewrite / Reply, what it is, and who it's for, as small menus above the field.
+    private var settingsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                Menu {
+                    Picker("Mode", selection: $mode) {
+                        ForEach([ChatMode.write, .rewrite, .reply]) { m in Label(m.label, systemImage: m.icon).tag(m) }
+                    }
+                } label: { MenuPill(title: mode.label, icon: mode.icon) }
+                Menu {
+                    Picker("Kind", selection: $kind) {
+                        ForEach(kinds) { k in Label(k.label, systemImage: k.icon).tag(k) }
+                    }
+                } label: { MenuPill(title: kind.label, icon: kind.icon) }
+                if !kind.isFormal {
+                    Menu {
+                        Picker("To", selection: $audience) {
+                            ForEach(Audience.allCases) { a in Text(a.label).tag(a) }
+                        }
+                    } label: { MenuPill(title: "To \(audience.label)", icon: "person.2.fill") }
+                }
+            }
+        }
+    }
+
+    /// The fields that only email and essay have: the email being answered, the essay question and length.
+    @ViewBuilder private var details: some View {
+        if kind == .essay && mode == .write {
+            VStack(alignment: .leading, spacing: 6) {
+                TextField("Essay question or topic", text: $question, axis: .vertical)
+                    .lineLimit(1...3)
+                    .font(.subheadline.weight(.semibold))
+                Stepper(value: $words, in: 100...650, step: 50) {
+                    Text("About \(words) words").font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 14))
+        } else if kind == .email && mode == .write {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "arrowshape.turn.up.left").font(.footnote).foregroundStyle(.secondary).padding(.top, 2)
+                TextField("Answering an email? Paste it (optional)", text: $replyTo, axis: .vertical)
+                    .lineLimit(1...3)
+                    .font(.footnote)
+                PasteButton(payloadType: String.self) { strings in
+                    Task { @MainActor in replyTo = strings.joined(separator: "\n") }
+                }
+                .labelStyle(.iconOnly)
+                .buttonBorderShape(.circle)
+                .controlSize(.mini)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 14))
+        }
+    }
+
+    private var fixingBar: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Label(answering == nil ? "What should change?" : "Answering a question", systemImage: "wand.and.stars")
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Button("Cancel") { fixing = false; answering = nil }.font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(.secondary)
+            if answering == nil { reasons }
+        }
     }
 
     private var actionButton: some View {
@@ -374,6 +409,7 @@ struct ChatView: View {
                 .symbolEffect(.pulse, isActive: listening)
         }
         .disabled(busy)
+        .accessibilityLabel(listening ? "Stop" : empty ? "Speak" : "Send")
     }
 
     /// After 👎: one tap says what's wrong, without typing. Typing or 🎙 still work for anything else.
@@ -517,14 +553,145 @@ struct ChatView: View {
     }
 }
 
-/// SaySo's little "S" next to its answers.
+/// SaySo's avatar: the "S" on the blue brush gradient.
 struct Avatar: View {
+    var size: CGFloat = 32
+
     var body: some View {
         Text("S")
-            .font(.system(size: 13, weight: .heavy).width(.expanded))
+            .font(.custom("Archivo-ExpandedBlack", size: size * 0.46))
             .foregroundStyle(.white)
-            .frame(width: 28, height: 28)
+            .frame(width: size, height: size)
             .background(Theme.stroke, in: .circle)
+            .overlay(Circle().stroke(.white.opacity(0.6), lineWidth: 1.5))
+    }
+}
+
+/// A chat bubble with a small tail corner: the user's on the right, SaySo's on the left.
+struct BubbleShape: Shape {
+    let mine: Bool
+
+    func path(in rect: CGRect) -> Path {
+        UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: mine ? 18 : 5,
+                               bottomTrailingRadius: mine ? 5 : 18, topTrailingRadius: 18)
+            .path(in: rect)
+    }
+}
+
+/// One message from SaySo, with its avatar (or the space for it, in a run of messages).
+struct SaySoBubble<Content: View>: View {
+    var avatar = true
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            if avatar { Avatar() } else { Color.clear.frame(width: 32, height: 1) }
+            content
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .background(Color(.tertiarySystemBackground), in: BubbleShape(mine: false))
+                .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
+            Spacer(minLength: 30)
+        }
+    }
+}
+
+/// A quick action inside SaySo's welcome message.
+struct QuickAction: View {
+    let title: String
+    let icon: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.caption.weight(.bold))
+                Text(title).font(.footnote.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 9)
+            .foregroundStyle(selected ? Color.white : Color.accentColor)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 12).fill(Theme.accentGradient)
+                } else {
+                    RoundedRectangle(cornerRadius: 12).fill(Color.accentColor.opacity(0.1))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// The label of a small menu above the message field.
+struct MenuPill: View {
+    let title: String
+    let icon: String
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon).font(.caption2.weight(.bold))
+            Text(title).font(.footnote.weight(.semibold))
+            Image(systemName: "chevron.down").font(.system(size: 8, weight: .heavy))
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .foregroundStyle(Color.accentColor)
+        .background(Color.accentColor.opacity(0.12), in: .capsule)
+    }
+}
+
+/// Three dots bouncing while SaySo writes.
+struct TypingDots: View {
+    @State private var on = false
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<3, id: \.self) { i in
+                Circle().fill(Color.secondary).frame(width: 7, height: 7)
+                    .offset(y: on ? -3 : 3)
+                    .animation(.easeInOut(duration: 0.45).repeatForever().delay(Double(i) * 0.15), value: on)
+            }
+        }
+        .onAppear { on = true }
+    }
+}
+
+/// The chat background: the brand backdrop with a faint pattern of writing doodles, like a messenger wallpaper.
+struct ChatWallpaper: View {
+    private static let symbols = ["sparkles", "bubble.left", "heart", "envelope", "pencil", "face.smiling",
+                                  "paperplane", "quote.bubble", "text.bubble", "hand.thumbsup"]
+
+    var body: some View {
+        ZStack {
+            Theme.backdrop
+            Canvas { context, size in
+                var seed: UInt64 = 42
+                func next() -> Double {
+                    seed = seed &* 6364136223846793005 &+ 1442695040888963407
+                    return Double(seed >> 33) / Double(UInt64(1) << 31)
+                }
+                let step: CGFloat = 62
+                var y: CGFloat = 24
+                var row = 0
+                while y < size.height + step {
+                    var x: CGFloat = row % 2 == 0 ? 22 : 53
+                    while x < size.width + step {
+                        let name = Self.symbols[Int(next() * Double(Self.symbols.count)) % Self.symbols.count]
+                        var layer = context
+                        layer.translateBy(x: x, y: y)
+                        layer.rotate(by: .degrees(next() * 50 - 25))
+                        let symbol = Text(Image(systemName: name))
+                            .font(.system(size: 15 + next() * 6, weight: .medium))
+                            .foregroundStyle(Color.accentColor.opacity(0.09))
+                        layer.draw(symbol, at: .zero)
+                        x += step
+                    }
+                    y += step
+                    row += 1
+                }
+            }
+            .ignoresSafeArea()
+        }
     }
 }
 
@@ -545,11 +712,11 @@ struct AnswerView: View {
     @State private var liked = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .bottom, spacing: 8) {
             Avatar()
             content
+            Spacer(minLength: 24)
         }
-        .padding(.trailing, 24)
     }
 
     private var content: some View {
@@ -571,8 +738,8 @@ struct AnswerView: View {
                 Text(part)
                     .textSelection(.enabled)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(.regularMaterial, in: .rect(cornerRadius: Theme.bubble))
-                    .overlay(RoundedRectangle(cornerRadius: Theme.bubble).stroke(Color.primary.opacity(0.06)))
+                    .background(Color(.tertiarySystemBackground), in: BubbleShape(mine: false))
+                    .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
             }
             if let count = answer.words, answer.outline != nil {
                 Text("\(count) words").font(.caption).foregroundStyle(.secondary)
