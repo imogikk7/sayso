@@ -3,12 +3,21 @@ import SwiftUI
 /// The SaySo keyboard: a top strip (mode, audience, format, ✨) over letter keys or the panel; results replace both.
 struct PanelView: View {
     @ObservedObject var model: PanelModel
+    @Environment(\.colorScheme) private var scheme
+
+    private var accent: Color { KeyTheme.accent(model.settings.accent) }
 
     var body: some View {
         VStack(spacing: 6) {
             strip
             if model.busy {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 10) {
+                    ProgressView().controlSize(.large).tint(accent)
+                    Label("Writing it your way…", systemImage: "sparkles")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !model.options.isEmpty {
                 ResultsView(model: model)
             } else if model.mode == .letters {
@@ -22,7 +31,8 @@ struct PanelView: View {
             Spacer(minLength: 0)
         }
         .padding(.top, 6)
-        .tint(model.settings.accent.color)
+        .background { KeyBackdrop(accent: accent) }
+        .tint(accent)
         .dynamicTypeSize(.small ... .large)  // the keyboard has a fixed height; huge text sizes would push keys out
     }
 
@@ -35,8 +45,10 @@ struct PanelView: View {
                 model.closeResults()
             } label: {
                 Image(systemName: model.mode == .letters ? "rectangle.grid.1x2" : "keyboard")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(KeyTheme.keyText(scheme))
                     .frame(width: 34, height: 30)
-                    .background(Color(.systemBackground), in: .capsule)
+                    .background { glassPill() }
             }
             .buttonStyle(.plain)
             Menu {
@@ -66,14 +78,29 @@ struct PanelView: View {
             } label: {
                 Image(systemName: "sparkles")
                     .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(width: 48, height: 30)
-                    .background(model.settings.accent.color, in: .capsule)
+                    .foregroundStyle(Color.white)
+                    .symbolEffect(.pulse, isActive: model.busy)
+                    .frame(width: 54, height: 30)
+                    .background {
+                        ZStack {
+                            Capsule().fill(LinearGradient(colors: sparkleColors,
+                                                          startPoint: .topLeading, endPoint: .bottomTrailing))
+                            Capsule().fill(KeyTheme.gloss)
+                            Capsule().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
+                        }
+                    }
+                    .shadow(color: accent.opacity(0.55), radius: 8, x: 0, y: 2)
+                    .shadow(color: accent.opacity(0.3), radius: 2, x: 0, y: 1)
             }
             .buttonStyle(.plain)
             .disabled(model.busy)
         }
         .padding(.horizontal, 8)
+    }
+
+    /// The brand blue fades from the light glow; other accents stay solid under the gloss.
+    private var sparkleColors: [Color] {
+        model.settings.accent == .blue ? [KeyTheme.glow, accent] : [accent, accent]
     }
 
     /// The AI thinks this text is for someone else than the chosen audience.
@@ -83,13 +110,39 @@ struct PanelView: View {
     }
 
     private func chip(_ title: String, systemImage: String, highlighted: Bool) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.caption.weight(.medium))
-            .lineLimit(1)
-            .padding(.horizontal, 10)
-            .frame(height: 30)
-            .foregroundStyle(highlighted ? model.settings.accent.color : .primary)
-            .background(Color(.systemBackground), in: .capsule)
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(accent)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(highlighted ? accent : KeyTheme.keyText(scheme))
+            Image(systemName: "chevron.down")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(.secondary)
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 11)
+        .frame(height: 30)
+        .background {
+            if highlighted {
+                ZStack {
+                    Capsule().fill(accent.opacity(0.14))
+                    Capsule().strokeBorder(accent.opacity(0.6), lineWidth: 1)
+                }
+            } else {
+                glassPill()
+            }
+        }
+    }
+
+    /// The light frosted pill behind the strip's buttons and chips.
+    private func glassPill() -> some View {
+        ZStack {
+            Capsule().fill(KeyTheme.chipFill(scheme))
+            Capsule().strokeBorder(KeyTheme.chipEdge(scheme), lineWidth: 0.5)
+        }
+        .shadow(color: KeyTheme.softShadow(scheme), radius: 3, x: 0, y: 1)
     }
 
     // MARK: Panel
@@ -105,6 +158,8 @@ struct PanelView: View {
                 Label("Turn on Full Access: Settings → General → Keyboard → Keyboards → SaySo", systemImage: "lock")
                     .font(.caption).foregroundStyle(.orange)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Color.orange.opacity(0.12), in: .rect(cornerRadius: KeyTheme.chip))
             }
             VStack(alignment: .leading, spacing: 8) {
                 if model.tab == .replies {
@@ -120,9 +175,18 @@ struct PanelView: View {
                 } else {
                     Text(model.draft.isEmpty ? hintText : model.draft)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(model.draft.isEmpty ? Color.secondary : KeyTheme.keyText(scheme))
                         .lineLimit(3)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                        .background {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: KeyTheme.card, style: .continuous).fill(KeyTheme.chipFill(scheme))
+                                RoundedRectangle(cornerRadius: KeyTheme.card, style: .continuous)
+                                    .strokeBorder(KeyTheme.chipEdge(scheme), lineWidth: 0.5)
+                            }
+                            .shadow(color: KeyTheme.softShadow(scheme), radius: 4, x: 0, y: 2)
+                        }
                     action(model.tab == .rewrite ? "Rewrite in my style" : "Write it like me", systemImage: "wand.and.stars") {
                         model.run()
                     }
@@ -140,19 +204,25 @@ struct PanelView: View {
     }
 
     private func status(_ message: String) -> some View {
-        HStack(alignment: .top) {
+        HStack(alignment: .top, spacing: 6) {
+            Image(systemName: model.warming ? "hourglass" : "info.circle")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(accent)
             Text(message).font(.caption).foregroundStyle(.secondary)
             Spacer(minLength: 0)
             if model.warming {
-                Button("Retry") { model.mode == .letters ? model.sparkle() : model.run() }.controlSize(.small)
+                Button("Retry") { model.mode == .letters ? model.sparkle() : model.run() }
+                    .font(.caption.weight(.semibold))
+                    .controlSize(.small)
             }
         }
         .padding(.horizontal, 10)
     }
 
     private func action(_ title: String, systemImage: String, run: @escaping () -> Void) -> some View {
-        Button(action: run) { Label(title, systemImage: systemImage).frame(maxWidth: .infinity) }
-            .buttonStyle(.borderedProminent)
+        Button(action: run) { Label(title, systemImage: systemImage) }
+            .buttonStyle(GlowButtonStyle(accent: accent))
+            .opacity(model.busy ? 0.5 : 1)
             .disabled(model.busy)
     }
 }

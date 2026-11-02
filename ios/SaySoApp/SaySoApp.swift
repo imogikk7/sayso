@@ -19,9 +19,9 @@ struct RootView: View {
     var body: some View {
         ZStack {
             if splash {
-                SplashView().transition(.opacity)
+                WelcomeSplash().transition(.opacity)
             } else if !onboarded {
-                OnboardingView { withAnimation { onboarded = true } }.transition(.opacity)
+                WelcomeOnboarding { withAnimation { onboarded = true } }.transition(.opacity)
             } else {
                 TabView {
                     Tab("Chat", systemImage: "bubble.left.and.text.bubble.right") { ChatView() }

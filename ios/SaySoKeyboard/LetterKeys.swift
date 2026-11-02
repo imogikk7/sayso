@@ -31,7 +31,8 @@ struct LetterKeys: View {
                 }
                 SpecialKey(title: model.language.switchLabel, width: 38, action: model.switchLanguage)
                 CharacterKey(label: model.language.spaceLabel, font: .callout) { model.space() }
-                SpecialKey(title: model.returnLabel, width: 78, action: model.newline)
+                SpecialKey(title: model.returnLabel, width: 78, kind: model.returnLabel == "return" ? .special : .accent,
+                           action: model.newline)
             }
         }
         .padding(.horizontal, 3)
@@ -68,10 +69,10 @@ struct CharacterKey: View {
                 .font(font)
                 .frame(maxWidth: .infinity, minHeight: 42)
                 .overlay(alignment: .topTrailing) {
-                    if hasAlternate { Circle().fill(.secondary).frame(width: 3, height: 3).padding(4) }
+                    if hasAlternate { Circle().fill(.tint).opacity(0.7).frame(width: 4, height: 4).padding(4) }
                 }
         }
-        .buttonStyle(KeyStyle(background: Color(.systemBackground), pressed: Color(.systemGray3)))
+        .buttonStyle(KeyStyle(kind: .letter))
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
             guard let onLongPress else { return }
             usedAlternate = true
@@ -84,29 +85,30 @@ struct SpecialKey: View {
     var title: String? = nil
     var systemImage: String? = nil
     let width: CGFloat
+    var kind: KeyKind = .special
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Group {
-                if let systemImage { Image(systemName: systemImage) } else { Text(title ?? "").font(.callout) }
+                if let systemImage {
+                    Image(systemName: systemImage).font(.body.weight(.medium))
+                } else {
+                    Text(title ?? "").font(.callout.weight(kind == .accent ? .semibold : .medium))
+                }
             }
             .frame(width: width, height: 42)
         }
-        .buttonStyle(KeyStyle(background: Color(.systemGray3), pressed: Color(.systemBackground)))
+        .buttonStyle(KeyStyle(kind: kind))
     }
 }
 
+/// Key caps are Buttons (a gesture-only key fired twice on some taps); the look lives in `KeyCap`.
 struct KeyStyle: ButtonStyle {
-    let background: Color
-    let pressed: Color
+    var kind: KeyKind = .letter
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(.primary)
-            .background(configuration.isPressed ? pressed : background, in: .rect(cornerRadius: 6))
-            .shadow(color: .black.opacity(0.25), radius: 0, y: 1)
-            .contentShape(.rect)
+        KeyCap(kind: kind, pressed: configuration.isPressed) { configuration.label }
     }
 }
 
@@ -116,28 +118,29 @@ struct DeleteKey: View {
     @State private var repeating: Task<Void, Never>?
 
     var body: some View {
-        Image(systemName: repeating == nil ? "delete.left" : "delete.left.fill")
-            .frame(width: 42, height: 42)
-            .background(Color(.systemGray3), in: .rect(cornerRadius: 6))
-            .shadow(color: .black.opacity(0.25), radius: 0, y: 1)
-            .contentShape(.rect)
-            .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    guard repeating == nil else { return }
-                    model.deleteBackward()
-                    repeating = Task {
-                        try? await Task.sleep(for: .milliseconds(450))
-                        var count = 0
-                        while !Task.isCancelled {
-                            model.deleteBackward()
-                            count += 1
-                            try? await Task.sleep(for: .milliseconds(count > 15 ? 40 : 90))
-                        }
+        KeyCap(kind: .special, pressed: repeating != nil) {
+            Image(systemName: repeating == nil ? "delete.left" : "delete.left.fill")
+                .font(.body.weight(.medium))
+                .frame(width: 42, height: 42)
+        }
+        .contentShape(.rect)
+        .gesture(DragGesture(minimumDistance: 0)
+            .onChanged { _ in
+                guard repeating == nil else { return }
+                model.deleteBackward()
+                repeating = Task {
+                    try? await Task.sleep(for: .milliseconds(450))
+                    var count = 0
+                    while !Task.isCancelled {
+                        model.deleteBackward()
+                        count += 1
+                        try? await Task.sleep(for: .milliseconds(count > 15 ? 40 : 90))
                     }
                 }
-                .onEnded { _ in
-                    repeating?.cancel()
-                    repeating = nil
-                })
+            }
+            .onEnded { _ in
+                repeating?.cancel()
+                repeating = nil
+            })
     }
 }
