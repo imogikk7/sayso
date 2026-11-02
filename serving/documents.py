@@ -43,7 +43,17 @@ LABEL = re.compile(r"^\s*(thesis|argument\s*\d*|counter-?argument|conclusion|int
 IMAGES = {".jpg", ".jpeg", ".png", ".heic", ".webp"}
 # Where an email starts quoting the message it answers (someone else's text): everything after it is dropped.
 QUOTE = re.compile(r"^\s*(>|On .{5,120} wrote:|.{0,80}(написал|написала|писал)\(?а?\)?:\s*$|-{2,}\s*Original Message|"
-                   r"-{2,}\s*Пересылаемое|From:|От:|Sent from my|Отправлено с)", re.I | re.M)
+                   r"-{2,}\s*Пересылаемое|-{2,}\s*Forwarded message|From:|От:|Sent from my|Отправлено с)", re.I | re.M)
+# The mail headers at the very top of a printed or pasted email (Apple Mail's PDF starts with them): not a quote.
+LEADING_HEADERS = re.compile(r"\A(?:[ \t]*(?:From|To|Cc|Bcc|Subject|Date|Sent|От|Кому|Копия|Тема|Дата|Отправлено)"
+                             r"[ \t]*:.*\n|[ \t]*\n)+", re.I)
+# Greetings keep their word, not the name ("Hi Tom," → "Hi [Name],"); a sign-off that is only a name is the user's name.
+GREETING = re.compile(r"^((?:hi|hello|hey|dear|good (?:morning|afternoon|evening)|your excellency|здравствуй(?:те)?|"
+                      r"привет|добрый (?:день|вечер)|доброе утро|уважаем\w*(?: команда)?|сәлем\w*|құрметті)[ ,!]+)(.+?)([,!.]?)$",
+                      re.I)
+SIGN_OFF = re.compile(r"(best|regards|thanks|thank you|cheers|sincerely|yours|respectfully|с уважением|спасибо|"
+                      r"всего доброго|хорошего дня|құрметпен|рахмет)", re.I)
+JUST_A_NAME = re.compile(r"^[A-ZА-ЯЁӘҒҚҢӨҰҮҺІ][\w.-]*(?: [A-ZА-ЯЁӘҒҚҢӨҰҮҺІ][\w.-]*){0,2}$")
 
 READ_SYSTEM = """You transcribe the user's own writing from a photo or a screenshot: a page of an essay or paper, or an
 email the user SENT. Return JSON only: {"text": "<the text>"}.
@@ -57,9 +67,24 @@ by the user, return {"text": ""}."""
 
 
 def own_email(text):
-    """An email the user sent → only their own part (the quoted message they answered is cut off)."""
+    """An email the user sent → only their own part: the mail headers at the top are dropped, and everything from the
+    first quote marker after the user's text ("On … wrote:", "> …", an Outlook "From:" block, "Sent from my iPhone")
+    is cut off."""
+    text = LEADING_HEADERS.sub("", text)
     match = QUOTE.search(text)
     return text[:match.start()] if match else text
+
+
+def mask_edge(line, opening):
+    """Other people's names out of a greeting; a sign-off that is only a name (the user's own) is dropped."""
+    if not line:
+        return None
+    if opening:
+        match = GREETING.match(line)
+        return f"{match.group(1).rstrip()} [Name]{match.group(3)}" if match and "[Name]" not in line else line
+    if SIGN_OFF.search(line):
+        return line
+    return None if JUST_A_NAME.match(line.rstrip(",.")) else line
 
 
 def mbox_texts(raw, limit=300):
@@ -69,6 +94,9 @@ def mbox_texts(raw, limit=300):
         f.write(raw)
         f.flush()
         for message in mailbox.mbox(f.name):
+            labels = (message.get("X-Gmail-Labels") or "").casefold()
+            if labels and "sent" not in labels and "отправлен" not in labels:
+                continue  # an "All mail" export: other people's emails are not the user's writing
             body = ""
             for part in message.walk() if message.is_multipart() else [message]:
                 if part.get_content_type() == "text/plain":
@@ -132,8 +160,12 @@ def edges(text):
     lines = [" ".join(line.split()) for line in text.replace("\r", "").split("\n") if line.strip()]
     short = lambda line: 0 < len(line.split()) <= 6
     opening = lines[0] if lines and short(lines[0]) else None
-    closing = lines[-1] if len(lines) > 1 and short(lines[-1]) and not re.search(r"\d{3,}", lines[-1]) else None
-    return opening, closing
+    closing = None
+    for line in reversed(lines[1:][-3:]):  # the sign-off, skipping the user's name under it
+        if short(line) and not re.search(r"\d{3,}", line) and mask_edge(line, False):
+            closing = line
+            break
+    return mask_edge(opening, True), closing
 
 
 def profile(texts, ends):

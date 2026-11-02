@@ -85,7 +85,7 @@ final class PanelModel: ObservableObject {
         if !settings.formats.contains(format), let first = settings.formats.first { format = first }
         mode = settings.startsWithLetters ? .letters : .panel
         returnLabel = Self.label(for: proxy?.returnKeyType)
-        lastText = (proxy?.documentContextBeforeInput ?? "") + (proxy?.documentContextAfterInput ?? "")
+        lastText = proxy?.documentContextBeforeInput ?? ""
         readDraft()
         autoShift()
     }
@@ -99,9 +99,11 @@ final class PanelModel: ObservableObject {
     /// Called on every change of the field. A field that had text and is suddenly empty (and not because the user
     /// erased it) was sent: that text is one of the user's messages.
     func fieldChanged() {
-        let now = (proxy?.documentContextBeforeInput ?? "") + (proxy?.documentContextAfterInput ?? "")
+        // Only what is before the cursor counts as typed: text after it (a quoted email, a reply below) isn't theirs.
+        let before = proxy?.documentContextBeforeInput ?? ""
+        let now = before + (proxy?.documentContextAfterInput ?? "")
         let sent = lastText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if now.count > lastText.count + 1 { pasted = true }  // more than one character at once: not typed with these keys
+        if before.count > lastText.count + 1 { pasted = true }  // more than one character at once: not typed here
         if now.isEmpty && !sent.isEmpty && !userDeleted && !pasted {
             remember(sent)
         }
@@ -109,7 +111,7 @@ final class PanelModel: ObservableObject {
             userDeleted = false
             pasted = false
         }
-        lastText = now
+        lastText = before
         readDraft()
         autoShift()
     }
@@ -137,9 +139,10 @@ final class PanelModel: ObservableObject {
 
     /// Sends what was learned (on every few messages and when the keyboard closes); keeps it if the network fails.
     func flush() {
-        let items = queue
-        guard !items.isEmpty, hasFullAccess else { return }
-        queue = []
+        let waiting = queue
+        guard !waiting.isEmpty, hasFullAccess else { return }
+        let items = Array(waiting.prefix(50))  // the server takes at most 50 at a time; the rest go next time
+        queue = Array(waiting.dropFirst(50))
         Task {
             do {
                 try await SaySoAPI.learn(items)
@@ -211,7 +214,7 @@ final class PanelModel: ObservableObject {
     }
 
     private func afterTyping() {
-        lastText = (proxy?.documentContextBeforeInput ?? "") + (proxy?.documentContextAfterInput ?? "")
+        lastText = proxy?.documentContextBeforeInput ?? ""
         readDraft()
         autoShift()
         if !options.isEmpty && series.isEmpty { options = [] }

@@ -187,7 +187,8 @@ the English translation of its first paragraph only (no need to translate it all
 **Screen (exact taps):**
 1. **Chat** tab. Mode **Write**, `For: Friends`, format `Message`. Type:
    `скажи, что опоздаю минут на 20, пробки` (*say I'll be ~20 min late, traffic*) → send.
-2. Tap **👎** → bar `Fixing the last answer` → type `shorter` → send. The revised answer and the toast
+2. Tap **👎** → bar `Fixing the last answer` and a row of reason chips (`Too long`, `Too formal`, `Not my words`, …).
+   Type `shorter` and send (or tap **Too long**; typing matches the voiceover). The revised answer and the toast
    **`✨ Learned: …`** appear. Hold 1.5 s on the toast.
 3. Cut: **Styles** → the style → **Learned from you** → a message just sent with SaySo's letter keys is at the top.
    Swipe it → **Delete** (or just show that you can).
@@ -198,7 +199,9 @@ the English translation of its first paragraph only (no need to translate it all
 
 **Caption:** `👎 "shorter" → a rule for next time` · `What you send teaches it · see and delete it all`
 
-**B-roll / edit:** zoom on the `Learned:` toast; right badge `Muse Spark turns feedback into a rule`.
+**B-roll / edit:** zoom on the `Learned:` toast; right badge `Muse Spark Open revises · Muse Spark turns feedback into
+a rule`. Keyboard learning is opt-in (`Learn from what I type` is on for filming, see checklist) and never learns
+pasted text; beat 8 shows the toggle.
 
 ---
 
@@ -226,14 +229,16 @@ Footnote: `40 held-out rewrites (style_gain*.json) · 499 held-out pairs (bench_
 **Caption:** `Spark Open writes · Spark 1.3 reads · Voice Transcribe listens · Glimmer 30B + your LoRA`
 
 **B-roll:** a quick scroll through the style card (`~20 characters · 96% start lowercase…`) under the diagram.
-If the blind test finished (TODO), add a line `Friends picked SaySo as "you" N% of the time (blind test, n = …)`.
+If the blind test finished (TODO), add a line `Blind test: friends found the real reply N% (chance 33%) · fooled by
+SaySo N% vs generic AI N% (n = …)`, from `eval/results/blind_test.json`.
 
 ---
 
 ## 8 · Privacy + close (2:33–2:48)
 
 **Screen:** Styles → style card → bottom: **Delete style**; Keyboard tab: `Learn from what I type` toggle and its footer
-(*Only your own text; never password, email, link, code or search fields*). Then back to the Telegram chat; the friend
+(*off until you turn it on; only your own typing: pasted text, password, email, link, code and search fields are never
+learned*). Then back to the Telegram chat; the friend
 replies `😂 ок, понял` (*😂 ok, got it*) to the series. Fade to the end card: SaySo icon, `Write the way you'd say it.`,
 `Built with Muse Spark Open · Muse Spark 1.3 · Muse Voice Transcribe · Muse Glimmer 30B`, repo URL.
 
@@ -295,11 +300,12 @@ replies `😂 ок, понял` (*😂 ok, got it*) to the series. Fade to the e
 ### Numbers to update before the edit (TODO)
 - [ ] **Self-check card** (beat 3): the design brief's example is `78% (generic AI 41%)`. Use the numbers the filmed
       style actually shows; update the voiceover and `captions.srt` to match.
-- [ ] **Beat 7 card**: `0.69 → 0.94` is Muse Spark 1.3 generic → with profile + real messages, and `0.93` is Muse
-      Spark Open with the production prompt (`eval/results/style_gain.json`, `style_gain_open.json`; 40 held-out
+- [ ] **Beat 7 card**: `0.69 → 0.94` is Muse Spark 1.3 generic → with profile + real messages, and `0.93` (chrF 50.4)
+      is Muse Spark Open with the production prompt (`eval/results/style_gain.json`, `style_gain_open.json`; 40 held-out
       rewrites). `2.64 → 0.04` is the fingerprint gap of base Glimmer vs the user's LoRA (v1) on 499 held-out pairs
       (`eval/results/bench_2026-10-28.json`). If `style_gain.py` is rerun before the edit, use the new file's numbers.
-- [ ] **Blind test** (beat 7, optional line): `Friends picked SaySo as "you" N% (n = …)` from
+- [ ] **Blind test** (beat 7, optional line): v2 shows a situation and three replies (real, SaySo, generic Muse Spark
+      1.3). Use the found-the-real-reply rate (chance = 1/3) and the fooled-by-SaySo vs fooled-by-generic rates from
       `eval/results/blind_test.json` once it exists (aggregated only).
 
 ### Showing the Meta models (judging requires Meta models; bonus for open weights)

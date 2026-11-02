@@ -44,13 +44,12 @@ SaySo пишет сообщения **так, как пишешь ты**: тво
   3 своих примера в пузырях; блок «Learned from your corrections» (правила, свайп «Forget»); удалить стиль.
 
 ### 2. Chat: чат со своим стилем
-- Сверху: переключатель **Write / Rewrite / Reply**; строка «For: Friends ▾» и формат «Message ▾»
+- Сверху: переключатель **Write / Rewrite / Reply / Email / Essay** (Email и Essay — см. «Экраны, добавленные после брифа»); строка «For: Friends ▾» и формат «Message ▾»
   (Message / Series / Official / Email, у каждого иконка); подзаголовок «in Me · Telegram».
 - Пустое состояние: подсказка что писать («Say what to write: “tell her I'm 20 min late”»).
 - Сообщения: мой ввод (справа), ответ SaySo (слева). **Серия** = 2–4 пузыря подряд.
 - Под ответом: Copy, 👍, 👎, ✏️ (своя версия), справа «✨ AI: Friends ▾» (ИИ предлагает аудиторию).
-- 👎 → снизу «Fixing the last answer» + поле «What to change?» (+ планируются **чипы причин**: Too long, Too formal,
-  Not my words, Wrong meaning, Too rude).
+- 👎 → снизу «Fixing the last answer» + поле «What to change?» и **чипы причин** (сделано, см. ниже).
 - Тост сверху: «✨ Learned: Keep partner messages short».
 - Шит «Your version» для правки ответа.
 
@@ -58,10 +57,59 @@ SaySo пишет сообщения **так, как пишешь ты**: тво
 - Живое превью клавиатуры сверху.
 - Opens with: Letters / SaySo panel.
 - Audiences (переключатели), Formats (переключатели), «✨ gives 1–3 variants», Haptics, Accent (5 кружков-цветов).
+- **Learning**: «Learn from what I type» (по умолчанию выкл.) + сноска: учится только на том, что набрано и отправлено
+  клавишами SaySo; вставленный текст, пароли, почта, ссылки, коды и поиск — никогда.
+- **Typing**: «Capital letter at sentence start» (по умолчанию выкл.: буквы строчные, ⇧ — одна заглавная, двойной тап —
+  caps lock).
 
 ### 4. Setup: чек-лист
 - 4 шага с номерами/галочками: Add the SaySo keyboard → Allow Full Access → Back Tap shortcut → Check the connection.
 - Кнопка «Open Settings», поле «Type here, then switch to SaySo 🌐», последние ответы со скриншота (тап = копировать).
+
+---
+
+## Экраны, добавленные после брифа (уже в коде, нужен дизайн)
+
+### Chat: режимы Email и Essay
+- **Email**: поле «The email you're answering (optional)» над вводом (вставить письмо, на которое отвечаешь); ввод —
+  «What should the email say?». Ответ: строка **Subject** (кнопка «Copy subject») + письмо абзацами (приветствие,
+  текст, подпись).
+- **Essay**: поле «Essay question or topic» + степпер «About N words» (100–650, шаг 50; сервер принимает 50–900); ввод — заметки
+  («Your notes: facts, stories, thoughts»). Ответ: текст эссе абзацами, счётчик «N words», затем блок
+  **«Make it stronger: answer one»** с 1–3 вопросами; тап по вопросу → ввод «Answer: …» → эссе переписывается.
+- Пустые состояния: подсказки по режиму («Say or type what the email should say…», «Add the question above, then your
+  notes… 🎙 works great here»).
+
+### 🎙 Голосовой ввод в чате
+- Кнопка 🎙 рядом с полем ввода во всех режимах. Во время записи: плейсхолдер «Listening… Ns — tap ■ when done»,
+  кнопка ■. После — расшифровка (Muse Voice Transcribe) уходит как обычный текст. Нужны состояния: запись, загрузка,
+  ошибка, «нет доступа к микрофону».
+
+### 👎 Чипы причин
+- После 👎 над полем — горизонтальная лента капсул, тап = сразу переписать без набора.
+  Чат-режимы: Too long · Too formal · Too casual · Not my words · Wrong meaning · Too rude.
+  Email/Essay: Shorter · Longer · More personal · Simpler words · Less formal.
+- Тост «✨ Learned: …», если отзыв стал правилом.
+
+### Styles: меню Add + гайды по источникам
+- Кнопка «+» в Styles — меню из трёх пунктов: **Messages (chats)** · **Emails** · **Essays & documents** (у каждого
+  иконка).
+- В каждом шите — секция **«How to get them / How to get your chats»**: список гайдов по приложениям (раскрываемые
+  шаги). Чаты: WhatsApp, Telegram, Instagram, скриншоты / запись экрана. Письма: Screenshots (easiest), Gmail as PDF,
+  Many at once (computer, Takeout .mbox) и др. Эссе: Photos of pages; Word, Pages, Google Docs; Copy and paste.
+
+### Formal writing: импорт писем и эссе
+- Шит «Emails» / «Essays & documents»: гайды сверху, кнопки «Add screenshots or photos», «Add files» (.txt .docx .pdf .mbox), «Paste text»; список добавленного (свайп
+  «Remove»); сноска «Only your own writing is kept. Screenshots and photos are
+  read once and not stored.» Прогресс чтения фото, затем счётчик «… paragraphs».
+- В карточке стиля — секция **Formal writing**: «Learned from N emails · M texts», «Sentences ~N words»,
+  «Links ideas with: …», «Opens with: …», «Signs off with: …»; кнопки «Add emails», «Add essays & documents»,
+  «Remove all formal writing». Имена других людей в прочитанных фото заменены на [Name].
+
+### Learned from you
+- Секция карточки стиля: сообщения, которые клавиатура взяла как примеры (с аудиторией; правленые ✨ — с пометкой),
+  свайп «Delete»; подпись «Your newest messages are used as examples first…». Пустое состояние, если обучение
+  выключено. Отдельно — **Learned from your corrections** (правила, свайп «Forget»).
 
 ---
 

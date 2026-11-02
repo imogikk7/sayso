@@ -364,6 +364,8 @@ def api():
         uploads, images, total = [], [], 0
         for f in files[:40]:
             raw = await f.read(20 * 1024 * 1024 + 1)
+            if len(raw) > 20 * 1024 * 1024:
+                raise HTTPException(413, f"{f.filename or 'a file'} is larger than 20 MB")
             total += len(raw)
             if total > 25 * 1024 * 1024:
                 raise HTTPException(413, "uploads are larger than 25 MB")

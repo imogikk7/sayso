@@ -257,9 +257,15 @@ struct ChatView: View {
     /// their message in Reply, or what to change while fixing).
     private func voice() async {
         if !recorder.isRecording {
+            recorder.onLimit = { Task { await finishVoice() } }
             if await !recorder.start() { show("Allow the microphone in Settings → SaySo") }
             return
         }
+        await finishVoice()
+    }
+
+    /// Stops (or takes the recording the 2-minute limit already stopped) and sends what was said.
+    private func finishVoice() async {
         guard let wav = recorder.stop() else { return }
         busy = true
         do {

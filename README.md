@@ -6,8 +6,8 @@ It also writes your **emails and essays** in your own formal voice, learned from
 It lives where you type: **its own iOS keyboard** (normal letter keys plus a ✨ key that rewrites or writes in your
 style), a **Back Tap shortcut** (double-tap the back of the iPhone → screenshot → three replies in your voice) and an
 **in-app chat** for longer things (Write, Rewrite, Reply, Email, Essay, with 🎙 voice input). It keeps learning:
-messages you send with the SaySo keyboard become new examples, and every 👍, 👎 or edit in the chat becomes an example
-or a short rule ("keep messages to family short").
+once you turn learning on, messages you type and send with the SaySo keyboard become new examples, and every 👍, 👎 or
+edit in the chat becomes an example or a short rule ("keep messages to family short").
 
 Built solo during the **Meta Global AI Developer Hackathon** (indie track, Oct 27 – Nov 4, 2026) on four Meta
 models: the open-weights **Muse Spark Open** writes, **Muse Spark 1.3** reads, **Muse Voice Transcribe 1.0** listens,
@@ -16,7 +16,8 @@ and the open-weights **Muse Glimmer 30B** carries the user's own LoRA.
 > **Status, honestly.** Every message, email and rewrite in the live app is written by **Muse Spark Open**, Meta's
 > open-weights model, served by Baseten (hackathon key, `reasoning_effort: low`, about 2–8 s per answer), guided by
 > the user's style profile, their real example messages and the rules learned from their feedback. **Muse Spark 1.3**
-> (Meta Model API) reads screenshots, pasted chats and photos, and each of the two is the fallback for the other.
+> (Meta Model API) reads screenshots, pasted chats and photos, drafts the Back Tap replies and writes essays, and each
+> of the two is the fallback for the other.
 > The user's own **LoRA on Muse Glimmer 30B** is trained and benchmarked (numbers below), and the server can run it on
 > Modal or Baseten, but nothing is hosting it right now: Modal credits are nearly used up, Fireworks uploads are
 > disabled service-wide, and the hackathon Baseten key serves only Muse Spark Open. So the deployed server runs with
@@ -28,11 +29,11 @@ and the open-weights **Muse Glimmer 30B** carries the user's own LoRA.
 
 | Surface | What happens |
 |---|---|
-| **SaySo keyboard** | Its own RU/EN letter keys (Kazakh letters on long-press). The strip on top has an audience chip (the AI suggests one), a format chip, and ✨. Type a draft, tap ✨, get 1–3 versions in your style, tap one to insert. A *series* comes as a stack you send one message at a time. The **panel** has Rewrite / Write / Replies (the latest screenshot replies). You always send the message yourself. |
+| **SaySo keyboard** | Its own RU/EN letter keys (Kazakh letters on long-press). The strip on top has an audience chip (the AI suggests one), a format chip, and ✨. Type a draft, tap ✨, get 1–3 versions in your style, tap one to insert. A *series* comes as a stack you send one message at a time. The **panel** has Rewrite / Write / Replies (the latest screenshot replies, or paste their messages). Settings in the app's Keyboard tab: audiences, formats, number of variants, haptics, accent, "Capital letter at sentence start" (off by default, since most people who write like this write lowercase) and "Learn from what I type" (off by default). You always send the message yourself. |
 | **Back Tap → replies** | One iOS Shortcut: *Take Screenshot* → SaySo App Intent → `/reply`. Muse Spark 1.3 reads the chat, guesses the audience and situation, and returns three replies with different intents (for example agree / refuse / joke). You pick one from the list and it's copied. The keyboard's Replies tab shows the same three. |
-| **Chat in the app** | Five modes, each with an audience and a format. **Write** (an instruction → your message), **Rewrite** (your draft → your wording), **Reply** (paste their messages). **Email**: subject + body from your notes, optionally answering an email you paste. **Essay**: a plan and the text, built only from your own notes, then up to 3 questions whose answers would make it stronger. 🎙 records a voice note and Muse Voice Transcribe turns it into text, so notes, drafts and answers to those questions can be spoken. Under each answer: Copy, 👍, 👎, ✏️. A 👎 with "shorter" rewrites the answer, and if the feedback says something lasting, it becomes a rule of the style ("✨ Learned: …"). |
+| **Chat in the app** | Five modes, each with an audience and a format. **Write** (an instruction → your message), **Rewrite** (your draft → your wording), **Reply** (paste their messages). **Email**: subject + body from your notes, optionally answering an email you paste. **Essay**: a plan and the text, built only from your own notes, then up to 3 questions whose answers would make it stronger. 🎙 records a voice note and Muse Voice Transcribe turns it into text, so notes, drafts and answers to those questions can be spoken. Under each answer: Copy, 👍, 👎, ✏️. 👎 offers one-tap reasons (Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; for emails and essays: Shorter, Longer, More personal, Simpler words, Less formal) or your own words, typed or spoken. The answer is rewritten, and if the feedback says something lasting, it becomes a rule of the style ("✨ Learned: …"). |
 | **Styles** | An **Add** menu with three kinds of source, each with step-by-step guides per app. **Messages (chats)**: WhatsApp, Telegram, Instagram exports, or screenshots / a screen recording for iMessage and any other app. SaySo asks which participant is you and who each chat is with, then builds a style: profile, examples, a self-check score, and optionally its own LoRA. **Emails** and **Essays & documents**: your own writing as files (.txt, .docx, .pdf, Google Takeout .mbox), photos or screenshots, or pasted text, which becomes your formal voice. |
-| **Learned from you** | The style card lists every message the keyboard learned from and every rule taken from your corrections. Each one can be deleted. |
+| **Learned from you** | The style card lists every message the keyboard learned from and every rule taken from your corrections. Each one can be deleted. Its **Formal writing** section shows what was learned from your emails and essays (sentence length, linking words, how you open and sign off). |
 
 **Formats:** `message` (one chat message), `series` (2–4 short messages, the way you split a thought), `official`
 (a polite message for a work or study chat) and `email`; the chat's Essay mode writes `essay`. The formal ones use
@@ -101,12 +102,15 @@ flowchart TD
    the usual length, share of lowercase starts, end punctuation, laughter and swearing, and how often the user agrees,
    jokes, teases, asks back and so on in each situation. It returns the audience (and the top 3 guesses), the situation
    (request, invitation, good news, sadness, conflict, joke, thanks, apology, logistics, …), a neutral 20–30-word
-   summary of the other person's messages, and **three drafts with different intents**. Nothing from the screenshot
-   is stored. Only the user's suggested replies are cached for the keyboard, never the summary.
+   summary of the other person's messages, and **three drafts with different intents**. With the GPU off (now), these
+   drafts are the replies the user sees. Nothing from the screenshot is stored. Only the user's suggested replies are
+   cached for the keyboard, never the summary.
 2. **Write in the user's style.** For ✨, rewrite, compose, chat answers and emails, **Muse Spark Open** writes with
    the style profile, up to 8 of the user's real messages to that audience (their newest and approved ones first, then
    the ones closest in words and spelling, picked on our own server with TF-IDF), and the rules learned from their
-   feedback. It returns its answer plus 4 more variants, which become the alternatives under ✨. Spark Open always
+   feedback. The prompt tells it to keep the user's habits (fillers, laughter, swearing, emoji, splitting a thought
+   into several messages) at the user's own rate for that audience, instead of writing cleaner than they do. It
+   returns its answer plus 4 more variants, which become the alternatives under ✨. Spark Open always
    reasons; `reasoning_effort: low` keeps the thought short (2.7 s instead of 5.5 s in our test). If it fails, Muse
    Spark 1.3 answers instead, and if Spark 1.3 fails, Spark Open does. A compose answer that just repeats the
    instruction ("tell her…") is rewritten by Spark 1.3.
@@ -126,7 +130,8 @@ flowchart TD
 Chats teach how the user writes to friends; their own emails and essays teach how they write when it's official.
 In the style card or the Add menu, the user adds **Emails** or **Essays & documents**: `.txt`, `.md`, `.docx`, `.pdf`,
 a Google Takeout `.mbox` (Sent label only), pasted text, or photos and screenshots that Muse Spark 1.3 transcribes
-(handwritten lines joined into paragraphs, crossed-out words left out, mail app headers skipped). Each source has a
+(handwritten lines joined into paragraphs, crossed-out words left out, mail app headers and the signature block after
+the sign-off skipped, names of other people and companies replaced with `[Name]`). Each source has a
 step-by-step guide in the app (Gmail and Apple Mail screenshots, copy and paste, print to PDF, Takeout; photos of
 pages, Word / Pages / Google Docs).
 
@@ -139,6 +144,9 @@ and sign off) and keeps their paragraphs as examples. The two kinds teach differ
   structure, headings or topic. The structure comes from the new task.
 - **Emails teach manner only**: how the user greets, asks and signs off, how formal and direct they are. Never what
   those emails said.
+
+The author's own style currently holds 8 emails they sent and 11 handwritten essay pages (photographed, names masked
+as `[Name]`); only those paragraphs and the formal profile are stored, on the private volume.
 
 **Email mode** writes a subject and a body from the user's notes (spoken or typed), optionally answering an email they
 paste, with every fact from the notes and nothing invented. **Essay mode** plans first (4–6 points), then writes in
@@ -168,13 +176,15 @@ optional `training` of the style's own LoRA (`SAYSO_TRAIN=on`, at least 150 turn
 
 ### Learning from use
 
-- **Keyboard → `/learn`.** When a message is sent with the SaySo keyboard's own letter keys, the keyboard queues it.
-  A suggestion sent unchanged is not counted as the user's own wording. A ✨ suggestion the user changed is sent along
-  with their version, and Spark may turn the difference into a rule. Links, emails, phone and card numbers are
-  stripped. The keyboard never learns from password, email, URL, one-time-code or search fields. The new messages serve
-  as examples on the very next request.
-- **Chat → `/feedback`.** 👍 keeps the answer as an example, ✏️ keeps the user's version and may teach a rule, 👎 with
-  a comment revises the answer and may teach a rule.
+- **Keyboard → `/learn`** (opt-in: "Learn from what I type" is off until the user turns it on). When a message is
+  typed and sent with the SaySo keyboard's own letter keys, the keyboard queues it. **Pasted text is never learned**
+  (it may be someone else's words). A suggestion sent unchanged is not counted as the user's own wording. A ✨
+  suggestion the user changed is sent along with their version, and Spark may turn the difference into a rule. Links,
+  emails, phone and card numbers are stripped. The keyboard never learns from password, email, URL, number,
+  one-time-code or search fields. The new messages serve as examples on the very next request.
+- **Chat → `/feedback`.** 👍 keeps the answer as an example, ✏️ keeps the user's version and may teach a rule.
+- **Chat → 👎.** A quick reason chip or the user's own words go back to `/chat` as feedback on the last answer: the
+  answer is revised, and a lasting preference becomes a rule.
 - The style card lists what was learned, and each item can be deleted ("Learned from you").
 
 ### The main style's LoRA (offline pipeline)
@@ -227,20 +237,21 @@ against the user's real message. Script: `eval/style_gain.py`, results: `eval/re
 | Muse Spark 1.3 + style profile | 0.92 | 47.4 |
 | Muse Spark 1.3 + style profile + the user's real example messages (random) | 0.94 | 54.0 |
 | Muse Spark 1.3, production prompt (examples by TF-IDF, + 4 variants) | 0.94 | 53.5 |
-| **Muse Spark Open, production prompt (what the app runs now)** | **0.93** | **47.5** |
+| **Muse Spark Open, production prompt (what the app runs now)** | **0.93** | **50.4** |
 
 - The style profile does most of the work on **form**; the user's real messages add most of the gain in **wording**
   (chrF).
-- Muse Spark Open matches the user's form as well as Spark 1.3 (0.93 vs 0.94) but shares fewer of their exact words
-  (chrF 47.5 vs 53.5). The app uses it because it is an open-weights model (the path to self-hosting), with Spark 1.3
-  one call away as the fallback.
-- **Picking examples by meaning did not help.** Examples picked by Fireworks embeddings (form 0.93, chrF 53.2) and by
-  local TF-IDF scored the same as random examples, within noise. The server keeps TF-IDF because it is free and keeps
-  the topic close, and removed the embeddings so nothing leaves the server for it. Picking the variant closest to the
-  user's statistics (best-of-5) kept form at 0.94 but dropped chrF to 41.5, so the app keeps the model's own answer.
-- Spark's outputs vary run to run. An earlier run of the same script scored 0.68 / 39.5 → 0.91 / 46.4 → 0.92 / 53.3
-  (generic → profile → examples), so differences of about 0.02 form or 2 chrF are noise. One "examples" output failed
-  in the committed run (n = 39).
+- Muse Spark Open matches the user's form about as well as Spark 1.3 (0.93 vs 0.94) but shares fewer of their exact
+  words (chrF 50.4 vs 53.5). Its chrF rose to 50.4 after the prompt started asking it to keep the user's fillers,
+  laughter, swearing, emoji and message splitting at their own rate. The app uses it because it is an open-weights
+  model (the path to self-hosting), with Spark 1.3 one call away as the fallback.
+- **Picking examples by meaning did not help.** Examples picked by Fireworks embeddings and by local TF-IDF scored the
+  same as random examples, within noise (Nov 1 runs, noted in `eval/style_gain.py`, not in the committed JSON). The
+  server keeps TF-IDF because it is free and keeps the topic close, and removed the embeddings so nothing leaves the
+  server for it. Picking the variant closest to the user's statistics (best-of-5) kept form but lowered chrF in the
+  same runs, so the app keeps the model's own answer.
+- Spark's outputs vary run to run: differences of about 0.02 form or 2 chrF between reruns of the same script are
+  noise. One "examples" output failed in the committed run (n = 39).
 
 ### 2. The personal LoRA vs prompting the same base model
 
@@ -249,7 +260,7 @@ against the user's real message. Script: `eval/style_gain.py`, results: `eval/re
 | System | Fingerprint ↓ | chrF ↑ (all) | chrF rewrite | chrF compose | Median length | Memorized |
 |---|---:|---:|---:|---:|---:|---:|
 | Base Glimmer, same prompt | 2.64 | 13.1 | 28.5 | 22.8 | 73 chars | 0.2% |
-| Glimmer + 5 of the user's own messages (few-shot) | 1.02 | 20.5 | 40.7 | 25.5 | 27 chars | 3.8% |
+| Glimmer + 5 of the user's own messages (few-shot) | 1.01 | 20.5 | 40.7 | 25.5 | 27 chars | 3.8% |
 | **Glimmer + the user's LoRA (v1)** | **0.04** | **28.9** | **57.2** | **42.5** | 19 chars | 0.6% |
 
 The user's real messages average about 28 characters. Replies are the hardest task: guessing someone's exact answer is
@@ -259,16 +270,16 @@ from different test sets, so they are not a head-to-head comparison.)
 
 ### 3. v4: thought first, then the message
 
-`eval/results/bench_v4.json` and `docs/PLAN_v4_thinking.md`. Same 499 pairs, 5 candidates each. The act and tone of
-every reply were re-tagged by base Glimmer. That tagger agrees with its own earlier labels only 48% of the time, so
-about 48% is the ceiling for act match, and always guessing the most common act scores 36.8%.
+`eval/results/bench_v4.json` (ceiling and baseline from `docs/PLAN_v4_thinking.md`). Same 499 pairs, 5 candidates
+each. The act and tone of every reply were re-tagged by base Glimmer. That tagger agrees with its own earlier labels
+only 48% of the time, so about 48% is the ceiling for act match, and always guessing the most common act scores 36.8%.
 
 | | v2 | v4 | v4 + rerank | v4 with act/tone from the profile |
 |---|---:|---:|---:|---:|
 | Act match on replies | 44% | 40% | **46%** | 42% |
 | Tone mix gap (TV ↓) | 0.09 | 0.11 | 0.12 | **0.06** |
 | Fingerprint ↓ (all tasks) | 0.075 | 0.072 | 0.045 | **0.044** |
-| Reply length (real: 28 chars) | 38 | – | – | **24** |
+| Mean length, all tasks (real: 28 chars) | 34 | 26 | 30 | **26** |
 
 Takeaway: the thought does not make the model read the user's mind better (both are near the tagger's noise), but it
 makes the mood mix and the length match the user, and the act becomes a **control**: prefill `act: agree`,
@@ -282,8 +293,16 @@ from a summary 2.4 s, from pasted messages 6 s, from a screenshot 9.7 s, `/compo
 
 ### 5. Blind test
 
-> **TODO:** blind test with friends (compose tasks only, no third-party messages shown; real vs SaySo vs generic).
-> Not run yet. No numbers until it is, and the protocol is written before running.
+Protocol (v2, `eval/blind_test.py`): each question shows who the other person is (partner, friend, family, an elder)
+and a neutral retelling of what they wrote (Muse Spark's summary translated to Russian, never their words), then three
+replies in random order: the user's **real** reply, **SaySo's** (`/chat` in Reply mode, in the user's style) and a
+**generic** Muse Spark 1.3 answer with no style. Pairs where the real reply doesn't fit the situation or contains names
+are skipped (Muse Spark checks each one), as are questions with two identical replies. Friends pick the reply they
+think is the user's and send back a code; `score` reports how often they found the real one (chance = 1/3, exact
+binomial p), how often SaySo fooled them vs the generic AI, and splits by audience, writing aggregate numbers only to
+`eval/results/blind_test.json`.
+
+> **TODO:** results. Not run yet; no numbers until `eval/results/blind_test.json` exists.
 
 ---
 
@@ -294,8 +313,9 @@ from a summary 2.4 s, from pasted messages 6 s, from a screenshot 9.7 s, `/compo
   the volume, the datasets or the training pairs. Tested in `tests/test_styles.py` (builds a style from a made-up
   WhatsApp chat and asserts that none of the other person's lines are written) and `tests/test_privacy.py` (scans
   everything under `data/` for incoming text from the real exports).
-- **Emails and essays:** only the user's own text is kept. Quoted earlier messages in emails are cut off, links,
-  emails, phone and card numbers are removed, and photos and screenshots are read once and not stored. An email the
+- **Emails and essays:** only the user's own text is kept. Quoted earlier messages and signature blocks in emails are
+  cut off, links, emails, phone and card numbers are removed, names of other people and companies in photos and
+  screenshots become `[Name]`, and the images are read once and not stored. An email the
   user pastes to answer is used for that one answer and not stored.
 - **Voice notes** are transcribed in memory and the audio is not stored.
 - Screenshots are processed in memory. The keyboard's "latest replies" cache holds the user's suggested replies and
@@ -355,12 +375,41 @@ pipeline/   parse_telegram.py, parse_whatsapp.py, parse_instagram.py, sources.py
             build_pairs.py  rewrite / compose / reply pairs (Muse Spark Open)
             style_profile.py, style_stats.py (reranker), lexicon.py, add_thoughts.py
 training/   modal_train.py (Unsloth QLoRA), build_prefs.py + modal_prefs.py (SimPO, v3), fireworks_sft.py
-eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, results/ (aggregated metrics only)
-tests/      test_styles.py, test_privacy.py, test_parsers.py, fixtures/ (made-up chats and documents only)
+eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, blind_test.py + blind_template.html,
+            results/ (aggregated metrics only)
+tests/      test_api_auth.py, test_blind_test.py, test_parsers.py, test_privacy.py, test_styles.py,
+            test_writer_fakes.py, fixtures/ (made-up chats and documents only)
 ios/        SaySoApp/ (Styles with the Add menu and source guides, formal writing import, Chat with 🎙, Keyboard
             settings, Setup, App Intents), SaySoKeyboard/, Shared/, scripts/
-docs/       plans, review, design brief, SUBMISSION.md
+docs/       SUBMISSION.md, VIDEO_SCRIPT.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
 ```
+
+## API reference
+
+`serving/modal_app.py`, one FastAPI app on Modal CPU. Every route needs `Authorization: Bearer <SAYSO_API_TOKEN>`;
+the token (and a 60 MB size cap) is checked before any body is read, so a request without it gets 401 at once.
+Generation routes take `style` (default `"main"`) and `format` (`message` | `series` | `official` | `email`; unknown
+values fall back to `message`); `audience` is `partner` | `friends` | `family` | `elder_informal` (unknown →
+`friends`). Errors: 404 no such style, 413 too large, 422 invalid input, 502 a model didn't answer, 503 the GPU is
+warming up (only when `SAYSO_GPU` is on).
+
+| Route | Request | Response |
+|---|---|---|
+| `POST /rewrite` | JSON `{text` (≤ 2000), `audience, situation?, style?, format?}` | `{text, parts, candidates, styled, audiences}`: `parts` = the messages of a series, `candidates` = alternatives, `styled` = written by the LoRA |
+| `POST /compose` | JSON `{instruction` (≤ 1000), `audience, situation?, style?, format?}` | same as `/rewrite` |
+| `POST /reply` | a screenshot as the raw body (`image/*`, ≤ 4 MB; `?audience=&style=&format=` in the query), or JSON `{image` (base64) `, image_type` \| `messages` (≤ 4000) \| `summary` (≤ 400) `+ situation, options, audience?, instruction?` (≤ 300) `, style?, format?}`. Sending back `summary` + `options` with another audience restyles without reading again | `{context: {audience, audiences, situation, summary}, replies: [{intent, tone, thought, styled, text, parts}] × 3, options: [{act, draft}], ms: {read, total}}` |
+| `POST /chat` | JSON `{mode: write \| rewrite \| reply \| email \| essay, text` (≤ 4000) `, audience, style?, format?, instruction?, history: [{answer, feedback}]` (≤ 12) `, question?` (essay, ≤ 1000) `, words?` (essay, 50–900, default 250) `, reply_to?` (email being answered, ≤ 6000)`}`. Feedback on the last history item revises that answer | `{text, parts, alternatives, audience, audiences, learned}` (`learned` = a new rule or null); email adds `subject`; essay adds `outline, questions, words, cliches` |
+| `POST /transcribe` | multipart `audio`: mono 16-bit WAV, ≤ 10 MB | `{text}` (Muse Voice Transcribe; audio not stored) |
+| `POST /learn` | JSON `{style?, items: [{text` (≤ 2000) `, audience, suggested?}]` (≤ 50)`}` from the keyboard | `{learned, rules}` |
+| `POST /feedback` | JSON `{audience, style?, format?, answer, edited?, liked}` | `{learned}` (a rule or null) |
+| `GET /styles` | | `{styles: [{id, name, status, stage, progress, error, source, counts, scores, lora, adapter_ready, created, needs, participants, chats, me}]}` |
+| `GET /styles/{id}` | | the same fields plus `preferences, formal: {documents, counts, paragraphs, profile}, learning: {typed, edited, liked, recent}, profile` (per audience) `, examples` |
+| `POST /styles` | multipart `name` (≤ 40) + `files` (1–200, ≤ 50 MB in all: chat exports, screenshots, screen-recording frames) | the new style (`stage` moves through parsing → needs_me → reading → profile → checking → [training] → ready; poll `GET /styles/{id}`) |
+| `PATCH /styles/{id}` | JSON `{name?, me?, chats?: {chat: audience}, remove_preference?, remove_learned?, clear_documents?}`; `me`/`chats` only while `stage = needs_me` (else 409) | the full style view |
+| `DELETE /styles/{id}` | | `{deleted}`; 409 for the main style |
+| `POST /styles/{id}/documents` | multipart `kind` (`email` \| `essay`), `files` (≤ 40, ≤ 25 MB in all: .txt .md .docx .pdf .mbox, photos/screenshots .jpg .png .heic .webp) and/or `text` | `{documents, counts, paragraphs, profile}` (the formal voice) |
+| `GET /latest` | | the last `/reply` for the keyboard: `{audience, situation, replies, at}` or `{}` |
+| `GET /warmup` | | `{ready, gpu}`; wakes the GPU when `SAYSO_GPU` is on |
 
 ## How to run
 
@@ -368,7 +417,7 @@ You need a Modal account, a Meta Model API key, a Baseten key for Muse Spark Ope
 Glimmer weights and an adapter on the `sayso-data` volume. Your own data never goes in the repo.
 
 ```bash
-cp .env.example .env    # fill META_API_KEY, BASETEN_API_KEY, SAYSO_API_URL, SAYSO_API_TOKEN, …
+cp .env.example .env    # fill META_API_KEY, BASETEN_API_KEY, SAYSO_API_TOKEN; add SAYSO_API_URL and SAYSO_GLIMMER_URL
 ```
 
 ```bash
@@ -404,6 +453,36 @@ screenshot.)
 ```bash
 python3 -m unittest discover -s tests
 ```
+
+**Style gain** (how much the style adds to Muse Spark; needs the private held-out pairs in `data/` and the keys in
+`.env`; writes only aggregated numbers):
+
+```bash
+.venv/bin/python eval/style_gain.py --limit 40
+```
+
+```bash
+.venv/bin/python eval/style_gain.py --limit 40 --writer open --only production
+```
+
+(the first writes `eval/results/style_gain.json` with Muse Spark 1.3, the second `style_gain_open.json` with Muse Spark
+Open.)
+
+**Blind test** (needs `SAYSO_API_URL`, `SAYSO_API_TOKEN`, `META_API_KEY` and the private pairs; the page and the answer
+key go to the gitignored `data/blind/`):
+
+```bash
+python3 eval/blind_test.py build --n 15
+```
+
+Send `data/blind/test.html` to friends; each one sends back a code (`SS2-…`). Then:
+
+```bash
+python3 eval/blind_test.py score SS2-... SS2-...
+```
+
+(or `--codes-file codes.txt`, one code per line; `build --no-warmup` skips waking the GPU.) `score` writes
+`eval/results/blind_test.json`, aggregate numbers only.
 
 **iOS** (Xcode, iOS 26): generate the API URL and token for the app from `.env`, then open the project, set your
 signing team, and run the `SaySo` scheme on a device. Add the keyboard in Settings → Keyboards, and create the

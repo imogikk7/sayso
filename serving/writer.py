@@ -1,24 +1,25 @@
 """What the SaySo API does with a request: read the chat, think like the user, write like the user.
 
-  read     — Muse Spark 1.3 (Meta API) reads a screenshot or pasted messages and returns the same
-             {audience, situation, summary} the model was trained on (summary = 20–30 neutral English words
-             about the other person's latest messages; nothing is stored), the top 3 audiences, and three drafts
-  rewrite  — the user's draft → their own wording            (the style's LoRA, user channel)
-  compose  — an instruction → the message they'd write          (the style's LoRA, user channel)
-  reply    — Muse Spark, which sees the whole chat and gets the style (how the user usually reacts per
-             audience × situation, how long and how they write, their real messages, the rules learned in Chat),
-             drafts three replies the way this user would mean them; the style's LoRA rewrites each in the user's
-             voice (its strongest task) and the candidate closest to the user's statistics wins. While the GPU is
-             cold or the style has no LoRA yet, Spark's drafts are returned at once (styled: false).
-             Without a chat (summary only), the main style's v4 thinks (act · tone · gist) and writes by itself.
-  chat     — the same tasks in the app's chat, plus revising an answer from the user's feedback; a feedback that
-             says something lasting ("shorter with family") becomes a rule of the style.
+Who does what (Meta models):
+  Muse Spark Open (Baseten)   writes in the user's style: rewrite, compose, chat, email, and the reply drafts' polish
+                              (reasoning "low"); with writer="meta" Muse Spark 1.3 writes instead
+  Muse Spark 1.3 (Meta API)   reads screenshots, pasted chats and photos of the user's documents; writes essays;
+                              the fallback when Spark Open fails (and the other way round)
+  Muse Voice Transcribe       turns a voice note into text (transcribe)
+  Muse Glimmer 30B + LoRA     the user's own model: with the GPU on (SAYSO_GPU), it rewrites drafts in their voice and
+                              writes replies "thought first" (main style, v4); off by default
 
-Formats: message (one chat message), series (2–4 short messages, sent one by one), official (a polite message for
-a work or study chat), email.
+  read     — screenshot or messages → {audience, audiences (top 3), situation, summary} + three reply drafts that
+             follow the user's style (profile, their real messages, rules learned from their corrections)
+  reply    — the drafts, rewritten by the LoRA when it's up, else returned as written
+  rewrite / compose — the user's draft or instruction → their wording, in a format: message, series, official, email
+  chat     — the same in the app, plus email (subject + body) and essay (plan + text from the user's notes only), and
+             revising an answer from feedback; a lasting preference becomes a rule of the style
+  formal voice — official messages, emails and essays copy the user's own emails and essays (voice, not structure)
+  learn / feedback — what the user sends with the keyboard, likes or corrects becomes examples and rules
 
-Runs inside the Modal `api` container: the user's data (pairs, lexicon, profiles, styles) is on the private
-volume, mounted so that pipeline/ modules find it at their usual data/ path.
+Other people's messages are read in memory and never stored. Runs inside the Modal `api` container: the user's data
+is on the private volume, mounted so that pipeline/ modules find it at their usual data/ path.
 """
 
 import asyncio
@@ -70,10 +71,13 @@ FORMATS["essay"] = ("as an essay: paragraphs separated by blank lines, first per
                     "formal voice")
 FORMAT_WORDS = {"message": 40, "series": 50, "official": 60, "email": 200, "essay": 900}
 CHAT_FORMATS = {"message", "series"}  # the LoRA was trained on chats: it rewrites only these
-FORMAL = {"official", "email", "essay"}  # written in the user's formal voice (their own documents), not their chat one
+FORMAL = {"official", "email", "essay"}
+# Formal writing overrides the casual habits the shared style prompt asks for (slang, swearing, emoji, splitting).
+FORMAL_NOTE = ("\n\nThis is formal writing: ignore the casual chat habits above (no slang, swearing, emoji or splitting "
+               "into short messages); keep only the user's formal voice.")  # written in the user's formal voice (their own documents), not their chat one
 # Phrases that make a text read as AI-written; an essay or email that has them is rewritten once.
 CLICHES = re.compile(
-    r"в современном мире|в наше время|играет (важную|ключевую) роль|не секрет, что|неотъемлемой частью|"
+    r"в современном мире|в наше время|игра(?:ет|ют) (важную|ключевую) роль|не секрет, что|неотъемлемой частью|"
     r"в заключение хочется|данная тема|является актуальн|на сегодняшний день|широкий спектр|уникальн(ая|ый) возможност|"
     r"\bdelve|tapestry|in today's (fast-paced )?world|plays a (crucial|vital|pivotal) role|a testament to|"
     r"navigat(e|ing) the complexities|in conclusion,|ever-evolving|unlock (the|my) potential|embark on", re.I)
@@ -699,7 +703,7 @@ class Writer:
                     "email": "Write the user's email from these notes",
                     "essay": f"Write the user's essay ({question or 'from these notes'}) from these notes"}[mode]
             voice = ctx.style_text if format not in FORMAL else (
-                (ctx.formal_block(text, kind="essay" if format == "essay" else "email") or "Write plainly and directly, like a real person, not like an AI.") + ctx.rules())
+                (ctx.formal_block(text, kind="essay" if format == "essay" else "email") or "Write plainly and directly, like a real person, not like an AI.") + ctx.rules() + FORMAL_NOTE)
             label = await self.spark(
                 REVISE_SYSTEM.format(style=voice),
                 f"{task}, to their {audience}.{self.format_line(format)}{await self.examples(ctx, format, audience, query=text)}\n\n"
@@ -708,11 +712,13 @@ class Writer:
                 max_tokens=6000 if mode == "essay" else 3000, timeout=90 if mode == "essay" else 30)
             out, parts = shape(clip(clean(label["text"]), FORMAT_WORDS.get(format, 40) * 2), format)
             rule = clean(str(label.get("rule") or ""))
+            if rule and format in FORMAL:  # scoped, so a rule learned on an essay doesn't change chat messages
+                rule = f"In {'essays' if format == 'essay' else 'emails and official messages'}: {rule}"
             if rule:
                 styles.add_preference(ctx.id, rule)
                 styles.commit()
             return {"text": out, "parts": parts, "alternatives": [], "audience": audience, "audiences": [audience],
-                    "learned": rule or None}
+                    "learned": rule or None, **({"subject": None} if mode != "email" else {})}
         if mode == "email":
             return await self.email(ctx, text, reply_to)
         if mode == "essay":
@@ -733,7 +739,7 @@ class Writer:
     def formal_system(self, ctx, query, kind="email"):
         return (STYLE_SYSTEM.split("Return JSON only")[0].format(style="")
                 + "\n" + (ctx.formal_block(query, kind=kind) or "The user hasn't added formal writing yet: write plainly and "
-                                                     "directly, like a real person, not like an AI.") + ctx.rules())
+                                                     "directly, like a real person, not like an AI.") + ctx.rules() + FORMAL_NOTE)
 
     async def email(self, ctx, notes, reply_to=""):
         reply = f", answering this email:\n{clean(reply_to)[:3000]}\n" if reply_to.strip() else ""
@@ -742,12 +748,13 @@ class Writer:
                                                    reply_lang=" (or of the email being answered)" if reply else ""),
                                  "text", writes=True, timeout=60)
         text, parts = shape(clip(clean(label["text"]), FORMAT_WORDS["email"] * 2), "email")
+        subject = clean(str(label.get("subject") or "")) or None  # the fix pass below returns only the text
         if CLICHES.search(text):
-            label = await self.spark(self.formal_system(ctx, notes), ESSAY_FIX.format(
+            fixed = await self.spark(self.formal_system(ctx, notes), ESSAY_FIX.format(
                 problems="remove phrases that sound AI-written: " + ", ".join(sorted({m.group(0) for m in CLICHES.finditer(text)})),
                 text=text), "text", timeout=60)
-            text, parts = shape(clean(label["text"]), "email")
-        return {"text": text, "parts": parts, "subject": clean(str(label.get("subject") or "")) or None,
+            text, parts = shape(clean(fixed["text"]), "email")
+        return {"text": text, "parts": parts, "subject": subject,
                 "alternatives": [], "audience": "elder_informal", "audiences": ["elder_informal"], "learned": None}
 
     async def essay(self, ctx, question, notes, words=250):
@@ -756,8 +763,9 @@ class Writer:
         system = self.formal_system(ctx, f"{question} {notes}", kind="essay")
         args = {"question": clean(question) or "(none given)", "notes": clean(notes)[:4000], "words": words}
         label = await self.spark(system, ESSAY_TASK.format(**args), "text", max_tokens=6000, timeout=90)
-        outline = [clean(str(point)) for point in label.get("outline") or [] if clean(str(point))][:8]
-        questions = [clean(str(q)) for q in label.get("questions") or [] if clean(str(q))][:3]
+        as_list = lambda value: value if isinstance(value, list) else [value] if isinstance(value, str) else []
+        outline = [clean(str(point)) for point in as_list(label.get("outline")) if clean(str(point))][:8]
+        questions = [clean(str(q)) for q in as_list(label.get("questions")) if clean(str(q))][:3]
         text = clean(label["text"])
         problems = []
         count = len(text.split())
@@ -831,6 +839,11 @@ class Writer:
         from parse_telegram import clean as scrub
         text = scrub(clean(edited or answer))  # links, emails, phones and cards removed, as in learn()
         if not text or audience not in AUDIENCES:
+            return {"learned": None}
+        if format in FORMAL:  # a liked or corrected email/essay is formal writing, not a chat example for friends
+            styles.add_documents(ctx.id, [(f"{'edited' if edited else 'liked'} in Chat", text)],
+                                 kind="essay" if format == "essay" else "email")
+            styles.commit()
             return {"learned": None}
         styles.add_feedback(ctx.id, {"audience": audience, "format": format, "text": text,
                                      "kind": "edited" if edited else "liked"})

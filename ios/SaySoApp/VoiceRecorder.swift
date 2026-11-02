@@ -9,6 +9,8 @@ final class VoiceRecorder: ObservableObject {
 
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
+    /// Called when the 2-minute limit stops the recording by itself, so the note is sent instead of lost.
+    var onLimit: (() -> Void)?
     private let url = FileManager.default.temporaryDirectory.appending(path: "sayso-voice.wav")
 
     /// Asks for the microphone the first time; false if the user said no.
@@ -32,7 +34,11 @@ final class VoiceRecorder: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 self.seconds += 1
-                if self.recorder?.isRecording == false { self.isRecording = false }
+                if self.recorder?.isRecording == false, self.isRecording {
+                    self.timer?.invalidate()
+                    self.isRecording = false
+                    self.onLimit?()
+                }
             }
         }
         return true

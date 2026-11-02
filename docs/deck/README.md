@@ -20,5 +20,6 @@ For a live preview run `npx @marp-team/marp-cli@4 -s docs/deck --config-file doc
 
 ## Numbers
 Every number comes from the repo: `eval/results/style_gain.json` and `style_gain_open.json` (slide 6, "Results · the
-live path"), `docs/PLAN_v4_thinking.md` and `eval/results/bench_v4.json` (slides 2, 7). Cost and price on the scaling
-slide are estimates. Blind test is still TODO.
+live path"), `eval/results/bench_v4.json` (slides 2, 7; slide 7's intent ceiling and guessing baseline come from
+`docs/PLAN_v4_thinking.md`). Cost and price on the scaling slide are estimates. Blind test is still TODO.
+`sayso.pdf` must be rebuilt after any change to `sayso.md`.

@@ -34,9 +34,11 @@ tease, ask back), adapted to who you're talking to (partner, friends, family, el
   your own files, photos, screenshots or pasted text become your **formal voice**. Essays teach only voice (word choice,
   sentence length, linking words), never structure or topic; emails teach only manner (greeting, sign-off, how direct
   you are), never content.
-- **It keeps learning.** Messages you send with the SaySo keyboard's letter keys become examples right away (never
-  from password, email, URL, code or search fields). A ✨ suggestion you edited before sending, or a 👎 with
-  "shorter", becomes a rule ("keep messages to family short"). Everything it learned is listed and can be deleted.
+- **It keeps learning.** Once you turn learning on (it's off by default), messages you type and send with the SaySo
+  keyboard's letter keys become examples right away. Pasted text is never learned (it may be someone else's words), and
+  neither are password, email, URL, code or search fields. A ✨ suggestion you edited before sending, or a 👎 with a
+  one-tap reason ("Too long", "Not my words") or your own words, becomes a rule ("keep messages to family short").
+  Everything it learned is listed and can be deleted.
 
 You always send the message yourself. SaySo is about keeping your own voice, not about hiding that AI was used.
 
@@ -62,8 +64,9 @@ You always send the message yourself. SaySo is about keeping your own voice, not
   my distribution instead of my average.
 - **Formal voice.** `serving/documents.py` turns my own emails and essays (.txt, .docx, .pdf, Google Takeout .mbox,
   photos, pasted text) into paragraphs and a formal profile (sentence length, linking words, openings and sign-offs).
-  Quoted earlier messages and old section labels ("Thesis:") are cut, so it learns my voice and not someone else's
-  text or my homework's structure. Essay mode plans first, takes its structure from the task, writes in the first
+  Quoted earlier messages, signature blocks and old section labels ("Thesis:") are cut, and names of other people
+  and companies in photos become `[Name]`, so it learns my voice and not someone else's text or my homework's
+  structure. My own style now holds 8 emails I sent and 11 handwritten essay pages. Essay mode plans first, takes its structure from the task, writes in the first
   person for personal statements, uses only facts from my notes, and fixes itself once if it is too long or sounds
   AI-written.
 - **Styles from uploads.** A pipeline goes parse → which one is you → Spark tagging → profile → training pairs →
@@ -102,11 +105,12 @@ You always send the message yourself. SaySo is about keeping your own voice, not
 ## Accomplishments that we're proud of
 
 - On 499 held-out pairs, the personal LoRA brought the stylometric fingerprint gap from **2.64** (base Glimmer) and
-  **1.02** (few-shot with my own messages) down to **0.04**. Rewrite chrF went from 28.5 / 40.7 to **57.2**, with
+  **1.01** (few-shot with my own messages) down to **0.04**. Rewrite chrF went from 28.5 / 40.7 to **57.2**, with
   0.6% verbatim memorization.
 - With the GPU off, the style alone lifts Muse Spark 1.3 from **0.69 → 0.94** form similarity to my real messages and
   **41.8 → 54.0** chrF (40 held-out rewrites: generic → + profile → + my real messages). **Muse Spark Open**, the
-  open-weights writer the app runs now, reaches **0.93** form and **47.5** chrF with the same prompt.
+  open-weights writer the app runs now, reaches **0.93** form and **50.4** chrF with the same prompt
+  (after it learned to keep my fillers, laughter, swearing, emoji and message splitting at my own rate).
 - The whole loop in one iOS app: keyboard ✨ in any messenger, Back Tap → three replies in my voice, emails and essays
   in my formal voice from dictated notes, and feedback that visibly turns into rules.
 - Four Meta models with clear roles: Spark Open writes, Spark 1.3 reads, Voice Transcribe listens, Glimmer carries
@@ -130,7 +134,10 @@ You always send the message yourself. SaySo is about keeping your own voice, not
 - Host the LoRA again: per-token multi-LoRA serving (Fireworks/Together) until a few thousand users, then one shared
   Glimmer base with per-user adapters swapped per request.
 - Self-host Muse Spark Open next to Glimmer, so writing runs on our own GPUs.
-- Run the blind test with friends (compose tasks only). **Result: TODO, not run yet.**
+- Run the blind test with friends (built, v2): each question shows who it is and a neutral retelling of what they
+  wrote, then three replies (my real one, SaySo's, a generic Muse Spark answer); can friends find me, and does SaySo
+  fool them more often than generic AI? Questions where my real reply doesn't fit or contains names are skipped.
+  **Result: TODO, not run yet.**
 - Batch what the keyboard learns into periodic LoRA refreshes behind an eval gate, with rollback.
 - Per-device auth instead of the demo's single server token. Move live chat reading to self-hosted models so other
   people's messages never leave our own servers.

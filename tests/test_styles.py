@@ -151,7 +151,7 @@ class FormalWriting(unittest.TestCase):
         formal = styles.add_documents(meta["id"], [("letter.txt", text)], kind="email")
         self.assertEqual(formal["documents"], 1)
         self.assertIn("кроме того", formal["profile"]["connectors"])
-        self.assertEqual(formal["profile"]["openings"], ["Здравствуйте, Анна Сергеевна"])
+        self.assertEqual(formal["profile"]["openings"], ["Здравствуйте, [Name]"])
         ctx = writer.Context(meta["id"])
         block = ctx.formal_block("хочу перенести сдачу курсовой")
         self.assertIn("курсов", block)

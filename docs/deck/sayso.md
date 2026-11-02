@@ -64,7 +64,7 @@ Your own voice, adapted to who you're talking to — in any messenger.
 - **Back Tap** on the iPhone: screenshot → ready replies
 - **Chat**: Write · Rewrite · Reply · **Email** · **Essay**, 🎙 voice input
 - **Styles** from your chats, emails and essays, with a self-check
-- **Keyboard and chat keep learning** from what you send and fix
+- **Keyboard and chat keep learning** from what you send (opt-in) and fix (👎 with one-tap reasons)
 
 </div>
 <div>
@@ -169,7 +169,7 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 
 <br>
 
-<p style="font-size: 23px;">40 held-out pairs: a neutral draft → what the user really wrote. Muse Spark 1.3, only the prompt changes. <strong>Live writer, Muse Spark Open (open weights) with the same prompt: form 0.93 · chrF 47.5</strong> — same form, fewer of the user's exact words. Picking examples by meaning scored the same as random ones.</p>
+<p style="font-size: 23px;">40 held-out pairs: a neutral draft → what the user really wrote. Muse Spark 1.3, only the prompt changes. <strong>Live writer, Muse Spark Open (open weights) with the same prompt: form 0.93 · chrF 50.4</strong> — about the same form, fewer of the user's exact words (it keeps their fillers, swearing, emoji and message splitting at their own rate). Picking examples by meaning scored the same as random ones.</p>
 
 <p class="note">Form similarity = 1 − total variation of form features (length, case, punctuation, emoji, languages) vs the real messages, as in the app's style self-check. chrF = character n-gram overlap with the real message. Reruns vary by about 0.02 form / 2 chrF. Source: <code>eval/style_gain.py</code> → <code>eval/results/style_gain.json</code>, <code>style_gain_open.json</code>.</p>
 
@@ -181,14 +181,14 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 
 <div class="cols-4">
 <div class="card">
-<span class="who">Reply length</span>
-<div class="stat accent">24</div>
-<div class="stat-label">chars · real 28 · earlier LoRA 38</div>
+<span class="who">Mean length</span>
+<div class="stat accent">26</div>
+<div class="stat-label">chars · real 28 · earlier LoRA 34</div>
 </div>
 <div class="card">
 <span class="who">Form distance</span>
-<div class="stat accent">0.07</div>
-<div class="stat-label">vs 0.12 earlier LoRA (lower is better)</div>
+<div class="stat accent">0.044</div>
+<div class="stat-label">vs 0.075 earlier LoRA (lower is better)</div>
 </div>
 <div class="card">
 <span class="who">Tone mix distance</span>
@@ -206,11 +206,11 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 
 - 499 held-out test pairs. The model writes a short thought (intent + tone) in Glimmer's reasoning channel, then the message. Trained and benchmarked; not hosted live (no GPU credits).
 - The intent is a control: *agree*, *refuse*, *joke* → three replies with different intents, all in your voice.
-- **Blind test** (friends guess: real or SaySo?): *TODO — results pending.*
+- **Blind test** (friends see a situation and three replies: the real one, SaySo's, a generic AI's — can they find the user?): *TODO — results pending.*
 
 </div>
 
-<p class="note">Source: <code>docs/PLAN_v4_thinking.md</code>, <code>eval/results/bench_v4.json</code>. Intent ceiling = how often the tagger agrees with itself.</p>
+<p class="note">Source: <code>eval/results/bench_v4.json</code> (v4 with act/tone from the profile vs v2, all tasks; intent match = v4 + rerank). Ceiling and guessing baseline: <code>docs/PLAN_v4_thinking.md</code>; intent ceiling = how often the tagger agrees with itself.</p>
 
 ---
 
@@ -223,8 +223,8 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 
 - Trained and prompted **only on what you wrote**.
 - Other people's messages are read **in memory** for context, then discarded.
-- Uploads are parsed in memory (quoted email replies cut off); **screenshots, photos and voice notes are never stored**.
-- The keyboard ignores password, email, URL, one-time-code and search fields.
+- Uploads are parsed in memory (quoted email replies and signatures cut off, other people's names → [Name]); **screenshots, photos and voice notes are never stored**.
+- The keyboard learns only if you turn it on, never from pasted text, and ignores password, email, URL, one-time-code and search fields.
 
 </div>
 <div>
@@ -254,7 +254,7 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 - **Per-user LoRA adapters** swapped per request (multi-LoRA vLLM) — a new user adds an adapter, not a GPU.
 - Users without their own LoRA yet run on Muse Spark Open + their style profile — open weights, so it can be self-hosted too.
 
-<p class="note">Cost per active user / month: ≈ <strong>$3</strong> now → ≈ <strong>$1–1.5</strong> optimized. Estimates.</p>
+<p class="note">Cost per active user / month: ≈ <strong>$3–3.5</strong> now → ≈ <strong>$1–1.5</strong> optimized. Estimates.</p>
 
 </div>
 <div>
