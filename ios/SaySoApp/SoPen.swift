@@ -48,7 +48,7 @@ struct SoPenMask: Shape {
                 SoPen.curve(SoPen.segments[index].points, in: rect, into: &path, move: n == 0)
             }
         }
-        let width = 38 * rect.width / SoPen.size.width
+        let width = 46 * rect.width / SoPen.size.width
         return path.trimmedPath(from: 0, to: progress)
             .strokedPath(StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
     }

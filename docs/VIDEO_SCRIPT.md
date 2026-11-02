@@ -91,15 +91,17 @@ changed: lowercase start, no period at the end, shorter length, emoji or `))`. R
 2. **Double-tap the back of the iPhone** (Back Tap → "Reply with SaySo" shortcut). The shortcut takes the screenshot.
 3. System dialog **"Who is it for?"** → tap **Friends**.
 4. Dialog **"Anything to add? …"** → type `politely decline, I'm busy` → Done.
-5. Wait (~6–10 s). The system **list of replies** appears (Choose from List). Tap the one you like → it's copied.
-6. Back in Telegram: long-press the message field → **Paste** (allow the paste prompt if iOS shows it) → Send.
+5. Wait (~6–10 s). The shortcut shows the replies and says *Switch to the SaySo keyboard*.
+6. Back in Telegram, the SaySo keyboard (already open, or 🌐 → SaySo) shows the replies on its own
+   (`Replies from your screenshot`). Tap one → it's in the message field → Send. (iOS drops clipboard writes from
+   an app in the background, so the keyboard inserts the reply instead of a paste.)
 
 **Voiceover:**
 > A friend asks for help on Saturday, and I can't. I double-tap the back of my phone. SaySo grabs the screen and asks
 > who it's for. I add a note: politely decline. Muse Spark reads the chat and writes three replies the way I would.
-> Pick one, paste, send.
+> They're waiting in my keyboard. Tap one, send.
 
-**Caption:** `Double-tap the back of the phone` · `Note: "politely decline, I'm busy"` · `Pick → paste → send`
+**Caption:** `Double-tap the back of the phone` · `Note: "politely decline, I'm busy"` · `Tap a reply in the keyboard → send`
 
 **B-roll / edit:** a screen recording can't show Back Tap, so cut to a **second camera**: a finger double-tapping the
 back of the phone (0.7 s), then back to the screen. During the wait show `⏩ ×3 · real time N s` and the right badge
@@ -155,7 +157,7 @@ others are cut off.`
 ## 5 · Essay from your voice, then an email (1:31–2:00)
 
 **Screen (exact taps):**
-1. **Chat** tab → mode **Essay**. Field *Essay question or topic*: paste
+1. **Chat** tab → **Write** → kind **Essay** (or the *Essay* button in SaySo's welcome message). Field *Essay question or topic*: paste
    `Describe a project you are proud of and what you learned from it.` Stepper: `About 250 words`.
 2. Tap **🎙** and speak the notes (about 15 s, sped up in the edit). Use real, non-private facts about this project,
    for example: *built SaySo alone in nine days for the Meta hackathon; a keyboard that writes like me; trained a LoRA
@@ -164,7 +166,7 @@ others are cut off.`
 3. Wait (speed-ramped, real time shown). The answer shows the essay text and `N words`; scroll it slowly for 2 s.
 4. Under it: **Make it stronger: answer one** with up to 3 questions. Tap one → tap **🎙** → answer in one sentence →
    send. The revised essay appears; hold 1.5 s.
-5. Quick cut (5 s): mode **Email**. Paste a staged email from the second account into *The email you're answering (optional)*
+5. Quick cut (5 s): **Write** → kind **Email**. Paste a staged email from the second account into *Answering an email? Paste it (optional)*
    field (`Hi! Can you present SaySo at our meetup on Thursday at 6?`), 🎙 *"yes, I'll be there, ask if I should
    bring a laptop"* → the answer shows a **subject** line and the email. Tap **Copy subject** if visible.
 
@@ -185,9 +187,9 @@ the English translation of its first paragraph only (no need to translate it all
 ## 6 · It learns as you use it (2:00–2:14)
 
 **Screen (exact taps):**
-1. **Chat** tab. Mode **Write**, `For: Friends`, format `Message`. Type:
+1. **Chat** tab. Menus above the field: **Write**, **Message**, **To Friends**. Type:
    `скажи, что опоздаю минут на 20, пробки` (*say I'll be ~20 min late, traffic*) → send.
-2. Tap **👎** → bar `Fixing the last answer` and a row of reason chips (`Too long`, `Too formal`, `Not my words`, …).
+2. Tap **👎** → bar `What should change?` and a row of reason chips (`Too long`, `Too formal`, `Not my words`, …).
    Type `shorter` and send (or tap **Too long**; typing matches the voiceover). The revised answer and the toast
    **`✨ Learned: …`** appear. Hold 1.5 s on the toast.
 3. Cut: **Styles** → the style → **Learned from you** → a message just sent with SaySo's letter keys is at the top.

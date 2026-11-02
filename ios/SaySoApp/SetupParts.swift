@@ -353,7 +353,7 @@ struct ShortcutFlow: View {
                 FlowArrow()
                 FlowNode(icon: "sparkles", title: "Reply from Screenshot", caption: "SaySo", highlighted: true)
                 FlowArrow()
-                FlowNode(icon: "text.bubble", title: "3 replies", caption: "first one copied", highlighted: false)
+                FlowNode(icon: "keyboard", title: "3 replies", caption: "in your keyboard", highlighted: false)
             }
         }
         .padding(.vertical, 14)

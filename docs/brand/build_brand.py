@@ -1,8 +1,7 @@
-"""Builds the brand assets from the traced logo and the pen path of "So":
-logo-so.svg (solid: the traced brush plus the pen path where the brush went faint), icon.svg, and the pen path as
-Swift (ios/SaySoApp/SoPen.swift) for the handwriting animation.
+"""Builds the brand assets: icon.svg (SAY traced from the logo, So drawn by stroke_so.py) and the pen path as Swift
+(ios/SaySoApp/SoPen.swift) for the handwriting animation.
 
-Usage: python docs/brand/build_brand.py  (after trace_logo.py)
+Usage: python docs/brand/build_brand.py  (after trace_logo.py and stroke_so.py)
 """
 import re
 from pathlib import Path
@@ -17,21 +16,7 @@ def path_d(name):
     return re.search(r' d="([^"]+)"', (HERE / name).read_text()).group(1)
 
 
-def strokes(color):
-    """The pen path as strokes of each segment's width; the thin tail ends are left to the traced brush."""
-    out = []
-    for i, (points, width) in enumerate(so_pen.SEGMENTS):
-        pts = points[:-1] if i in (2, 5) else points
-        out.append(f'<path d="{so_pen.svg_d(pts)}" fill="none" stroke="{color}" stroke-width="{width}" '
-                   'stroke-linecap="round" stroke-linejoin="round"/>')
-    return "".join(out)
-
-
-trace = path_d("logo-so-trace.svg")
-(HERE / "logo-so.svg").write_text(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 847 430" width="847" height="430">'
-    f'<path fill="#000" fill-rule="nonzero" d="{trace}"/>{strokes("#000")}</svg>\n')
-
+so = path_d("logo-so.svg")
 say = path_d("logo-say.svg")
 k = 0.789 * 1024 / 804  # the reference icon: SAY 78.9% wide, 11.7% from the left, its top 33.7% down
 (HERE / "icon.svg").write_text(f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
@@ -47,7 +32,7 @@ k = 0.789 * 1024 / 804  # the reference icon: SAY 78.9% wide, 11.7% from the lef
 <rect width="1024" height="1024" fill="#FFFFFF"/><rect width="1024" height="1024" fill="url(#tl)"/><rect width="1024" height="1024" fill="url(#br)"/>
 <g transform="translate({120 - k:.2f} 345) scale({k:.5f})">
  <path fill="#0A0A0A" fill-rule="evenodd" d="{say}"/>
- <g fill="url(#so)" stroke="url(#so)"><path stroke="none" d="{trace}"/>{strokes("url(#so)")}</g>
+ <path fill="url(#so)" fill-rule="evenodd" d="{so}"/>
 </g></svg>
 ''')
 
@@ -98,7 +83,7 @@ struct SoPenMask: Shape {{
                 SoPen.curve(SoPen.segments[index].points, in: rect, into: &path, move: n == 0)
             }}
         }}
-        let width = 38 * rect.width / SoPen.size.width
+        let width = 46 * rect.width / SoPen.size.width
         return path.trimmedPath(from: 0, to: progress)
             .strokedPath(StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
     }}

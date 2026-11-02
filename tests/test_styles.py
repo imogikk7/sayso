@@ -215,6 +215,12 @@ class Helpers(unittest.TestCase):
         writer.REVISE_SYSTEM.format(style="x")
         writer.STYLE_SYSTEM.format(style="x")
 
+    def test_tidy_transcript(self):
+        self.assertEqual(writer.tidy_transcript("Скажи, Мире, мире, что опоздаю на двадцать минут.."),
+                         "Скажи, Мире, что опоздаю на двадцать минут.")
+        self.assertEqual(writer.tidy_transcript("because of traffic, traffic and ask?."), "because of traffic and ask?")
+        self.assertEqual(writer.tidy_transcript("да да, конечно"), "да да, конечно")  # short repeats are often meant
+
     def test_similarity(self):
         self.assertEqual(build_style.similarity(["го", "ок"], ["го", "ок"]), 1.0)
         self.assertLess(build_style.similarity(["Здравствуйте, я хотел бы уточнить время встречи."], ["го"]), 0.7)

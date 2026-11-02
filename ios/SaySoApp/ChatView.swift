@@ -171,7 +171,6 @@ struct ChatView: View {
     private var welcome: some View {
         VStack(alignment: .leading, spacing: 8) {
             SaySoBubble { Text("Hey! I'm SaySo 👋 I write like **you**, not like an AI.") }
-            SaySoBubble(avatar: false) { contrast }
             SaySoBubble(avatar: false) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("What are we writing?")
@@ -189,27 +188,6 @@ struct ChatView: View {
                 }
             }
             if items.isEmpty { tryThese }
-        }
-    }
-
-    /// The same message from a generic AI and from SaySo in the user's style.
-    private var contrast: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Same message, two ways:").font(.subheadline.weight(.semibold))
-            HStack(alignment: .top, spacing: 8) {
-                Text("AI").font(.system(size: 10, weight: .heavy).width(.expanded)).foregroundStyle(.white)
-                    .frame(width: 26, height: 26).background(Color.gray, in: .circle)
-                Text("I apologize, but I won't be able to make it today.")
-                    .font(.subheadline).strikethrough().foregroundStyle(.secondary)
-            }
-            HStack(alignment: .top, spacing: 8) {
-                Avatar(size: 26)
-                Text("сорян, сегодня не успею 😅 давай завтра?")
-                    .font(.subheadline.weight(.medium))
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .foregroundStyle(.white)
-                    .background(Theme.accentGradient, in: .rect(cornerRadius: 12))
-            }
         }
     }
 

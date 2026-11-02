@@ -1,42 +1,8 @@
 import SwiftUI
 
-// The welcome flow: a splash with the logo in a breathing blue glow, then three illustrated onboarding pages.
+// The welcome flow: three illustrated onboarding pages (the splash with the pen-written logo is SplashView).
 // Everything is drawn with SwiftUI (no bitmaps). Numbers on page 3 are the committed self-check of the main style:
 // form 0.93 with SaySo (eval/results/style_gain_open.json) vs 0.69 for generic Muse Spark (eval/results/style_gain.json).
-
-/// Splash: the vector logo in a slowly breathing blue glow, and the tagline.
-struct WelcomeSplash: View {
-    @State private var breathing = false
-    @State private var shown = false
-
-    var body: some View {
-        ZStack {
-            Theme.backdrop
-            Circle()
-                .fill(RadialGradient(colors: [Theme.glow.opacity(0.55), Theme.glow.opacity(0)],
-                                     center: .center, startRadius: 0, endRadius: 210))
-                .frame(width: 420, height: 420)
-                .scaleEffect(breathing ? 1.12 : 0.82)
-                .opacity(breathing ? 1 : 0.55)
-            VStack(spacing: 22) {
-                LogoView()
-                    .frame(width: 250)
-                    .shadow(color: Theme.glow.opacity(breathing ? 0.55 : 0.15), radius: breathing ? 26 : 10)
-                    .scaleEffect(shown ? 1 : 0.9)
-                    .opacity(shown ? 1 : 0)
-                Text("Your writing. Our match.")
-                    .font(Theme.label(17))
-                    .foregroundStyle(.secondary)
-                    .opacity(shown ? 1 : 0)
-                    .offset(y: shown ? 0 : 10)
-            }
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { breathing = true }
-            withAnimation(.spring(duration: 0.6).delay(0.05)) { shown = true }
-        }
-    }
-}
 
 /// Three illustrated pages: your words vs generic AI, ✨ on the keyboard, the self-check score.
 struct WelcomeOnboarding: View {
@@ -331,11 +297,13 @@ private struct ScoreIllustration: View {
                     .frame(width: 210, height: 210)
                     .opacity(progress)
                 Circle().stroke(Color.accentColor.opacity(0.14), lineWidth: 14)
+                    .frame(width: 160, height: 160)  // the glow behind is wider; the ring keeps its own size
                 Circle()
                     .trim(from: 0, to: CGFloat(progress * sayso))
                     .stroke(Theme.stroke, style: StrokeStyle(lineWidth: 14, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .shadow(color: Color.accentColor.opacity(0.45), radius: 8)
+                    .frame(width: 160, height: 160)
                 VStack(spacing: 2) {
                     Text("\(Int((progress * sayso * 100).rounded()))%")
                         .font(Theme.display(40))

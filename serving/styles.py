@@ -92,12 +92,27 @@ def write_jsonl(path, rows):
     tmp.replace(path)  # atomic: readers see the old file or the new one, never half of it
 
 
+_main_counts = None
+
+
+def main_counts():
+    """How many of the user's own messages the main style was built from (its training pairs), counted once."""
+    global _main_counts
+    if _main_counts is None:
+        try:
+            with (DATA / "pairs_v4" / "train.jsonl").open(encoding="utf-8") as f:
+                _main_counts = {"turns": sum(1 for line in f if line.strip())}
+        except FileNotFoundError:
+            return {}
+    return _main_counts
+
+
 def meta(style_id):
     """The style's meta.json, or None if there is no such style."""
     path = folder(style_id) / "meta.json"
     stored = read_json(path)
     if style_id == MAIN:
-        return {**MAIN_META, **(stored or {})}
+        return {**MAIN_META, "counts": main_counts(), **(stored or {})}
     return stored
 
 

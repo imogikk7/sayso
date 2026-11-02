@@ -162,14 +162,6 @@ struct StyleHeroCard: View {
                 .frame(width: 220, height: 220)
                 .blur(radius: 50)
                 .offset(x: 60, y: -80)
-            Image("LogoSo")
-                .resizable()
-                .renderingMode(.template)
-                .scaledToFit()
-                .foregroundStyle(Color.white.opacity(0.15))
-                .frame(width: 280)
-                .rotationEffect(.degrees(-16))
-                .offset(x: 90, y: -10)
         }
     }
 }

@@ -37,4 +37,4 @@ def svg(mask, name, close=0, blur=2):
     print(name, len(curves), "curves", len(path), "chars")
 
 svg(dark, "logo-say")
-svg(blue, "logo-so-trace", close=21, blur=7)
+# So is drawn from its pen path by stroke_so.py (the traced brush has holes where it went faint)

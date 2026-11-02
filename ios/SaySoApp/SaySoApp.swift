@@ -19,7 +19,7 @@ struct RootView: View {
     var body: some View {
         ZStack {
             if splash {
-                WelcomeSplash().transition(.opacity)
+                SplashView().transition(.opacity)
             } else if !onboarded {
                 WelcomeOnboarding { withAnimation { onboarded = true } }.transition(.opacity)
             } else {

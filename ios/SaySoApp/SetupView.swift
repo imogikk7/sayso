@@ -115,7 +115,7 @@ struct SetupView: View {
             ShortcutFlow()
             NoteBox(icon: "square.on.square.dashed", text: """
             In Shortcuts: + → Take Screenshot → Reply from Screenshot (SaySo, leave Audience empty). \
-            It shows the replies and copies the first one; adding Choose from List → Copy to Clipboard is optional.
+            The replies then wait in the SaySo keyboard: switch to it in the chat and tap one to put it in.
             """)
             PathLine(steps: ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", "this shortcut"])
             HStack(spacing: 12) {

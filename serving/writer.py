@@ -149,6 +149,13 @@ DEFAULT_CONTRASTS = ["agree", "ask_back", "joke"]
 
 META_URL = "https://api.meta.ai/v1/chat/completions"
 TRANSCRIBE_URL = "https://api.meta.ai/v1/asr/transcribe"  # Muse Voice Transcribe: WAV in, text out
+# Muse Voice Transcribe repeats words ("traffic, traffic", "Мире, мире") and doubles the final punctuation ("?.", "..")
+REPEATED = re.compile(r"\b(\w{3,})[,.!?;:]?\s+\1\b", re.I)  # short ones ("да да", "ok ok") are often meant
+DOUBLED_STOP = re.compile(r"([.!?])[.!?]+")
+TRANSCRIPT_FIX = """You fix speech-recognition mistakes in a voice note, nothing else.
+Fix: repeated or broken words ("на бая. Абая" → "на Абая"), punctuation, capital letters of names and places.
+Keep every word the speaker said, in their language and order; never rephrase, shorten, translate, answer or add anything.
+Return JSON only: {"text": "<the fixed voice note>"}."""
 # If the Meta API fails (or hits a limit during the demo), Muse Spark Open answers instead (Baseten, hackathon key).
 FALLBACK_URL = "https://inference.baseten.co/v1/chat/completions"
 FALLBACK_MODEL = "meta-models/muse-spark-open-1026"
@@ -274,6 +281,14 @@ class Unavailable(Exception):
     def __init__(self, status, detail):
         super().__init__(detail)
         self.status, self.detail = status, detail
+
+
+def tidy_transcript(text):
+    """Removes the recognizer's repeated words and doubled final punctuation."""
+    previous = None
+    while previous != text:
+        previous, text = text, REPEATED.sub(r"\1", text)
+    return DOUBLED_STOP.sub(r"\1", text).strip()
 
 
 def clean(text):
@@ -841,9 +856,24 @@ class Writer:
                 TRANSCRIBE_URL, timeout=60, headers={"Authorization": f"Bearer {self.meta_key}"},
                 files={"request": (None, json.dumps(request), "application/json"), "audio": ("voice.wav", wav, "audio/wav")})
             response.raise_for_status()
-            return clean(response.json().get("transcript") or "")
+            text = clean(response.json().get("transcript") or "")
         except Exception:
             raise Unavailable(502, "Muse Voice Transcribe did not answer")
+        return await self.fix_transcript(tidy_transcript(text))
+
+    async def fix_transcript(self, text):
+        """Muse Spark fixes what the recognizer got wrong; kept only if it stayed the same note (same words, about
+        the same length), otherwise the tidied transcript goes out as it is."""
+        if len(text.split()) < 4:
+            return text
+        try:
+            fixed = clean(str((await self.spark(TRANSCRIPT_FIX, text, "text", max_tokens=2000, timeout=15))["text"]))
+        except Exception:
+            return text
+        said, got = set(re.findall(r"\w+", text.casefold())), set(re.findall(r"\w+", fixed.casefold()))
+        if not fixed or not 0.7 <= len(fixed) / len(text) <= 1.3 or len(said & got) < 0.7 * len(said):
+            return text
+        return fixed
 
     async def feedback(self, ctx, audience, format, answer, edited=None, liked=False):
         """The user liked an answer or wrote their own version: it becomes an example; an edit may teach a rule."""
