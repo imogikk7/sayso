@@ -1,3 +1,4 @@
+import CoreText
 import SwiftUI
 
 /// The SaySo design system: sky-blue accent, navy, soft blue gradients; radius 4 keys, 8 chips, 12 cards, 16 bubbles.
@@ -7,20 +8,101 @@ enum Theme {
     static let card: CGFloat = 12
     static let bubble: CGFloat = 16
     static let chip: CGFloat = 8
+    /// The blue of the "So" brush stroke, deep at its tail and light at its end.
+    static let stroke = LinearGradient(colors: [Color(red: 0.12, green: 0.37, blue: 0.84), glow],
+                                       startPoint: .bottomLeading, endPoint: .topTrailing)
+    static let accentGradient = LinearGradient(colors: [Color(red: 0.36, green: 0.62, blue: 1.0), Color.accentColor],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)
 
     /// White with a blue glow in the corners, like the icon.
     static var backdrop: some View {
         ZStack {
-            Color(.systemBackground)
-            RadialGradient(colors: [glow.opacity(0.55), .clear], center: .topLeading, startRadius: 0, endRadius: 420)
-            RadialGradient(colors: [glow.opacity(0.45), .clear], center: .bottomTrailing, startRadius: 0, endRadius: 460)
+            Color(.systemGroupedBackground)
+            RadialGradient(colors: [glow.opacity(0.5), .clear], center: .topLeading, startRadius: 0, endRadius: 420)
+            RadialGradient(colors: [glow.opacity(0.35), .clear], center: .bottomTrailing, startRadius: 0, endRadius: 460)
         }
         .ignoresSafeArea()
     }
 
-    /// Big rounded display numbers (the design uses Archivo ExtraBold; SF's heavy expanded width is the closest built-in).
-    static func display(_ size: CGFloat) -> Font {
-        .system(size: size, weight: .heavy).width(.expanded)
+    /// The brand font, Archivo (SIL Open Font License, Fonts/OFL.txt), bundled as three static cuts.
+    static func registerFonts() {
+        for name in ["Archivo-ExpandedBlack", "Archivo-ExpandedExtraBold", "Archivo-SemiBold"] {
+            if let url = Bundle.main.url(forResource: name, withExtension: "ttf") {
+                CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+            }
+        }
+    }
+
+    /// Big numbers and short headlines: Archivo Expanded ExtraBold.
+    static func display(_ size: CGFloat) -> Font { .custom("Archivo-ExpandedExtraBold", size: size, relativeTo: .largeTitle) }
+    /// Screen titles: Archivo Expanded Black.
+    static func title(_ size: CGFloat = 32) -> Font { .custom("Archivo-ExpandedBlack", size: size, relativeTo: .largeTitle) }
+    /// Card titles and labels: Archivo SemiBold.
+    static func label(_ size: CGFloat = 16) -> Font { .custom("Archivo-SemiBold", size: size, relativeTo: .headline) }
+}
+
+/// The SaySo wordmark, vector: "SAY" in the text color (black in light mode, white in dark), "So" in the blue gradient.
+struct LogoView: View {
+    var body: some View {
+        ZStack {
+            Image("LogoSay").resizable().scaledToFit().foregroundStyle(.primary)
+            Image("LogoSo").resizable().scaledToFit().foregroundStyle(Theme.stroke)
+        }
+        .accessibilityLabel("SaySo")
+    }
+}
+
+/// A rounded card on the backdrop: frosted, with a hairline edge, readable in light and dark mode.
+struct GlassCard: ViewModifier {
+    var radius: CGFloat = Theme.card + 4
+    var padding: CGFloat = 14
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial, in: .rect(cornerRadius: radius))
+            .overlay(RoundedRectangle(cornerRadius: radius).stroke(Color.primary.opacity(0.06)))
+            .shadow(color: Theme.glow.opacity(0.18), radius: 14, y: 6)
+    }
+}
+
+extension View {
+    func glassCard(radius: CGFloat = Theme.card + 4, padding: CGFloat = 14) -> some View {
+        modifier(GlassCard(radius: radius, padding: padding))
+    }
+}
+
+/// A pill to pick one of a few options (mode, kind, audience).
+struct Pill: View {
+    let title: String
+    var icon: String? = nil
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                if let icon { Image(systemName: icon).font(.caption.weight(.semibold)) }
+                Text(title).font(.subheadline.weight(selected ? .semibold : .regular))
+            }
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .foregroundStyle(selected ? Color.white : Color.primary)
+            .background {
+                if selected { Capsule().fill(Theme.accentGradient) } else { Capsule().fill(.regularMaterial) }
+            }
+            .overlay(Capsule().stroke(Color.primary.opacity(selected ? 0 : 0.08)))
+        }
+        .buttonStyle(.plain)
+        .animation(.snappy(duration: 0.2), value: selected)
+    }
+}
+
+/// A small section title over a group of cards.
+struct SectionTitle: View {
+    let text: String
+    var body: some View {
+        Text(text).font(Theme.display(17)).foregroundStyle(.primary)
     }
 }
 
@@ -94,7 +176,9 @@ struct PrimaryButtonStyle: ButtonStyle {
             .font(.headline)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 50)
-            .background(Color.accentColor.opacity(configuration.isPressed ? 0.8 : 1), in: .capsule)
+            .background(Theme.accentGradient, in: .capsule)
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .shadow(color: Color.accentColor.opacity(0.35), radius: 10, y: 4)
     }
 }
 
@@ -104,7 +188,7 @@ struct SplashView: View {
         ZStack {
             Theme.backdrop
             VStack(spacing: 18) {
-                Image("Logo").resizable().scaledToFit().frame(width: 230)
+                LogoView().frame(width: 230)
                 Text("Your writing. Our match.").font(.footnote).foregroundStyle(.secondary)
             }
         }

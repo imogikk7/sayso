@@ -2,6 +2,8 @@ import SwiftUI
 
 @main
 struct SaySoApp: App {
+    init() { Theme.registerFonts() }
+
     var body: some Scene {
         WindowGroup {
             RootView()

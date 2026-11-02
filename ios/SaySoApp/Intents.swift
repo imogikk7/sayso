@@ -1,4 +1,5 @@
 import AppIntents
+import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
@@ -23,9 +24,9 @@ enum ReplyAudience: String, AppEnum {
     }
 }
 
-/// The Back Tap shortcut: Take Screenshot → Reply from Screenshot → Choose from List → Copy to Clipboard.
-/// It asks who the reply is for and an optional note ("politely decline, I'm busy" or some context), then
-/// returns only the replies, one message each, for the system list; Copy to Clipboard copies the chosen one.
+/// The Back Tap shortcut: Take Screenshot → Reply from Screenshot (→ optionally Choose from List → Copy to Clipboard).
+/// It asks who the reply is for and an optional note ("politely decline, I'm busy" or some context), shows the
+/// replies right in the shortcut, copies the first one, and returns all of them for a Choose from List step.
 struct ReplyFromScreenshotIntent: AppIntent {
     static var title: LocalizedStringResource = "Reply from Screenshot"
     static var description = IntentDescription("Reads the chat on the screenshot and writes replies in your style.")
@@ -53,7 +54,7 @@ struct ReplyFromScreenshotIntent: AppIntent {
         }
     }
 
-    func perform() async throws -> some IntentResult & ReturnsValue<[String]> {
+    func perform() async throws -> some IntentResult & ReturnsValue<[String]> & ProvidesDialog & ShowsSnippetView {
         var note = note
         if note == nil && asksForNote {
             // Cancelling or leaving it empty just means "no note".
@@ -61,7 +62,34 @@ struct ReplyFromScreenshotIntent: AppIntent {
         }
         let response = try await SaySoAPI.reply(screenshot: screenshot.data, audience: audience.audience, instruction: note)
         ReplyStore.latest = response
-        return .result(value: response.replies.map(\.text))
+        let replies = response.replies.map(\.text)
+        if let first = replies.first {
+            await MainActor.run { UIPasteboard.general.string = first }
+        }
+        let dialog: IntentDialog = replies.isEmpty ? "No reply this time. Try again with a note." : "Copied the first one. Paste it in the chat."
+        return .result(value: replies, dialog: dialog, view: RepliesSnippet(replies: replies))
+    }
+}
+
+/// The replies, shown inside the shortcut: the first one is already on the clipboard.
+struct RepliesSnippet: View {
+    let replies: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(replies.enumerated()), id: \.offset) { index, reply in
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: index == 0 ? "doc.on.clipboard.fill" : "bubble.left")
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 18)
+                    Text(reply).font(.subheadline)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.accentColor.opacity(index == 0 ? 0.14 : 0.06), in: .rect(cornerRadius: 12))
+            }
+        }
+        .padding()
     }
 }
 
