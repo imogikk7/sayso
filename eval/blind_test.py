@@ -376,7 +376,7 @@ def run_all(fn, batch):
 
 
 def build(n=20, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, warmup=True, log=print, generic=0,
-          author="", post_url=None, max_draws=None, workers=12, splits=("test",), max_parts=None):
+          author="", post_url=None, max_draws=None, workers=12, splits=("test",), max_parts=None, distinct=False):
     """→ the key. Writes <out_dir>/<test_id>/{test.html, questions.json, answers.json} and <out_dir>/latest.json."""
     rng = random.Random(seed)
     pairs, seen = [], set()
@@ -488,7 +488,7 @@ def build(n=20, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, 
             if ok is not True:
                 continue
             key = " ".join(parts).casefold().strip(" .!?")
-            if key in used_texts:
+            if distinct and key in used_texts:
                 dropped["sayso: the same text as another item"] += 1
                 continue
             used_texts.add(key)
@@ -968,7 +968,7 @@ def main(argv=None):
               not args.no_warmup, generic=args.generic, author=author,
               post_url=lambda test_id: f"{url}/blind/{test_id}/answers",
               splits=("test", "train") if args.include_train else ("test",),
-              max_parts=1 if args.single else None)
+              max_parts=1 if args.single else None, distinct=True)
     elif args.command == "publish":
         keys = env(("SAYSO_API_URL",))
         publish(args.test or latest_id(), Api(keys["SAYSO_API_URL"], None))
