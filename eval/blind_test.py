@@ -954,6 +954,7 @@ def main(argv=None):
     s.add_argument("codes", nargs="*")
     s.add_argument("--codes-file", help="a text file with one code per line")
     s.add_argument("--server", action="store_true", help="pull the answers posted to the published page")
+    s.add_argument("--skip", type=int, default=0, help="leave out the first N server responses (the author's own)")
     s.add_argument("--test", help="the v3 test id (default: the last build)")
     s.add_argument("--answers", help="a key file (default: data/blind/<test>/answers.json; for v2: "
                                      "data/blind/answers.json)")
@@ -990,6 +991,9 @@ def main(argv=None):
             except RuntimeError as error:
                 sys.exit(str(error))
             print(f"{len(responses)} responses on the server")
+            if args.skip:  # the author's own runs (trying the page) are not a friend's guesses
+                responses = sorted(responses, key=lambda r: r.get("at") or 0)[args.skip:]
+                print(f"  skipping the first {args.skip} (the author's own), scoring {len(responses)}")
         elif not codes:
             parser.error("give codes, or --server for the answers posted to the page")
         try:
