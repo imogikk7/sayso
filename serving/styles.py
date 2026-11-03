@@ -10,6 +10,8 @@
                                      suggestion before sending it (their own text only)
                   documents.jsonl    paragraphs of the user's own formal writing (emails, essays) and formal.json, its
                                      profile: their formal voice for official messages, emails and essays
+                  custom.json        what the user set by hand in the Styles tab: their own greetings and sign-offs
+                                     for emails (and the default of each), phrases they never use per kind of text
 
 The main style is the author's Telegram model; its data stays where it was (data/pairs_v4, data/style_profile.json,
 adapter v4) and only its meta.json, preferences and feedback live under data/styles/main.
@@ -162,7 +164,8 @@ def delete(style_id):
 def version(style_id):
     """Changes whenever anything the writer reads for this style changes."""
     parts = []
-    for name in ("meta.json", "preferences.json", "feedback.jsonl", "learned.jsonl", "profile.json", "formal.json"):
+    for name in ("meta.json", "preferences.json", "feedback.jsonl", "learned.jsonl", "profile.json", "formal.json",
+                 "custom.json"):
         path = folder(style_id) / name
         parts.append(path.stat().st_mtime if path.exists() else 0)
     return tuple(parts)
@@ -263,3 +266,102 @@ def add_documents(style_id, uploads, kind="essay"):
 def clear_documents(style_id):
     for name in ("documents.jsonl", "formal.json"):
         (folder(style_id) / name).unlink(missing_ok=True)
+
+
+# ---- what the user set by hand ------------------------------------------------------------------------------
+
+CUSTOM_LISTS = {"email": ("openers", "signoffs", "avoid"), "essay": ("avoid",), "message": ("avoid",)}
+CUSTOM_DEFAULTS = {"email": {"openers": "default_opener", "signoffs": "default_signoff"}}  # list → its default
+MAX_CUSTOM_ITEMS = 20
+MAX_CUSTOM_CHARS = 80
+
+
+def custom(style_id):
+    """custom.json: {email: {openers, signoffs, default_opener, default_signoff, avoid}, essay: {avoid},
+    message: {avoid}}. A list that is missing was never edited (the app shows what SaySo parsed instead)."""
+    value = read_json(folder(style_id) / "custom.json", {})
+    return value if isinstance(value, dict) else {}
+
+
+def custom_items(values):
+    """Trimmed, one line each, no duplicates (ignoring case), at most MAX_CUSTOM_ITEMS of MAX_CUSTOM_CHARS."""
+    out, seen = [], set()
+    for value in values or []:
+        item = " ".join(str(value).split())[:MAX_CUSTOM_CHARS].strip()
+        if item and item.casefold() not in seen:
+            seen.add(item.casefold())
+            out.append(item)
+    return out[:MAX_CUSTOM_ITEMS]
+
+
+def set_custom(style_id, changes):
+    """changes = {kind: {field: value} | None}, only the fields being changed. A list replaces the stored one (None =
+    forget it, back to what SaySo parsed); a default must be one of its list's items, or it is dropped."""
+    current = custom(style_id)
+    for kind, fields in (changes or {}).items():
+        if kind in CUSTOM_LISTS and fields is None:  # {kind: null}: forget everything set for this kind
+            current.pop(kind, None)
+            continue
+        if kind not in CUSTOM_LISTS or not isinstance(fields, dict):
+            raise ValueError(f"unknown kind of text: {kind}")
+        defaults = CUSTOM_DEFAULTS.get(kind, {})
+        section = dict(current.get(kind) or {})
+        for name, value in fields.items():
+            if name in CUSTOM_LISTS[kind]:
+                if value is None:
+                    section.pop(name, None)
+                elif isinstance(value, list):
+                    section[name] = custom_items(value)
+                else:
+                    raise ValueError(f"{kind}.{name} must be a list")
+            elif name in defaults.values():
+                item = " ".join(str(value or "").split())[:MAX_CUSTOM_CHARS].strip()
+                section[name] = item or None
+            else:
+                raise ValueError(f"unknown field: {kind}.{name}")
+        for list_name, default_name in defaults.items():
+            chosen = section.get(default_name)
+            match = [i for i in section.get(list_name) or [] if chosen and i.casefold() == chosen.casefold()]
+            if match:
+                section[default_name] = match[0]
+            else:
+                section.pop(default_name, None)
+        if section:
+            current[kind] = section
+        else:
+            current.pop(kind, None)
+    write_json(folder(style_id) / "custom.json", current)
+    return current
+
+
+def parsed_ends(style_id, limit=8):
+    """Every greeting and sign-off SaySo found in the user's emails, most used first: (openers, signoffs)."""
+    from collections import Counter
+    openers, signoffs = Counter(), Counter()
+    for pair in formal(style_id).get("ends", []):
+        opening, closing = (list(pair) + [None, None])[:2]
+        if opening:
+            openers[opening.rstrip(",:!")] += 1
+        if closing:
+            signoffs[closing.rstrip(",.")] += 1
+    return [o for o, _ in openers.most_common(limit)], [c for c, _ in signoffs.most_common(limit)]
+
+
+def formal_by_kind(style_id):
+    """The formal profile of each kind of text on its own ({email: …, essay: …}), so emails and essays each show
+    their own traits; plus how many documents and paragraphs per document."""
+    import statistics
+    import documents as parse
+    rows, out = documents(style_id), {}
+    ends = [tuple(e) for e in formal(style_id).get("ends", [])]
+    for kind in parse.KINDS:
+        mine = [r for r in rows if r.get("kind", "essay") == kind]
+        if not mine:
+            continue
+        per_doc = {}
+        for r in mine:
+            per_doc[r["doc"]] = per_doc.get(r["doc"], 0) + 1
+        profile = parse.profile([r["text"] for r in mine], ends if kind == "email" else [])
+        out[kind] = {**profile, "documents": len(per_doc),
+                     "paragraphs_per_doc": round(statistics.median(per_doc.values()), 1)}
+    return out

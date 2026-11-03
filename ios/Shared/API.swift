@@ -119,10 +119,11 @@ struct Style: Codable, Hashable, Identifiable {
     var examples: [String: [String]]? = nil
     var learning: StyleLearning? = nil
     var formal: FormalWriting? = nil
+    var custom: StyleCustom? = nil  // what the user set by hand: greetings, sign-offs, phrases they never use
 
     enum CodingKeys: String, CodingKey {
         case id, name, status, stage, progress, error, source, counts, scores, lora, adapterReady = "adapter_ready",
-             needs, participants, chats, me, preferences, profile, examples, learning, formal
+             needs, participants, chats, me, preferences, profile, examples, learning, formal, custom
     }
 
     var isReady: Bool { status == "ready" }
@@ -137,6 +138,9 @@ struct FormalWriting: Codable, Hashable {
     var counts: [String: Int]? = nil  // "email" / "essay" → how many documents
     var paragraphs: Int = 0
     var profile: FormalProfile? = nil
+    var kinds: [String: FormalProfile]? = nil  // "email" / "essay" → the profile of that kind of text on its own
+    var openers: [String]? = nil  // every greeting found in the user's emails, most used first
+    var signoffs: [String]? = nil  // every sign-off found in the user's emails, most used first
 }
 
 struct FormalProfile: Codable, Hashable {
@@ -145,10 +149,38 @@ struct FormalProfile: Codable, Hashable {
     var connectors: [String]? = nil
     var openings: [String]? = nil
     var closings: [String]? = nil
+    var firstPerson: Double? = nil  // share of words that are "I", "my", "me"
+    var paragraphs: Int? = nil
+    var documents: Int? = nil  // per kind only
+    var paragraphsPerDoc: Double? = nil  // per kind only
 
     enum CodingKeys: String, CodingKey {
-        case sentenceWords = "sentence_words", paragraphWords = "paragraph_words", connectors, openings, closings
+        case sentenceWords = "sentence_words", paragraphWords = "paragraph_words", connectors, openings, closings,
+             firstPerson = "first_person", paragraphs, documents, paragraphsPerDoc = "paragraphs_per_doc"
     }
+}
+
+/// What the user set by hand in the Styles tab (custom.json). A list that is nil was never edited.
+struct StyleCustom: Codable, Hashable {
+    var email: EmailCustom? = nil
+    var essay: AvoidCustom? = nil
+    var message: AvoidCustom? = nil
+}
+
+struct EmailCustom: Codable, Hashable {
+    var openers: [String]? = nil
+    var signoffs: [String]? = nil
+    var defaultOpener: String? = nil
+    var defaultSignoff: String? = nil
+    var avoid: [String]? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case openers, signoffs, defaultOpener = "default_opener", defaultSignoff = "default_signoff", avoid
+    }
+}
+
+struct AvoidCustom: Codable, Hashable {
+    var avoid: [String]? = nil
 }
 
 /// What the style learned from the user: messages sent with the keyboard, suggestions they changed, answers they liked.
@@ -401,6 +433,18 @@ enum SaySoAPI {
                         clearDocuments: clearDocuments)
         return try await send("styles/\(id)", method: "PATCH", body: try JSONEncoder().encode(body),
                               contentType: "application/json", timeout: 20)
+    }
+
+    /// One list the user edited by hand (kind "email" | "essay" | "message", field "openers" | "signoffs" | "avoid"),
+    /// with its default ("default_opener" / "default_signoff") when it has one. items nil = forget the list and go
+    /// back to what SaySo found in the user's own writing.
+    static func updateCustomList(_ id: String, kind: String, field: String, items: [String]?,
+                                 defaultField: String? = nil, defaultValue: String? = nil) async throws -> Style {
+        var fields: [String: Any] = [field: items.map { $0 as Any } ?? (NSNull() as Any)]
+        if let defaultField { fields[defaultField] = defaultValue.map { $0 as Any } ?? (NSNull() as Any) }
+        let body = try JSONSerialization.data(withJSONObject: [kind: fields])
+        return try await send("styles/\(id)/custom", method: "PATCH", body: body, contentType: "application/json",
+                              timeout: 20)
     }
 
     static func deleteStyle(_ id: String) async throws {

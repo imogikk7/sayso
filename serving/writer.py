@@ -301,6 +301,35 @@ def audiences_of(label, first=None):
     return list(dict.fromkeys(ranked))[:3]
 
 
+CYRILLIC = re.compile(r"[а-яёәғқңөұүһі]", re.I)
+LATIN = re.compile(r"[a-z]", re.I)
+
+
+def is_cyrillic(text):
+    return len(CYRILLIC.findall(text or "")) >= max(1, len(LATIN.findall(text or "")))
+
+
+def preferred_ends(custom, text=""):
+    """The greeting and sign-off the user picked in the Styles tab for an email in the language of `text` (Cyrillic or
+    Latin): their default first, else the first of that language. (None, None) when they set none for it, so the
+    parsed ones from their emails are used."""
+    email = (custom or {}).get("email") or {}
+    cyrillic = is_cyrillic(text)
+
+    def pick(items, default):
+        ordered = ([default] if default in items else []) + [i for i in items if i != default]
+        return next((i for i in ordered if is_cyrillic(i) == cyrillic), None)
+    return (pick(email.get("openers") or [], email.get("default_opener")),
+            pick(email.get("signoffs") or [], email.get("default_signoff")))
+
+
+def avoid_line(custom, kind):
+    """"Never use: …" for the phrases the user marked as not theirs for this kind of text (message, email, essay)."""
+    avoid = ((custom or {}).get(kind) or {}).get("avoid") or []
+    return ("\nWords and phrases the user never uses (never write them): " + " · ".join(f"«{a}»" for a in avoid)
+            if avoid else "")
+
+
 class Context:
     """One style, ready to write with: its profile and prompts, the user's real messages as examples, their
     statistics for reranking, what they usually do per audience × situation, and the rules learned in Chat."""
@@ -346,14 +375,17 @@ class Context:
         self.preferences = styles.preferences(style_id)
         self.documents = styles.documents(style_id)  # the user's own formal writing: [{doc, kind, text}]
         self.formal = styles.formal(style_id).get("profile") or {}
+        self.custom = styles.custom(style_id)  # set by hand in the Styles tab: greetings, sign-offs, phrases to avoid
         text = profile_text(profile)
         audiences = [a for a in AUDIENCES if self.examples.get((a, None))]
         shown = "\n".join(f"- {a}: " + " · ".join(f"«{one_message(e)}»" for e in self.sample(a, k=4, seed=0))
                           for a in audiences)
         style = ("The user's style, from their own chats (how they write, not who they are):\n" + text
-                 + ("\n\nSome of their real messages:\n" + shown if shown else "") + self.rules())
+                 + ("\n\nSome of their real messages:\n" + shown if shown else "") + self.rules()
+                 + avoid_line(self.custom, "message"))
         self.read_system = read_system(style)
-        self.style_text = "The user's style, from their own chats:\n" + text + self.rules()
+        self.style_text = ("The user's style, from their own chats:\n" + text + self.rules()
+                           + avoid_line(self.custom, "message"))
 
     def rules(self):
         if not self.preferences:
@@ -398,9 +430,11 @@ class Context:
 
     def formal_block(self, query=None, k=3, kind=None):
         """The user's formal voice for official messages, emails and essays: their formal profile and the paragraphs of
-        their own writing most like `query`, of the same kind first; empty if they haven't added any."""
+        their own writing most like `query`, of the same kind first, then what they set by hand (greeting and sign-off
+        in the language of `query`, phrases to avoid); empty if they have neither."""
+        own = self.custom_block(query, kind)
         if not self.documents:
-            return ""
+            return ("\nWrite plainly and directly, like a real person, not like an AI." + own) if own else ""
         import documents as parse
         q = grams(query or "")
         def score(text):
@@ -413,7 +447,20 @@ class Context:
                  "email": "copy ONLY their manner: how they greet, ask and sign off, how formal and direct they are. "
                           "Never copy what those emails say"}[kind if kind in ("essay", "email") else "email"]
         return (f"\nThe user's own formal writing, to {rules}:\n" + parse.profile_text(self.formal) + "\n"
-                + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked))
+                + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked) + own)
+
+    def custom_block(self, query=None, kind=None):
+        """The user's own picks from the Styles tab; they override the greetings and sign-offs parsed above."""
+        kind = "essay" if kind == "essay" else "email"
+        lines = avoid_line(self.custom, kind)
+        if kind == "email":
+            opener, signoff = preferred_ends(self.custom, query)
+            if opener:
+                lines += (f"\nIf it opens with a greeting, use exactly the user's own: «{opener}» "
+                          "(put the person's name for [Name], or leave the name out if it isn't known).")
+            if signoff:
+                lines += f"\nIf it signs off, use exactly the user's own sign-off: «{signoff}»."
+        return lines
 
     @property
     def pool(self):
