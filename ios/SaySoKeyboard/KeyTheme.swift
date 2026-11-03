@@ -43,6 +43,11 @@ enum KeyTheme {
         scheme == .dark ? Color(white: 0.275, opacity: 0.9) : Color(red: 0.675, green: 0.694, blue: 0.725)
     }
 
+    /// The key popup over a pressed letter: the letter-key color, opaque (it covers the key under it).
+    static func calloutFill(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(white: 0.42) : Color.white
+    }
+
     /// The 1 pt shadow under every key: #898A8D (light), black at 35% (dark).
     static func keyShadow(_ scheme: ColorScheme) -> Color {
         scheme == .dark ? Color.black.opacity(0.35) : Color(red: 0.537, green: 0.541, blue: 0.553)

@@ -56,6 +56,12 @@ final class PanelModel: ObservableObject {
     @Published var shift: ShiftState = .on
     @Published var returnLabel = "return"
     private var lastShiftTap = Date.distantPast
+    /// Which key is down, per key (not published: a press redraws only its own key; see KeyTouches.swift).
+    let presses = KeyPresses()
+    /// The last letter typed and how it went in (its case), so a long press can swap it for its alternate.
+    private var lastTyped: (key: String, text: String)?
+    /// When a key last typed: the shortcut poll stays out of the way while the user is typing.
+    private var lastKeystroke: CFTimeInterval = 0
 
     // Learning from what the user sends with this keyboard (their own text only)
     private var lastText = ""  // the field's text at the last change
@@ -114,6 +120,13 @@ final class PanelModel: ObservableObject {
         fromShortcut = true
         options = replies
         haptic.impactOccurred()
+    }
+
+    /// The 1.5 s poll while the keyboard is up. It does nothing while the user is typing (a keystroke never waits on
+    /// it) and, when nothing is new, only reads two small values of the App Group (no decoding, nothing published).
+    func pollShortcutReplies() {
+        guard hasFullAccess, CACurrentMediaTime() - lastKeystroke > 1 else { return }
+        checkShortcutReplies()
     }
 
     /// The panel's Rewrite / Write / Replies picker: switching by hand drops the previous tab's results.
@@ -198,17 +211,22 @@ final class PanelModel: ObservableObject {
 
     // MARK: - Letter keys
 
+    /// A letter, typed on touch down.
     func type(_ key: String) {
         userDeleted = false
-        proxy?.insertText(shift == .off ? key : key.uppercased())
+        let text = shift == .off ? key : key.uppercased()
+        proxy?.insertText(text)
         if shift == .on { setShift(.off) }
         afterTyping()
+        lastTyped = (key, text)
     }
 
-    func typeAlternate(_ key: String) {
-        guard let alternate = alternates[key] else { return }
-        proxy?.insertText(shift == .off ? alternate : alternate.uppercased())
-        if shift == .on { setShift(.off) }
+    /// A long press on a letter that has an alternate (е → ё, а → ә…): the letter, already typed on touch down, is
+    /// replaced by its alternate, in the same case.
+    func swapForAlternate(_ key: String) {
+        guard let alternate = alternates[key], let typed = lastTyped, typed.key == key, let proxy else { return }
+        proxy.deleteBackward()
+        proxy.insertText(typed.text == key ? alternate : alternate.uppercased())
         afterTyping()
     }
 
@@ -247,6 +265,8 @@ final class PanelModel: ObservableObject {
     }
 
     private func afterTyping() {
+        lastTyped = nil
+        lastKeystroke = CACurrentMediaTime()
         lastText = proxy?.documentContextBeforeInput ?? ""
         readDraft()
         autoShift()
@@ -272,14 +292,12 @@ final class PanelModel: ObservableObject {
         if shift != new { shift = new }
     }
 
-    /// The key click, on touch down. Queued after the touch is handled, on a generator kept prepared, so it never holds
-    /// up the highlight or the letter.
+    /// The key click, on touch down, right after the letter. One generator for the keyboard's life, prepared on open
+    /// and again after each click (it stays ready a few seconds), so a click allocates nothing and never waits.
     func feedback() {
         guard settings.haptics && hasFullAccess else { return }
-        DispatchQueue.main.async { [haptic] in
-            haptic.impactOccurred(intensity: 0.6)
-            haptic.prepare()
-        }
+        haptic.impactOccurred(intensity: 0.6)
+        haptic.prepare()
     }
 
     private static func label(for type: UIReturnKeyType?) -> String {

@@ -12,6 +12,7 @@ final class KeyboardViewController: UIInputViewController {
     private var watch: Timer?  // picks up the Back Tap shortcut's replies while the keyboard is up
     private var height: NSLayoutConstraint?
     private var host: UIHostingController<KeyboardRoot>?
+    private weak var undelayedWindow: UIWindow?  // the window whose system touch delays are already off
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,9 +56,32 @@ final class KeyboardViewController: UIInputViewController {
         updateHeight()
         model.appear(fullAccess: hasFullAccess, needsGlobe: needsInputModeSwitchKey)
         watch?.invalidate()
-        watch = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.model.checkShortcutReplies() }
+        // Cheap when nothing is new and skipped while the user types (`pollShortcutReplies`); the tolerance lets iOS
+        // fold it into other wake-ups.
+        let timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.model.pollShortcutReplies() }
         }
+        timer.tolerance = 0.5
+        watch = timer
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        removeSystemTouchDelays()
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        if view.window !== undelayedWindow { removeSystemTouchDelays() }
+    }
+
+    /// Lag cause 1: the system's edge and home-indicator gesture recognizers on the keyboard's window hold every touch
+    /// back (`delaysTouchesBegan`) before the keys see it. Turned off on the window and every view above this one, on
+    /// each appearance and whenever the keyboard lands in another window (see `SystemTouchDelays`).
+    private func removeSystemTouchDelays() {
+        guard let window = view.window else { return }
+        undelayedWindow = window
+        SystemTouchDelays.remove(above: view)
     }
 
     override func textDidChange(_ textInput: UITextInput?) {
