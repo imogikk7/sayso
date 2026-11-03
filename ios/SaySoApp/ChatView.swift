@@ -66,10 +66,12 @@ struct ChatView: View {
     @State private var answering: String?  // an essay question the user is answering
     @State private var question = ""  // essay: the question or topic
     @State private var words = 250  // essay: about how many words
-    @State private var replyTo = ""  // email: the email being answered
+    @State private var customWords = false  // essay: the length is set with the stepper, not a preset
+    @State private var previous: [PreviousTurn] = []  // this thread's last turns, sent back for context
     @State private var busy = false
     @State private var editing: (answer: String, text: String)?
     @State private var toast: String?
+    @State private var toastIcon = "sparkles"
     @FocusState private var focused: Bool
     @StateObject private var recorder = VoiceRecorder()
 
@@ -97,7 +99,7 @@ struct ChatView: View {
             .toolbar(.hidden, for: .navigationBar)
             .overlay(alignment: .top) {
                 if let toast {
-                    Label(toast, systemImage: "sparkles")
+                    Label(toast, systemImage: toastIcon)
                         .font(.footnote.weight(.semibold))
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(.thinMaterial, in: .capsule)
@@ -118,31 +120,27 @@ struct ChatView: View {
         }
     }
 
-    // MARK: Header, like a chat with a person
+    // MARK: Header: the wordmark in one line, and a new chat
 
     private var header: some View {
-        HStack(spacing: 12) {
-            Avatar(size: 42)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("SaySo").font(Theme.display(19))
-                HStack(spacing: 5) {
-                    Circle().fill(busy ? Color.accentColor : Color.green).frame(width: 7, height: 7)
-                    Text(busy ? "typing like you…" : "writes as \(SharedStore.styleName)")
-                        .font(.caption).foregroundStyle(.secondary)
+        ZStack {
+            LogoHorizontal()
+                .frame(height: 32)
+                .accessibilityAddTraits(.isHeader)
+            HStack {
+                Spacer()
+                Button { withAnimation { reset() } } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(width: 38, height: 38)
+                        .background(.regularMaterial, in: .circle)
                 }
+                .disabled(items.isEmpty)
+                .accessibilityLabel("New chat")
             }
-            Spacer()
-            Button { withAnimation { reset() } } label: {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 38, height: 38)
-                    .background(.regularMaterial, in: .circle)
-            }
-            .disabled(items.isEmpty)
-            .accessibilityLabel("New chat")
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .overlay(alignment: .bottom) { Divider().opacity(0.5) }
     }
@@ -247,6 +245,7 @@ struct ChatView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 14).padding(.vertical, 10)
                 .background(Theme.accentGradient, in: BubbleShape(mine: true))
+                .copyMenu(text, shape: BubbleShape(mine: true), onCopy: copy)
                 .shadow(color: Color.accentColor.opacity(0.25), radius: 6, y: 2)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.leading, 56)
@@ -258,7 +257,7 @@ struct ChatView: View {
                 .frame(maxWidth: .infinity)
         case .answer(let id, let answer, let audience, let format):
             AnswerView(answer: answer, format: format, audience: audience, isLast: items.last?.id == id,
-                       onCopy: { UIPasteboard.general.string = answer.text; show(L("Copied")) },
+                       onCopy: copy,
                        onLike: { Task { await like(answer, audience: audience, format: format) } },
                        onFix: { fixing = true; focused = true },
                        onEdit: { editing = (answer.text, answer.text) },
@@ -328,35 +327,64 @@ struct ChatView: View {
         }
     }
 
-    /// The fields that only email and essay have: the email being answered, the essay question and length.
+    /// The essay's own fields: the question or topic, and how long, as two separate cards.
     @ViewBuilder private var details: some View {
         if kind == .essay && mode == .write {
             VStack(alignment: .leading, spacing: 6) {
-                TextField("Essay question or topic", text: $question, axis: .vertical)
-                    .lineLimit(1...3)
-                    .font(.subheadline.weight(.semibold))
-                Stepper(value: $words, in: 100...650, step: 50) {
-                    Text("About \(words) words").font(.footnote).foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "text.quote").font(.footnote.weight(.semibold)).foregroundStyle(Color.accentColor)
+                    TextField("Essay question or topic", text: $question, axis: .vertical)
+                        .lineLimit(1...3)
+                        .font(.subheadline.weight(.semibold))
                 }
+                .padding(.horizontal, 12).padding(.vertical, 9)
+                .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.08)))
+                essayLength
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 14))
-        } else if kind == .email && mode == .write {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "arrowshape.turn.up.left").font(.footnote).foregroundStyle(.secondary).padding(.top, 2)
-                TextField("Answering an email? Paste it (optional)", text: $replyTo, axis: .vertical)
-                    .lineLimit(1...3)
-                    .font(.footnote)
-                PasteButton(payloadType: String.self) { strings in
-                    Task { @MainActor in replyTo = strings.joined(separator: "\n") }
-                }
-                .labelStyle(.iconOnly)
-                .buttonBorderShape(.circle)
-                .controlSize(.mini)
-            }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 14))
         }
+    }
+
+    private static let essayLengths = [150, 250, 400, 650]
+
+    /// How long the essay should be: a few presets, or Custom with a stepper.
+    private var essayLength: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Label("Length", systemImage: "ruler")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("about \(words) words")
+                    .font(.caption.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.accentColor)
+                    .contentTransition(.numericText())
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Self.essayLengths, id: \.self) { length in
+                        LengthChip(title: "\(length)", selected: !customWords && words == length) {
+                            withAnimation(.snappy) {
+                                customWords = false
+                                words = length
+                            }
+                        }
+                    }
+                    LengthChip(title: "Custom", selected: customWords) {
+                        withAnimation(.snappy) { customWords = true }
+                    }
+                    if customWords {
+                        Stepper("Words", value: $words.animation(.snappy), in: 100...900, step: 50)
+                            .labelsHidden()
+                            .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .leading)))
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .background(Color.accentColor.opacity(0.07), in: .rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.accentColor.opacity(0.18)))
     }
 
     private var fixingBar: some View {
@@ -471,7 +499,7 @@ struct ChatView: View {
             thread = input
             history = []
             items.append(.input(UUID(), input))
-            await run(again: false)
+            await run(again: false, request: input)
         }
     }
 
@@ -482,11 +510,12 @@ struct ChatView: View {
         answering = nil
         items.append(.input(UUID(), shown ?? feedback))
         fixing = false
-        await run(again: false)
+        await run(again: false, request: shown ?? feedback)
     }
 
-    /// again: the same input for another audience (a new thread of answers, no feedback).
-    private func run(again: Bool) async {
+    /// again: the same input for another audience (a new thread of answers, no feedback). request: what the user
+    /// said this turn (the input, or what to change), kept with the answer as context for the next requests.
+    private func run(again: Bool, request: String? = nil) async {
         guard !thread.isEmpty else { return }
         if again { history = [] }
         busy = true
@@ -497,9 +526,10 @@ struct ChatView: View {
             let answer = try await SaySoAPI.chat(mode: apiMode, text: answeringEmail ? "Answer this email." : thread,
                                                  audience: audience, format: kind.format, history: history,
                                                  question: question, words: words,
-                                                 replyTo: answeringEmail ? thread : replyTo)
+                                                 replyTo: answeringEmail ? thread : "", previous: previous)
             history.append(ChatTurn(answer: answer.text))
             items.append(.answer(UUID(), answer, audience, kind.format))
+            previous = Array((previous + [PreviousTurn(request: request ?? thread, answer: answer.joinedParts)]).suffix(3))
             if let learned = answer.learned { show(Lf("Learned: %@", learned)) }
         } catch {
             items.append(.note(UUID(), error.localizedDescription))
@@ -518,12 +548,21 @@ struct ChatView: View {
         items.append(.answer(UUID(), ChatAnswer(text: edited, parts: format == .series ? edited.split(separator: "\n").map(String.init) : nil),
                              audience, format))
         if !history.isEmpty { history[history.count - 1] = ChatTurn(answer: edited) }
+        if let last = previous.last { previous[previous.count - 1] = PreviousTurn(request: last.request, answer: edited) }
         UIPasteboard.general.string = edited
         let result = try? await SaySoAPI.feedback(answer: original, edited: edited, audience: audience, format: format)
         show(result?.learned.map { Lf("Learned: %@", $0) } ?? L("Saved your version (copied)"))
     }
 
-    private func show(_ message: String) {
+    /// Long-press Copy, a copy button or the action bar: the text goes to the clipboard with a tap and a toast.
+    private func copy(_ text: String) {
+        UIPasteboard.general.string = text
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        show(String(localized: "Copied"), icon: "doc.on.doc.fill")
+    }
+
+    private func show(_ message: String, icon: String = "sparkles") {
+        toastIcon = icon
         withAnimation { toast = message }
         Task {
             try? await Task.sleep(for: .seconds(2.5))
@@ -534,6 +573,7 @@ struct ChatView: View {
     private func reset() {
         items = []
         history = []
+        previous = []
         thread = ""
         fixing = false
         answering = nil
@@ -554,14 +594,53 @@ struct Avatar: View {
     }
 }
 
-/// A chat bubble with a small tail corner: the user's on the right, SaySo's on the left.
+/// A chat bubble with a small tail corner: the user's on the right, SaySo's on the left. In a run of messages (a
+/// series) only the first one is round at the top on the tail side, as in a messenger.
 struct BubbleShape: Shape {
     let mine: Bool
+    var first = true
 
     func path(in rect: CGRect) -> Path {
-        UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: mine ? 18 : 5,
-                               bottomTrailingRadius: mine ? 5 : 18, topTrailingRadius: 18)
+        let top: CGFloat = first ? 18 : 6
+        return UnevenRoundedRectangle(topLeadingRadius: mine ? 18 : top, bottomLeadingRadius: mine ? 18 : 5,
+                                      bottomTrailingRadius: mine ? 5 : 18, topTrailingRadius: mine ? top : 18)
             .path(in: rect)
+    }
+}
+
+extension View {
+    /// Long-press a bubble, as in a messenger: Copy (the whole text), Copy all (a series), Share. The preview keeps
+    /// the bubble's shape.
+    func copyMenu<S: Shape>(_ text: String, all: String? = nil, shape: S,
+                            onCopy: @escaping (String) -> Void) -> some View {
+        contentShape(.contextMenuPreview, shape)
+            .contextMenu {
+                Button("Copy", systemImage: "doc.on.doc") { onCopy(text) }
+                if let all, all != text {
+                    Button("Copy all messages", systemImage: "square.on.square") { onCopy(all) }
+                }
+                ShareLink(item: all ?? text) { Label("Share", systemImage: "square.and.arrow.up") }
+            }
+    }
+}
+
+extension ChatAnswer {
+    /// The messages of the main answer, one per bubble (just the text when there are no parts).
+    var messages: [String] { Self.nonEmpty(parts) ?? [text] }
+
+    /// The main answer as one text: its messages, one per line.
+    var joinedParts: String { messages.joined(separator: "\n") }
+
+    /// The messages of each alternative, one per card (its text when the server sent no parts for it).
+    func alternativeMessages(_ index: Int) -> [String] {
+        let alternative = alternatives?[index] ?? ""
+        let parts = alternativeParts.flatMap { index < $0.count ? $0[index] : nil }
+        return Self.nonEmpty(parts) ?? [alternative]
+    }
+
+    private static func nonEmpty(_ parts: [String]?) -> [String]? {
+        let kept = (parts ?? []).filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return kept.isEmpty ? nil : kept
     }
 }
 
@@ -682,13 +761,14 @@ struct ChatWallpaper: View {
     }
 }
 
-/// One answer: a bubble (or a stack of bubbles for a series), the AI's audience guesses, and the feedback actions.
+/// One answer: a bubble per message (a series is a run of bubbles, each with its copy button), the alternatives
+/// (a series one is a collapsed stack that opens into cards), the AI's audience guesses and the feedback actions.
 struct AnswerView: View {
     let answer: ChatAnswer
     let format: ReplyFormat
     let audience: Audience
     let isLast: Bool
-    let onCopy: () -> Void
+    let onCopy: (String) -> Void
     let onLike: () -> Void
     let onFix: () -> Void
     let onEdit: () -> Void
@@ -703,8 +783,13 @@ struct AnswerView: View {
         HStack(alignment: .top, spacing: 8) {
             Avatar()
             content
-            Spacer(minLength: 24)
+            Spacer(minLength: 16)
         }
+    }
+
+    private func copy(_ text: String) {
+        onCopy(text)
+        withAnimation(.snappy) { copied = text }
     }
 
     private var content: some View {
@@ -713,7 +798,6 @@ struct AnswerView: View {
                 HStack(alignment: .firstTextBaseline) {
                     Label("Subject: \(subject)", systemImage: "envelope")
                         .font(.subheadline.weight(.semibold))
-                        .textSelection(.enabled)
                     Spacer(minLength: 8)
                     Button("Copy subject", systemImage: "doc.on.doc") { onCopySubject(subject) }
                         .font(.caption)
@@ -722,13 +806,7 @@ struct AnswerView: View {
                         .controlSize(.mini)
                 }
             }
-            ForEach(Array((answer.parts?.isEmpty == false ? answer.parts! : [answer.text]).enumerated()), id: \.offset) { _, part in
-                Text(part)
-                    .textSelection(.enabled)
-                    .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(Color(.tertiarySystemBackground), in: BubbleShape(mine: false))
-                    .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
-            }
+            bubbles
             if let count = answer.words, answer.outline != nil {
                 Text("\(count) words").font(.caption).foregroundStyle(.secondary)
             }
@@ -745,52 +823,198 @@ struct AnswerView: View {
             }
             if let alternatives = answer.alternatives, !alternatives.isEmpty {
                 Text("Or say it like this").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.leading, 4)
-                ForEach(alternatives, id: \.self) { alternative in
-                    Button {
-                        UIPasteboard.general.string = alternative
-                        withAnimation { copied = alternative }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(alternative).font(.subheadline).multilineTextAlignment(.leading)
-                            Image(systemName: copied == alternative ? "checkmark" : "doc.on.doc").font(.caption2)
+                ForEach(alternatives.indices, id: \.self) { index in
+                    AlternativeView(messages: answer.alternativeMessages(index), copied: copied, onCopy: copy)
+                }
+            }
+            actions
+        }
+    }
+
+    /// The main answer: one bubble, or a run of bubbles (one per message) with a copy button beside each.
+    private var bubbles: some View {
+        let messages = answer.messages
+        let all = messages.count > 1 ? answer.joinedParts : nil
+        return VStack(alignment: .leading, spacing: 3) {
+            ForEach(messages.indices, id: \.self) { index in
+                let message = messages[index]
+                let shape = BubbleShape(mine: false, first: index == 0)
+                HStack(spacing: 6) {
+                    Text(message)
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .background(Color(.tertiarySystemBackground), in: shape)
+                        .copyMenu(message, all: all, shape: shape, onCopy: copy)
+                        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
+                    if all != nil { CopyChip(done: copied == message) { copy(message) } }
+                }
+            }
+        }
+    }
+
+    private var actions: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 18) {
+                Button { copy(answer.joinedParts) } label: { Image(systemName: "doc.on.doc") }
+                    .accessibilityLabel("Copy")
+                Button { liked = true; onLike() } label: {
+                    Image(systemName: liked ? "hand.thumbsup.fill" : "hand.thumbsup").foregroundStyle(liked ? Color.accentColor : Color.secondary)
+                }
+                if isLast {
+                    Button(action: onFix) { Image(systemName: "hand.thumbsdown") }
+                    Button(action: onEdit) { Image(systemName: "pencil") }
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 7)
+            .background(.regularMaterial, in: .capsule)
+            if isLast, let suggestions = answer.audiences?.compactMap(Audience.init(rawValue:)), suggestions.count > 1 {
+                Menu {
+                    ForEach(suggestions) { suggestion in
+                        Button { onAudience(suggestion) } label: {
+                            Label(suggestion.label, systemImage: suggestion == audience ? "checkmark" : "sparkles")
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 7)
-                        .foregroundStyle(.primary)
-                        .background(Color(.tertiarySystemBackground).opacity(0.6), in: BubbleShape(mine: false))
-                        .overlay(BubbleShape(mine: false).stroke(Color.accentColor.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    }
+                } label: {
+                    MenuPill(title: Lf("For %@?", audience.label), icon: "sparkles")
+                }
+            }
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(.secondary)
+        .font(.subheadline)
+    }
+}
+
+/// One "Or say it like this" option. A single message is one card with a copy button. A series is a collapsed
+/// stack, like a notification group: its first message on top, one or two cards peeking out beneath and "+N".
+/// Tap opens it into one card per message, each with its own copy button.
+struct AlternativeView: View {
+    let messages: [String]
+    let copied: String?
+    let onCopy: (String) -> Void
+
+    @State private var expanded = false
+
+    private var all: String? { messages.count > 1 ? messages.joined(separator: "\n") : nil }
+
+    var body: some View {
+        if messages.count > 1 && !expanded {
+            collapsed
+                .transition(.opacity)
+        } else {
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(messages.indices, id: \.self) { index in
+                    let message = messages[index]
+                    let shape = BubbleShape(mine: false, first: index == 0)
+                    HStack(spacing: 6) {
+                        card(Text(message).font(.subheadline), shape: shape)
+                            .copyMenu(message, all: all, shape: shape, onCopy: onCopy)
+                        CopyChip(done: copied == message) { onCopy(message) }
+                    }
+                }
+                if messages.count > 1 {
+                    Button { withAnimation(.snappy) { expanded = false } } label: {
+                        Label("Show less", systemImage: "chevron.up")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, 8).padding(.top, 2)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            HStack(spacing: 8) {
-                HStack(spacing: 18) {
-                    Button(action: onCopy) { Image(systemName: "doc.on.doc") }
-                    Button { liked = true; onLike() } label: {
-                        Image(systemName: liked ? "hand.thumbsup.fill" : "hand.thumbsup").foregroundStyle(liked ? Color.accentColor : Color.secondary)
-                    }
-                    if isLast {
-                        Button(action: onFix) { Image(systemName: "hand.thumbsdown") }
-                        Button(action: onEdit) { Image(systemName: "pencil") }
-                    }
-                }
-                .padding(.horizontal, 14).padding(.vertical, 7)
-                .background(.regularMaterial, in: .capsule)
-                if isLast, let suggestions = answer.audiences?.compactMap(Audience.init(rawValue:)), suggestions.count > 1 {
-                    Menu {
-                        ForEach(suggestions) { suggestion in
-                            Button { onAudience(suggestion) } label: {
-                                Label(suggestion.label, systemImage: suggestion == audience ? "checkmark" : "sparkles")
-                            }
-                        }
-                    } label: {
-                        MenuPill(title: Lf("For %@?", audience.label), icon: "sparkles")
-                    }
-                }
-            }
-            .buttonStyle(.borderless)
-            .foregroundStyle(.secondary)
-            .font(.subheadline)
+            .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .top)))
         }
+    }
+
+    /// The first message on top, the rest as cards peeking out beneath it.
+    private var collapsed: some View {
+        let depth = min(messages.count - 1, 2)
+        let shape = BubbleShape(mine: false)
+        return HStack(spacing: 6) {
+            Button { withAnimation(.snappy) { expanded = true } } label: {
+                card(HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(messages[0]).font(.subheadline).lineLimit(3)
+                    Text("+\(messages.count - 1)")
+                        .font(.caption.weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Color.accentColor.opacity(0.14), in: .capsule)
+                }, shape: shape)
+                .background(alignment: .bottom) {
+                    ZStack(alignment: .bottom) {
+                        if depth > 1 { peek.padding(.horizontal, 18).offset(y: 12).opacity(0.6) }
+                        peek.padding(.horizontal, 9).offset(y: 6).opacity(0.9)
+                    }
+                }
+                .padding(.bottom, CGFloat(depth) * 6)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .copyMenu(messages[0], all: all, shape: RoundedRectangle(cornerRadius: 16), onCopy: onCopy)
+            .accessibilityHint("Shows all \(messages.count) messages")
+            Color.clear.frame(width: CopyChip.size, height: 1)  // lines up with the copy buttons of other cards
+        }
+    }
+
+    /// A card beneath the top one, only its bottom edge showing.
+    private var peek: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color(.tertiarySystemBackground))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Color.accentColor.opacity(0.2)))
+            .shadow(color: .black.opacity(0.06), radius: 3, y: 2)
+    }
+
+    /// An alternative's card: lighter than an answer bubble, with a dashed accent edge.
+    private func card<Content: View>(_ content: Content, shape: BubbleShape) -> some View {
+        content
+            .multilineTextAlignment(.leading)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(Color(.tertiarySystemBackground), in: shape)
+            .overlay(shape.stroke(Color.accentColor.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+    }
+}
+
+/// The small copy button beside a message of a series or an alternative card; turns into a check once copied.
+struct CopyChip: View {
+    static let size: CGFloat = 28
+    let done: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: done ? "checkmark" : "doc.on.doc")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(done ? Color.accentColor : Color.secondary)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: Self.size, height: Self.size)
+                .background(.regularMaterial, in: .circle)
+                .overlay(Circle().stroke(Color.primary.opacity(0.06)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(done ? "Copied" : "Copy")
+    }
+}
+
+/// One essay length preset (or Custom) in the composer.
+struct LengthChip: View {
+    let title: LocalizedStringKey
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .monospacedDigit()
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .foregroundStyle(selected ? Color.white : Color.primary)
+                .background {
+                    if selected { Capsule().fill(Theme.accentGradient) } else { Capsule().fill(.regularMaterial) }
+                }
+                .overlay(Capsule().stroke(Color.primary.opacity(selected ? 0 : 0.08)))
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -52,6 +52,62 @@ struct LogoView: View {
     }
 }
 
+/// The wordmark in one line, for headers: "SAY", then the handwritten "So" starting at the Y and running on to the
+/// right, its o on SAY's baseline and its swash under the Y. The same two vector assets as LogoView, both drawn in
+/// the logo's 847 × 430 units: So is scaled 1.1× and moved 500 right and 133 up (SAY's baseline is at y 198, the
+/// o's bottom at 301). Size it by height: about 4.4 times as wide as it is tall.
+struct LogoHorizontal: View {
+    private static let art = CGSize(width: 847, height: 430)
+    private static let soScale: CGFloat = 1.1
+    private static let soOffset = CGSize(width: 500, height: -133)
+    /// The ink of the whole line: SAY's S starts at x 0 and its top at y 0; the flourish ends at x 1423, the swash at y 325.
+    private static let bounds = CGSize(width: 1424, height: 325)
+
+    var body: some View {
+        GeometryReader { geometry in
+            let unit = geometry.size.width / Self.bounds.width
+            ZStack(alignment: .topLeading) {
+                ZStack {
+                    Image("LogoSay").resizable()
+                    SayGapFill()
+                }
+                .foregroundStyle(.primary)
+                .frame(width: Self.art.width * unit, height: Self.art.height * unit)
+                Image("LogoSo").resizable()
+                    .foregroundStyle(Theme.stroke)
+                    .frame(width: Self.art.width * Self.soScale * unit, height: Self.art.height * Self.soScale * unit)
+                    .offset(x: Self.soOffset.width * unit, y: Self.soOffset.height * unit)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+        }
+        .aspectRatio(Self.bounds.width / Self.bounds.height, contentMode: .fit)
+        .accessibilityElement()
+        .accessibilityLabel("SaySo")
+    }
+}
+
+/// LogoSay has gaps cut where So crosses it in the stacked logo (the bottom of the A, the foot of the Y's stem).
+/// With So beside it they would show, so these shapes fill them back in (847 × 430 logo units, the A's legs follow
+/// its outer edges, the lower opening between them stays).
+struct SayGapFill: Shape {
+    private static let polygons: [[(x: CGFloat, y: CGFloat)]] = [
+        [(308.8, 148), (567.6, 148), (576, 162), (300.6, 162)],  // A: the bottom of the crossbar
+        [(300.6, 162), (382, 162), (361, 198), (279.5, 198)],  // A: left leg
+        [(499.5, 162), (576, 162), (597.6, 198), (501, 198)],  // A: right leg
+        [(620.2, 140), (698.4, 140), (698.4, 198), (620.2, 198)],  // Y: the foot of the stem
+    ]
+
+    func path(in rect: CGRect) -> Path {
+        let sx = rect.width / 847, sy = rect.height / 430
+        var path = Path()
+        for polygon in Self.polygons {
+            path.addLines(polygon.map { point in CGPoint(x: rect.minX + point.x * sx, y: rect.minY + point.y * sy) })
+            path.closeSubpath()
+        }
+        return path
+    }
+}
+
 /// A rounded card on the backdrop: frosted, with a hairline edge, readable in light and dark mode.
 struct GlassCard: ViewModifier {
     var radius: CGFloat = Theme.card + 4
