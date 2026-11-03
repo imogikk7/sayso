@@ -5,7 +5,8 @@ import UIKit
 /// another keyboard, write from an instruction, replies from the last screenshot or copied messages).
 ///
 /// It sits like the stock keyboard: no background of its own (the system keyboard backdrop shows through the clear
-/// input view), and the stock height: a 44 pt strip over 216 pt of keys in portrait, 38 + 160 in landscape.
+/// input view), and the stock height: a 52 pt strip over 207 pt of keys in portrait (259 in all), 38 + 160 in
+/// landscape (sizes in `KeyMetrics`).
 final class KeyboardViewController: UIInputViewController {
     private lazy var model = PanelModel(controller: self)
     private var watch: Timer?  // picks up the Back Tap shortcut's replies while the keyboard is up
@@ -15,6 +16,9 @@ final class KeyboardViewController: UIInputViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
+        // The input view takes its height from the constraint below, not the system's default keyboard height (on an
+        // iPhone 17 Pro the keyboard came out ≈ 24 pt taller than the 260 pt it asked for, all of it above the strip).
+        inputView?.allowsSelfSizing = true
         AppLanguage.install()
         let host = UIHostingController(rootView: KeyboardRoot(model: model, language: AppLanguage.current.code))
         self.host = host
@@ -25,7 +29,9 @@ final class KeyboardViewController: UIInputViewController {
         view.addSubview(host.view)
         host.view.translatesAutoresizingMaskIntoConstraints = false
         let height = view.heightAnchor.constraint(equalToConstant: currentMetrics.total)
-        height.priority = .defaultHigh  // lets the system resize during rotation without layout warnings
+        // Just under required: wins over the system's own height (.defaultHigh lost to it), yet lets the system resize
+        // during rotation without layout warnings.
+        height.priority = UILayoutPriority(999)
         self.height = height
         NSLayoutConstraint.activate([
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),

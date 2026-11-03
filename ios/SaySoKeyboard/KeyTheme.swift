@@ -60,28 +60,74 @@ enum KeyTheme {
     }
 }
 
-/// Sizes of the stock iPhone keyboard. Portrait: a 44 pt strip over 216 pt of keys (key 43, rows 11 apart, 8 above
-/// the first row, 3 under the last; 3 pt at the sides, 6 pt between keys, 5 on 11-key rows). Landscape: 38 + 160.
+/// Every size of the keyboard, matched to the stock iOS 26 keyboard. Portrait values were measured on an iPhone 17 Pro
+/// (402 × 874 pt) from screenshots of the stock keyboard (with its suggestion bar) in a Telegram chat:
+///
+///   keyboard top edge  y ≈ 546        suggestion bar  ≈ 52 tall          first key row  y ≈ 599
+///   key height         ≈ 41.5         row pitch       ≈ 54 (gap ≈ 12)    space row bottom  y ≈ 802
+///   English letter key ≈ 33 wide      key pitch       ≈ 39.8
+///
+/// So: strip 52, no gap under it, 4 rows of 42 pt keys 12 apart (204 pt), 3 under the space row (where SaySo's rows
+/// already lined up with stock), total 259 pt. A 10-key row is 10 × 33 + 9 × 6.8 + 2 × 5.4 = 402, pitch 39.8.
+/// Landscape was not measured: it keeps the earlier stock values.
 struct KeyMetrics {
+    /// The top strip (mode, audience, format, ✨): the stock suggestion bar, 52 pt.
     let strip: CGFloat
-    let keys: CGFloat
-    let keyHeight: CGFloat
-    let rowGap: CGFloat
+    /// From the strip to the top of the first key row: 0 (the bar's 52 pt already end at the first row, y 546 + 52 ≈ 599).
     let top: CGFloat
-    let side: CGFloat = 3
+    /// Key cap height: 42 (stock ≈ 41.5).
+    let keyHeight: CGFloat
+    /// Between key rows: 12 (stock pitch ≈ 54).
+    let rowGap: CGFloat
+    /// Under the space row, above the system's globe / dictation bar: 3.
+    let bottom: CGFloat
+    /// Left and right of a full 10-key row: 5.4 (402 − 10 × 33 − 9 × 6.8 = 10.8).
+    let side: CGFloat
+    /// Between keys of a 10-key row (English, numbers, symbols), and in the bottom row: 6.8 (pitch 39.8 − key 33).
+    let keyGap: CGFloat
+    /// Between keys of an 11-key row (Russian): not measured; 6, a little tighter, as iOS does.
+    let narrowKeyGap: CGFloat
+    /// Shift, delete, 123 and the language key, in English letter-key widths: 1.36 (≈ 45 pt; not measured).
+    let functionKey: CGFloat
+    /// The return / send key: 88 (the earlier stock value; not measured on iOS 26).
+    let returnKey: CGFloat
 
+    /// The four key rows: 4 × 42 + 3 × 12 = 204.
+    var rows: CGFloat { 4 * keyHeight + 3 * rowGap }
+    /// Everything under the strip: 0 + 204 + 3 = 207.
+    var keys: CGFloat { top + rows + bottom }
+    /// The keyboard's height: 52 + 207 = 259 (stock: 546 → 805).
     var total: CGFloat { strip + keys }
 
-    static let portrait = KeyMetrics(strip: 44, keys: 216, keyHeight: 43, rowGap: 11, top: 8)
-    static let landscape = KeyMetrics(strip: 38, keys: 160, keyHeight: 33, rowGap: 7, top: 4)
+    static let portrait = KeyMetrics(strip: 52, top: 0, keyHeight: 42, rowGap: 12, bottom: 3, side: 5.4,
+                                     keyGap: 6.8, narrowKeyGap: 6, functionKey: 1.36, returnKey: 88)
+    static let landscape = KeyMetrics(strip: 38, top: 4, keyHeight: 33, rowGap: 7, bottom: 3, side: 3,
+                                      keyGap: 6, narrowKeyGap: 5, functionKey: 1.36, returnKey: 88)
 
     static func current(compactHeight: Bool) -> KeyMetrics {
         compactHeight ? .landscape : .portrait
     }
 
-    /// The gap between keys in a row: 6 pt, or 5 pt on rows of 11 keys (Russian), as iOS does.
-    static func keyGap(columns: Int) -> CGFloat {
-        columns >= 11 ? 5 : 6
+    /// The gap between keys of a row with this many columns.
+    func gap(columns: Int) -> CGFloat {
+        columns >= 11 ? narrowKeyGap : keyGap
+    }
+
+    /// The width of a letter key when the widest row has `columns` keys and the keyboard is `width` wide
+    /// (portrait iPhone 17 Pro: 33 for English, 30.1 for Russian).
+    func keyWidth(_ width: CGFloat, columns: Int) -> CGFloat {
+        let columns = max(columns, 1)
+        return max(0, (width - 2 * side - CGFloat(columns - 1) * gap(columns: columns)) / CGFloat(columns))
+    }
+
+    /// Shift, delete, 123, globe and language keys, the same whatever the language (from the 10-key letter width).
+    func functionWidth(_ width: CGFloat) -> CGFloat {
+        (functionKey * keyWidth(width, columns: 10)).rounded()
+    }
+
+    /// The return / send key.
+    func returnWidth(_ width: CGFloat) -> CGFloat {
+        max(returnKey, 2 * keyWidth(width, columns: 10))
     }
 }
 
@@ -120,7 +166,7 @@ struct KeyCap<Content: View>: View {
                 }
                 .shadow(color: KeyTheme.keyShadow(scheme), radius: 0, x: 0, y: 1)
             }
-            .contentShape(.rect)
+            .transaction { $0.animation = nil }  // a press shows and clears at once, never fades
     }
 }
 

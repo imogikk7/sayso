@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// The SaySo keyboard: a compact top strip (mode, audience, format, ✨) over letter keys or the panel; results replace
-/// both. No background of its own: the system keyboard backdrop shows through, as behind the stock keyboard.
+/// both. No background of its own: the system keyboard backdrop shows through, as behind the stock keyboard, one
+/// uniform surface from the strip down (no overlay, shadow, mask or scroll edge effect between the strip and below).
 struct PanelView: View {
     @ObservedObject var model: PanelModel
     @Environment(\.colorScheme) private var scheme
@@ -20,6 +21,10 @@ struct PanelView: View {
         }
         // The keys sit at the bottom, like the stock keyboard's, if the system ever gives more height than asked.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        // iOS 26 gives every scroll view (the panel, the results) a soft edge effect: a blurred, dimmed band at its top
+        // edge, right under the strip, that shows as a dark gradient over the backdrop in dark mode. The keyboard has
+        // no bars for content to slide under, so it has no use for it.
+        .scrollEdgeEffectHidden(true, for: .all)
         .dynamicTypeSize(.small ... .large)  // the keyboard has a fixed height; huge text sizes would push keys out
     }
 
@@ -197,9 +202,9 @@ struct PanelView: View {
                             .disabled(model.busy)
                         }
                     } else {
-                        Text(model.draft.isEmpty ? hintText : model.draft)
+                        Text(model.shownDraft.isEmpty ? hintText : model.shownDraft)
                             .font(.footnote)
-                            .foregroundStyle(model.draft.isEmpty ? Color.secondary : KeyTheme.keyText(scheme))
+                            .foregroundStyle(model.shownDraft.isEmpty ? Color.secondary : KeyTheme.keyText(scheme))
                             .lineLimit(3)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(10)
@@ -215,7 +220,7 @@ struct PanelView: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.top, metrics.top)
+            .padding(.top, 4)
             .padding(.bottom, 6)
         }
         .scrollIndicators(.hidden)
