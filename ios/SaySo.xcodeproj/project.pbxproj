@@ -241,6 +241,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SaySo;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SaySo turns what you say into a message in your style. The recording is transcribed and not kept.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your iPhone also listens to your voice note on the device, so names and English words come out right. Nothing is sent to Apple or kept.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -271,6 +272,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SaySo;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SaySo turns what you say into a message in your style. The recording is transcribed and not kept.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your iPhone also listens to your voice note on the device, so names and English words come out right. Nothing is sent to Apple or kept.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

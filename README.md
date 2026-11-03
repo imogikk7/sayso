@@ -169,6 +169,25 @@ by Muse Spark 1.3; emails by Muse Spark Open.
 (an instruction, a draft, notes for an essay, an answer to one of its questions). The audio is read in memory and not
 stored.
 
+- **Recording:** mono 16-bit **24 kHz** WAV (Muse Voice Transcribe takes 16 or 24 kHz; 24 kHz keeps more of the
+  consonants that tell English words apart), the raw microphone (`.measurement`, no system voice processing).
+- **Before recognition** (`writer.prepare_wav`): silence before and after the speech trimmed (in silence recognizers
+  invent and repeat words), quiet speech raised to about −3 dBFS (at most ×10), other rates resampled.
+- **Hints to Muse Voice Transcribe:** `languageBias: ["English"]` when the app's language is English (its list has no
+  Russian), and `keywords`: names from the text the note is about (SaySo's last answer when fixing it, the email being
+  answered). If the API refuses the hints, the call is repeated without them.
+- **A second hearing on the iPhone:** Apple's on-device recognizer (`SFSpeechRecognizer`, on-device only, en-US or
+  ru-RU from the app's language, at most a few seconds) hears the same note. Muse Voice Transcribe stays the
+  recognizer; the iPhone's text goes to the fix pass as a second opinion, and is used alone only if Muse fails.
+- **The fix pass** (Muse Spark, `fix_transcript`): repeated words and doubled stops are removed first
+  (`tidy_transcript`), then Spark fixes recognition slips with a prompt for the note's language, detected from its
+  letters: the English one knows sound-alike words (their/there, your/you're, to/too, four/for), broken words, missing
+  apostrophes and names. It is told what the note is for (the Chat mode and audience) and the known names. The fix is
+  kept only if it is still the same note: about the same length, the same language, at most 30% new words (words
+  either recognizer heard don't count as new) and most of the recognized words kept. Otherwise the transcript goes
+  out as recognized.
+- `eval/voice_samples.py` measures word error rate before and after on English and Russian samples.
+
 ### Building a style from chat uploads (`serving/build_style.py`)
 
 `parsing` (Telegram HTML/JSON, WhatsApp `.txt`/`.zip`, Instagram JSON via `pipeline/sources.py`; screenshots and
@@ -322,7 +341,8 @@ binomial p), how often SaySo fooled them vs the generic AI, and splits by audien
   cut off, links, emails, phone and card numbers are removed, names of other people and companies in photos and
   screenshots become `[Name]`, and the images are read once and not stored. An email the
   user pastes to answer is used for that one answer and not stored.
-- **Voice notes** are transcribed in memory and the audio is not stored.
+- **Voice notes** are transcribed in memory and the audio is not stored. The iPhone's second hearing runs on the device
+  only (`requiresOnDeviceRecognition`), so the audio isn't sent to Apple.
 - Screenshots are processed in memory. The keyboard's "latest replies" cache holds the user's suggested replies and
   the situation tag, never the summary of the other person's messages.
 - The keyboard learns only when the user turns it on (off by default), and only from what they type and send with its
@@ -404,7 +424,7 @@ warming up (only when `SAYSO_GPU` is on).
 | `POST /compose` | JSON `{instruction` (≤ 1000), `audience, situation?, style?, format?}` | same as `/rewrite` |
 | `POST /reply` | a screenshot as the raw body (`image/*`, ≤ 4 MB; `?audience=&style=&format=` in the query), or JSON `{image` (base64) `, image_type` \| `messages` (≤ 4000) \| `summary` (≤ 400) `+ situation, options, audience?, instruction?` (≤ 300) `, style?, format?}`. Sending back `summary` + `options` with another audience restyles without reading again | `{context: {audience, audiences, situation, summary}, replies: [{intent, tone, thought, styled, text, parts}] × 3, options: [{act, draft}], ms: {read, total}}` |
 | `POST /chat` | JSON `{mode: write \| rewrite \| reply \| email \| essay, text` (≤ 4000) `, audience, style?, format?, instruction?, history: [{answer, feedback}]` (≤ 12) `, question?` (essay, ≤ 1000) `, words?` (essay, 50–900, default 250) `, reply_to?` (email being answered, ≤ 6000)`}`. Feedback on the last history item revises that answer | `{text, parts, alternatives, audience, audiences, learned}` (`learned` = a new rule or null); email adds `subject`; essay adds `outline, questions, words, cliches` |
-| `POST /transcribe` | multipart `audio`: mono 16-bit WAV, ≤ 10 MB | `{text}` (Muse Voice Transcribe; audio not stored) |
+| `POST /transcribe` | multipart `audio`: mono 16-bit WAV, ≤ 10 MB; optional `language` (en \| ru), `mode`, `audience`, `context` (text the note is about), `heard` (the iPhone's on-device transcript) | `{text}` (Muse Voice Transcribe, then the Muse Spark fix pass; audio not stored) |
 | `POST /learn` | JSON `{style?, items: [{text` (≤ 2000) `, audience, suggested?}]` (≤ 50)`}` from the keyboard | `{learned, rules}` |
 | `POST /feedback` | JSON `{audience, style?, format?, answer, edited?, liked}` | `{learned}` (a rule or null) |
 | `GET /styles` | | `{styles: [{id, name, status, stage, progress, error, source, counts, scores, lora, adapter_ready, created, needs, participants, chats, me}]}` |

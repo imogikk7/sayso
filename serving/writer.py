@@ -24,12 +24,14 @@ is on the private volume, mounted so that pipeline/ modules find it at their usu
 
 import asyncio
 import base64
+import io
 import math
 import json
 import random
 import re
 import sys
 import time
+import wave
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -312,13 +314,43 @@ DEFAULT_CONTRASTS = ["agree", "ask_back", "joke"]
 
 META_URL = "https://api.meta.ai/v1/chat/completions"
 TRANSCRIBE_URL = "https://api.meta.ai/v1/asr/transcribe"  # Muse Voice Transcribe: WAV in, text out
+# Its request takes the same hints as its realtime handshake: "keywords" (words to expect: names) and "languageBias"
+# (language names from its list; there is no "language" field, which is why that was ignored). Russian and Kazakh are
+# not on its list, so a Russian note goes without a language bias.
+ASR_LANGUAGES = {"en": "English", "de": "German", "fr": "French", "es": "Spanish", "it": "Italian", "tr": "Turkish",
+                 "pl": "Polish"}
+ASR_RATES = (16_000, 24_000)  # the WAV rates it takes; 24 kHz is what its realtime API streams
 # Muse Voice Transcribe repeats words ("traffic, traffic", "Мире, мире") and doubles the final punctuation ("?.", "..")
 REPEATED = re.compile(r"\b(\w{3,})[,.!?;:]?\s+\1\b", re.I)  # short ones ("да да", "ok ok") are often meant
 DOUBLED_STOP = re.compile(r"([.!?])[.!?]+")
+CYRILLIC = re.compile(r"[а-яёәғқңөұүһі]", re.I)  # Russian and Kazakh letters
+LATIN = re.compile(r"[a-z]", re.I)
 TRANSCRIPT_FIX = """You fix speech-recognition mistakes in a voice note, nothing else.
 Fix: repeated or broken words ("на бая. Абая" → "на Абая"), punctuation, capital letters of names and places.
 Keep every word the speaker said, in their language and order; never rephrase, shorten, translate, answer or add anything.
+English or Kazakh words inside a Russian note stay as they are.
 Return JSON only: {"text": "<the fixed voice note>"}."""
+TRANSCRIPT_FIX_EN = """You fix speech-recognition mistakes in an English voice note, nothing else.
+The speaker may have an accent, so the recognizer sometimes writes a word that sounds similar but makes no sense. Fix:
+- sound-alike words that don't fit the sentence: their/there/they're, your/you're, its/it's, to/too/two, then/than,
+  know/no, write/right, here/hear, where/wear/were, whether/weather, by/buy/bye, for/four, one/won, meet/meat,
+  week/weak, wait/weight, accept/except, our/hour/are, I'll/aisle, we'll/will, he'll/heel;
+- a misheard word or a word broken in two ("for get" → "forget", "a sleep" → "asleep"), or two words run together;
+- missing apostrophes ("dont" → "don't", "im" → "I'm"), "i" → "I";
+- names and places: capital letters, and the spelling from "Known names" when it sounds the same;
+- sentence capitals and punctuation; a question ends with "?".
+Keep the speaker's words, order and casual tone ("gonna", "wanna", "ok", "yeah"); never rephrase, shorten, translate,
+answer or add anything. When you are not sure a word is wrong, keep it.
+Return JSON only: {"text": "<the fixed voice note>"}."""
+# What the note is for, from the Chat mode the app was in: tells the fix pass what kind of words to expect.
+TRANSCRIPT_USE = {
+    "write": "an instruction to SaySo about a message to write",
+    "rewrite": "the user's own draft of a chat message",
+    "reply": "a message the user got, read aloud",
+    "email": "what an email should say, or the email the user got",
+    "essay": "the user's notes for an essay",
+    "fix": "what to change in SaySo's last answer",
+}
 # If the Meta API fails (or hits a limit during the demo), Muse Spark Open answers instead (Baseten, hackathon key).
 FALLBACK_URL = "https://inference.baseten.co/v1/chat/completions"
 FALLBACK_MODEL = "meta-models/muse-spark-open-1026"
@@ -452,6 +484,78 @@ def tidy_transcript(text):
     while previous != text:
         previous, text = text, REPEATED.sub(r"\1", text)
     return DOUBLED_STOP.sub(r"\1", text).strip()
+
+
+def transcript_language(text, hint=None):
+    """"en" or "ru" (Russian, Kazakh) by the letters of the transcript; the app's language when there are none."""
+    cyrillic, latin = len(CYRILLIC.findall(text or "")), len(LATIN.findall(text or ""))
+    if cyrillic == latin == 0:
+        return hint if hint in ("en", "ru") else "ru"
+    return "en" if latin > cyrillic else "ru"
+
+
+def transcript_words(text):
+    """The words of a note for comparing two versions: lowercase, apostrophes dropped ("don't" = "dont")."""
+    return set(re.findall(r"\w+", (text or "").replace("'", "").replace("’", "").casefold()))
+
+
+def names_in(text, limit=12):
+    """Capitalized words that don't start a sentence (names, places): hints for the recognizer and the fix pass."""
+    found = []
+    for sentence in re.split(r"(?<=[.!?\n])\s+", text or ""):
+        for word in re.findall(r"[^\W\d_][\w'’-]*", sentence)[1:]:
+            if len(word) > 1 and word[0].isupper() and word not in found:
+                found.append(word[:40])
+    return found[:limit]
+
+
+def prepare_wav(wav):
+    """Gets a voice note ready for the recognizer: one channel, a rate it takes, the silence before and after the
+    speech trimmed (in silence recognizers invent and repeat words), quiet speech brought up to a normal level.
+    Anything it can't read goes out unchanged."""
+    try:
+        import numpy as np
+        with wave.open(io.BytesIO(wav)) as source:
+            channels, width, rate = source.getnchannels(), source.getsampwidth(), source.getframerate()
+            frames = source.readframes(source.getnframes())
+        if width != 2 or rate < 8_000:
+            return wav
+        samples = np.frombuffer(frames[: len(frames) // (2 * channels) * 2 * channels], "<i2").astype(np.float32)
+        if channels > 1:
+            samples = samples.reshape(-1, channels).mean(axis=1)
+        if rate not in ASR_RATES:  # e.g. 44.1/48 kHz from a test file: smooth, then resample to 24 kHz
+            width_ = max(1, round(rate / ASR_RATES[1]))
+            samples = np.convolve(samples, np.ones(width_) / width_, mode="same")
+            target = int(len(samples) * ASR_RATES[1] / rate)
+            samples = np.interp(np.linspace(0, len(samples) - 1, target), np.arange(len(samples)), samples)
+            rate = ASR_RATES[1]
+        samples = samples - samples.mean()
+        frame = rate // 50  # 20 ms
+        count = len(samples) // frame
+        if count < 10:
+            return wav
+        energy = np.sqrt((samples[: count * frame].reshape(count, frame) ** 2).mean(axis=1))
+        # speech: above 3× the quietest frames, but never more than 20 dB under the loudest (a note with no pause)
+        voiced = np.flatnonzero(energy > max(min(np.percentile(energy, 10) * 3, energy.max() * 0.1), 20))
+        if not len(voiced):
+            return wav
+        pad = 15  # 300 ms of silence kept on each side
+        start, end = max(voiced[0] - pad, 0) * frame, min(voiced[-1] + pad + 1, count) * frame
+        speech = samples[start: len(samples) if end >= count * frame else end]
+        peak = np.percentile(np.abs(speech), 99.9)
+        if peak < 1:
+            return wav
+        gain = max(1.0, min(0.7 * 32767 / peak, 10.0))  # up to -3 dBFS, at most ×10; never quieter
+        out = np.clip(speech * gain, -32768, 32767).astype("<i2")
+        buffer = io.BytesIO()
+        with wave.open(buffer, "wb") as sink:
+            sink.setnchannels(1)
+            sink.setsampwidth(2)
+            sink.setframerate(rate)
+            sink.writeframes(out.tobytes())
+        return buffer.getvalue()
+    except Exception:
+        return wav
 
 
 def clean(text):
@@ -1141,30 +1245,81 @@ class Writer:
             return ""
         return label["text"]
 
-    async def transcribe(self, wav):
-        """The user's voice note (mono 16-bit WAV) → text, with Muse Voice Transcribe. The audio is not kept."""
-        request = {"mode": "PUSH_TO_TALK", "model": "muse-voice-transcribe-1.0", "audioEncoding": "WAV"}
+    async def transcribe(self, wav, language=None, mode=None, audience=None, context="", heard=""):
+        """The user's voice note (mono 16-bit WAV) → text, with Muse Voice Transcribe, then a Muse Spark pass that
+        fixes what it misheard. The audio is not kept.
+          language  the app's language ("en", "ru"): Muse Voice Transcribe's language bias (it has no Russian)
+          mode, audience  where the text goes in Chat (write, rewrite, reply, email, essay, fix; friends, …)
+          context   the text the note is about (SaySo's last answer, the email being answered): its names become
+                    keywords for the recognizer and the fix pass; used once, not stored
+          heard     what the iPhone's own on-device recognizer heard: a second hearing for the fix pass, and the
+                    answer if Muse Voice Transcribe fails"""
+        language = language if language in ("en", "ru") else None
+        heard = tidy_transcript(clean(heard or ""))[:4000]
+        names = list(dict.fromkeys(names_in(context) + names_in(heard)))[:20]
+        hints = {**({"languageBias": [ASR_LANGUAGES[language]]} if language in ASR_LANGUAGES else {}),
+                 **({"keywords": names} if names else {})}
+        audio = prepare_wav(wav)
         try:
-            response = await self.client.post(
-                TRANSCRIBE_URL, timeout=60, headers={"Authorization": f"Bearer {self.meta_key}"},
-                files={"request": (None, json.dumps(request), "application/json"), "audio": ("voice.wav", wav, "audio/wav")})
-            response.raise_for_status()
-            text = clean(response.json().get("transcript") or "")
-        except Exception:
-            raise Unavailable(502, "Muse Voice Transcribe did not answer")
-        return await self.fix_transcript(tidy_transcript(text))
+            text = await self.recognize(audio, hints)
+        except Unavailable:
+            if not heard:
+                raise
+            text = ""  # Muse Voice Transcribe failed: the iPhone's hearing goes through the same fix pass
+        text = tidy_transcript(text)
+        if heard and transcript_language(heard) != transcript_language(text or heard, language):
+            heard = ""  # recognized in the wrong language (e.g. a Russian iPhone locale for an English note)
+        if not text:
+            text, heard = heard, ""
+        return await self.fix_transcript(text, language=language, mode=mode, audience=audience, names=names,
+                                         heard=heard)
 
-    async def fix_transcript(self, text):
-        """Muse Spark fixes what the recognizer got wrong; kept only if it stayed the same note (same words, about
-        the same length), otherwise the tidied transcript goes out as it is."""
-        if len(text.split()) < 4:
+    async def recognize(self, audio, hints=None):
+        """One Muse Voice Transcribe call; if it refuses the hints (400/422), once more without them."""
+        for extra in ([hints, {}] if hints else [{}]):
+            request = {"mode": "PUSH_TO_TALK", "model": "muse-voice-transcribe-1.0", "audioEncoding": "WAV", **extra}
+            try:
+                response = await self.client.post(
+                    TRANSCRIBE_URL, timeout=60, headers={"Authorization": f"Bearer {self.meta_key}"},
+                    files={"request": (None, json.dumps(request), "application/json"),
+                           "audio": ("voice.wav", audio, "audio/wav")})
+                if extra and response.status_code in (400, 422):
+                    continue
+                response.raise_for_status()
+                return clean(response.json().get("transcript") or "")
+            except Exception:
+                break
+        raise Unavailable(502, "Muse Voice Transcribe did not answer")
+
+    async def fix_transcript(self, text, language=None, mode=None, audience=None, names=(), heard=""):
+        """Muse Spark fixes what the recognizer got wrong, with a prompt for the note's language (English has its own:
+        sound-alike words, apostrophes, names) and what the note is for. Kept only if it stayed the same note: about
+        the same length, and its words are the ones that were said (by Muse Voice Transcribe, the iPhone's second
+        hearing or the known names); otherwise the tidied transcript goes out as it is."""
+        lang = transcript_language(text, language)
+        if len(text.split()) < (2 if heard else 4):
             return text
+        lines = []
+        if TRANSCRIPT_USE.get(mode):
+            lines.append(f"The note is {TRANSCRIPT_USE[mode]}" + (f", for {audience}." if audience in AUDIENCES else "."))
+        if names:
+            lines.append("Known names: " + ", ".join(names))
+        if heard and heard != text:
+            lines.append("A second recognizer heard (it makes its own mistakes; where the two differ, take the words "
+                         f"that fit the sentence): {heard}")
+        user = "\n".join(lines + [f"Voice note: {text}"]) if lines else text
         try:
-            fixed = clean(str((await self.spark(TRANSCRIPT_FIX, text, "text", max_tokens=2000, timeout=15))["text"]))
+            fixed = clean(str((await self.spark(TRANSCRIPT_FIX_EN if lang == "en" else TRANSCRIPT_FIX, user, "text",
+                                                max_tokens=2000, timeout=15))["text"]))
         except Exception:
             return text
-        said, got = set(re.findall(r"\w+", text.casefold())), set(re.findall(r"\w+", fixed.casefold()))
-        if not fixed or not 0.7 <= len(fixed) / len(text) <= 1.3 or len(said & got) < 0.7 * len(said):
+        said, got = transcript_words(text), transcript_words(fixed)
+        heard_words = transcript_words(heard) | transcript_words(" ".join(names))
+        lengths = [len(text)] + ([len(heard)] if heard else [])
+        if (not fixed or not got or transcript_language(fixed, lang) != lang
+                or not any(0.7 <= len(fixed) / n <= 1.3 for n in lengths)
+                or len(got - said - heard_words) > 0.3 * len(got)  # new words
+                or len(said & got) < (0.5 if heard else 0.6 if lang == "en" else 0.7) * len(said)):  # dropped words
             return text
         return fixed
 
