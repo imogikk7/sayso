@@ -1,8 +1,13 @@
 import SwiftUI
 import UIKit
 
-/// Setup checklist: add the keyboard, allow Full Access, set up Back Tap, test the server; plus the last replies.
+/// The Settings tab: the app's language first, then the setup checklist (add the keyboard, allow Full Access, set up
+/// the Back Tap shortcut, test the server) and the last screenshot's replies.
 struct SetupView: View {
+    /// An iCloud link to a ready-made Back Tap shortcut (Shortcuts → the shortcut → Share → Copy iCloud Link). When set,
+    /// the shortcut step offers it as one tap; until then the step shows how to build it.
+    static let shortcutLink: URL? = nil
+
     @Environment(\.scenePhase) private var scenePhase
     @State private var keyboardOpened = SharedStore.keyboardOpenedWithFullAccess
     @State private var shortcutDone = SharedStore.shortcutDone
@@ -11,6 +16,7 @@ struct SetupView: View {
     @State private var testing = false
     @State private var tryText = ""
     @State private var response = ReplyStore.latest
+    @AppStorage(AppLanguage.storageKey, store: SharedStore.defaults) private var language = AppLanguage.system.rawValue
 
     private let totalSteps = 4
 
@@ -27,6 +33,8 @@ struct SetupView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         header
+                        languageCard
+                        setupHeader.padding(.top, 10)
                         SectionTitle(text: "Keyboard").padding(.top, 4)
                         keyboardStep
                         fullAccessStep
@@ -59,9 +67,45 @@ struct SetupView: View {
     // MARK: - Header
 
     private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Settings").font(Theme.title(34))
+            Text("Language, and a few taps so SaySo writes like you in every chat.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: - Language
+
+    private var languageCard: some View {
+        SettingsCard(icon: "globe", colors: TileColors.sky, title: "Language",
+                     subtitle: "For SaySo's screens, keyboard and shortcut. What it writes for you stays in your own language.") {
+            VStack(spacing: 10) {
+                ForEach(AppLanguage.allCases) { option in
+                    SelectTile(icon: Self.icon(for: option), title: option.title, selected: language == option.rawValue) {
+                        AppLanguage.save(option)
+                    }
+                }
+                NoteBox(icon: "arrow.clockwise", text: "Shortcuts and Siri switch after you close SaySo and open it again.")
+            }
+        }
+    }
+
+    private static func icon(for language: AppLanguage) -> String {
+        switch language {
+        case .system: "iphone"
+        case .en: "character.book.closed"
+        case .ru: "character.book.closed.fill"
+        }
+    }
+
+    // MARK: - Set up
+
+    private var setupHeader: some View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Set up").font(Theme.title(34))
+                Text("Set up").font(Theme.title(26))
                 Text(doneSteps == totalSteps
                      ? "All set. SaySo works in every chat."
                      : "A few taps and SaySo writes like you in every chat.")
@@ -70,7 +114,7 @@ struct SetupView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
-            ProgressRing(done: doneSteps, total: totalSteps)
+            ProgressRing(done: doneSteps, total: totalSteps, size: 84)
         }
     }
 
@@ -111,13 +155,28 @@ struct SetupView: View {
 
     private var shortcutStep: some View {
         StepCard(number: 3, title: "Set up the Back Tap shortcut", done: shortcutDone,
-                 detail: "Double-tap the back of your iPhone on any chat and SaySo writes three replies from a screenshot.") {
+                 detail: "Double-tap the back of your iPhone on any chat: SaySo writes three replies from a screenshot, you tap one and it's copied.") {
             ShortcutFlow()
-            NoteBox(icon: "square.on.square.dashed", text: """
-            In Shortcuts: + → Take Screenshot → Reply from Screenshot (SaySo, leave Audience empty). \
-            The replies then wait in the SaySo keyboard: switch to it in the chat and tap one to put it in.
-            """)
+            if let link = Self.shortcutLink {
+                Button {
+                    UIApplication.shared.open(link)
+                } label: {
+                    Label("Add the ready-made shortcut", systemImage: "plus.square.on.square")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                Text("Or build it yourself:").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            }
+            NumberedSteps(steps: [
+                "Open Shortcuts and tap + to make a new shortcut.",
+                "Add the action Take Screenshot.",
+                "Add Reply with SaySo (search for SaySo). Leave Audience empty, so it asks every time.",
+                "Add Choose from List. It picks up the replies by itself.",
+                "Add Copy to Clipboard. It copies the reply you choose.",
+                "Name it, for example SaySo reply, and tap Done.",
+                "Turn on Back Tap below and pick this shortcut.",
+            ])
             PathLine(steps: ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", "this shortcut"])
+            NoteBox(icon: "keyboard", text: "The replies also wait in the SaySo keyboard: switch to it in the chat and tap one to put it in, no copying needed.")
             HStack(spacing: 12) {
                 Button(action: openShortcuts) {
                     Label("Open Shortcuts", systemImage: "square.2.layers.3d")
@@ -135,7 +194,7 @@ struct SetupView: View {
 
     private var serverStep: some View {
         StepCard(number: 4, title: "Check the connection", done: serverOK,
-                 detail: serverStatus ?? "Makes sure SaySo can reach your styles.") {
+                 detail: serverStatus ?? L("Makes sure SaySo can reach your styles.")) {
             Button {
                 Task { await test() }
             } label: {
@@ -170,13 +229,12 @@ struct SetupView: View {
 
     private func test() async {
         testing = true
-        serverStatus = "Testing…"
+        serverStatus = L("Testing…")
         let started = Date()
         do {
             let styles = try await SaySoAPI.styles()
             serverOK = true
-            serverStatus = String(format: "Connected in %.1f s · %d style%@", Date().timeIntervalSince(started),
-                                  styles.count, styles.count == 1 ? "" : "s")
+            serverStatus = Lf("Connected in %.1f s · styles: %lld", Date().timeIntervalSince(started), styles.count)
         } catch {
             serverOK = false
             serverStatus = error.localizedDescription

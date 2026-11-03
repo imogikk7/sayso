@@ -52,10 +52,10 @@ enum Audience: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .partner: "Partner"
-        case .friends: "Friends"
-        case .family: "Family"
-        case .elder_informal: "Elders"
+        case .partner: L("Partner")
+        case .friends: L("Friends")
+        case .family: L("Family")
+        case .elder_informal: L("Elders")
         }
     }
 }
@@ -219,7 +219,7 @@ enum ChatMode: String, CaseIterable, Identifiable {
     case write, rewrite, reply, email, essay
 
     var id: String { rawValue }
-    var label: String { rawValue.capitalized }
+    var label: String { L(rawValue.capitalized) }
     /// Email and essay are written in the user's formal voice (their own documents), with their own fields.
     var isFormal: Bool { self == .email || self == .essay }
 }
@@ -249,10 +249,10 @@ enum SaySoError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .warming: "Your model is waking up (about 2 minutes). Try again shortly."
-        case .unauthorized: "The app's token was rejected."
-        case .invalid(let detail): detail
-        case .server(let code): "Server error \(code)."
+        case .warming: L("Your model is waking up (about 2 minutes). Try again shortly.")
+        case .unauthorized: L("The app's token was rejected.")
+        case .invalid(let detail): L(detail)
+        case .server(let code): Lf("Server error %lld.", code)
         }
     }
 }

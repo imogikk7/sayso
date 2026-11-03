@@ -150,7 +150,7 @@ struct PanelView: View {
     private var panel: some View {
         VStack(spacing: 10) {
             Picker("Mode", selection: $model.tab) {
-                ForEach(PanelTab.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(PanelTab.allCases) { Text(L($0.rawValue)).tag($0) }
             }
             .pickerStyle(.segmented)
             .onChange(of: model.tab) { model.options = []; model.message = nil }
@@ -198,9 +198,9 @@ struct PanelView: View {
     }
 
     private var hintText: String {
-        model.tab == .rewrite
+        L(model.tab == .rewrite
             ? "Type or dictate a draft, then tap ✨."
-            : "Type what you want to say (“tell her I'm 20 min late”), then tap ✨."
+            : "Type what you want to say (“tell her I'm 20 min late”), then tap ✨.")
     }
 
     private func status(_ message: String) -> some View {
@@ -220,7 +220,7 @@ struct PanelView: View {
     }
 
     private func action(_ title: String, systemImage: String, run: @escaping () -> Void) -> some View {
-        Button(action: run) { Label(title, systemImage: systemImage) }
+        Button(action: run) { Label(L(title), systemImage: systemImage) }
             .buttonStyle(GlowButtonStyle(accent: accent))
             .opacity(model.busy ? 0.5 : 1)
             .disabled(model.busy)

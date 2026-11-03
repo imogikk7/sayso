@@ -42,7 +42,10 @@ Open first, then Spark 1.3 twice; then 502.
   and a panel with **Rewrite / Write / Replies** (latest Back Tap replies + system Paste button). Settings (app's
   Keyboard tab): opens with letters or panel, audiences, formats, variants, haptics, **"Capital letter at sentence
   start" (off by default)**, accent, and **"Learn from what I type" (off by default)**.
-- **Back Tap**: Shortcut *Take Screenshot → SaySo App Intent* → `/reply` → system list of three replies (tap = copy).
+- **Back Tap**: Shortcut *Take Screenshot → Reply with SaySo* (App Intent → `/reply`, returns `[String]`) → *Choose from
+  List* → *Copy to Clipboard*. The intent never writes the clipboard (iOS drops pasteboard writes from a background
+  intent); Shortcuts copies. The older *Reply from Screenshot* action shows the replies in a snippet; both save them
+  for the keyboard.
 - **Chat** (`ChatView.swift`): modes **Write / Rewrite / Reply / Email / Essay**, audience + format pickers, 🎙 voice
   input (`VoiceRecorder.swift` → `/transcribe`). Under each answer: Copy, 👍, 👎, ✏️. 👎 shows **quick reason chips**
   (chat: Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; Email/Essay: Shorter, Longer, More
@@ -56,7 +59,11 @@ Open first, then Spark 1.3 twice; then 502.
   (`PATCH /styles/{id}/custom`); the writer uses them (`writer.preferred_ends`, `avoid_line`). Style card: per-audience
   profile, self-check, **Formal writing** (counts, sentence length, linking words, openings, sign-offs), **Learned from
   you** (keyboard messages, deletable) and **Learned from your corrections** (rules, deletable).
-- **Setup** tab: keyboard + Full Access + Back Tap checklist, last screenshot replies.
+- **Settings** tab (`SetupView`): language (System / English / Русский, `appLanguage` in the App Group, applied at once),
+  then the keyboard + Full Access + Back Tap checklist, last screenshot replies.
+- **Languages**: English (source) and Russian in `ios/Shared/Localizable.xcstrings` (app + keyboard + intents),
+  `SaySoApp/AppShortcuts.xcstrings`, `SaySoApp/InfoPlist.xcstrings`. Strings kept in variables go through `L()` /
+  `Lf()` (`Shared/Localization.swift`).
 
 Formats: `message`, `series` (2–4 short messages), `official`, `email`; Chat's Essay mode uses `essay`. `official`,
 `email`, `essay` are written in the **formal voice**; the LoRA (when on) writes only `message` and `series`.

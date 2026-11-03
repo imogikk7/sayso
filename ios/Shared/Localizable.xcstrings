@@ -1,0 +1,5153 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    " · you open with “%@”" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · ты начинаешь с «%@»"
+          }
+        }
+      }
+    },
+    "%lld messages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld message"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld messages"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld сообщение"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld сообщения"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld сообщений"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld сообщения"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld of %lld steps done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово шагов: %lld из %lld"
+          }
+        }
+      }
+    },
+    "%lld variants" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld variant"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld variants"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вариант"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld варианта"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вариантов"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld варианта"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld words" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld words"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld слово"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld слова"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld слов"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld слова"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "(generic AI %lld%%)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(обычный ИИ %lld%%)"
+          }
+        }
+      }
+    },
+    ".txt, .docx, .pdf, screenshots, or paste." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".txt, .docx, .pdf, скриншоты или вставка текста."
+          }
+        }
+      }
+    },
+    "3 replies" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 ответа"
+          }
+        }
+      }
+    },
+    "A challenge you overcame" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Трудность, которую ты преодолел"
+          }
+        }
+      }
+    },
+    "A few taps and SaySo writes like you in every chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пара шагов — и SaySo пишет как ты в любом чате."
+          }
+        }
+      }
+    },
+    "A light tap you can feel on every key." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лёгкая вибрация на каждой клавише."
+          }
+        }
+      }
+    },
+    "About %lld words" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "About %lld word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "About %lld words"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Около %lld слова"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Около %lld слов"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Около %lld слов"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Около %lld слов"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Accent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цвет"
+          }
+        }
+      }
+    },
+    "Accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Универсальный доступ"
+          }
+        }
+      }
+    },
+    "Add chat exports" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить экспорт чатов"
+          }
+        }
+      }
+    },
+    "Add chats with friends, family or your partner and SaySo learns how you write to each." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь чаты с друзьями, семьёй или партнёром — SaySo выучит, как ты пишешь каждому."
+          }
+        }
+      }
+    },
+    "Add Choose from List. It picks up the replies by itself." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь «Выбрать из списка». Ответы оно подхватит само."
+          }
+        }
+      }
+    },
+    "Add Copy to Clipboard. It copies the reply you choose." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь «Скопировать в буфер обмена». Скопируется ответ, который выберешь."
+          }
+        }
+      }
+    },
+    "Add emails" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить письма"
+          }
+        }
+      }
+    },
+    "Add essays" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить эссе"
+          }
+        }
+      }
+    },
+    "Add essays & documents" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить эссе и документы"
+          }
+        }
+      }
+    },
+    "Add files" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить файлы"
+          }
+        }
+      }
+    },
+    "Add it to your iPhone's keyboards, next to your usual ones." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь её к клавиатурам iPhone, рядом с привычными."
+          }
+        }
+      }
+    },
+    "Add more chats for this style to get its own model." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь больше чатов, чтобы у стиля появилась своя модель."
+          }
+        }
+      }
+    },
+    "Add New Keyboard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые клавиатуры"
+          }
+        }
+      }
+    },
+    "Add Reply with SaySo (search for SaySo). Leave Audience empty, so it asks every time." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь «Ответить через SaySo» (найди по слову SaySo). Поле «Кому» оставь пустым — тогда оно спрашивает каждый раз."
+          }
+        }
+      }
+    },
+    "Add screenshots or a screen recording" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить скриншоты или запись экрана"
+          }
+        }
+      }
+    },
+    "Add screenshots or photos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить скриншоты или фото"
+          }
+        }
+      }
+    },
+    "Add the action Take Screenshot." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь действие «Сделать снимок экрана»."
+          }
+        }
+      }
+    },
+    "Add the ready-made shortcut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить готовую команду"
+          }
+        }
+      }
+    },
+    "Add the SaySo keyboard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь клавиатуру SaySo"
+          }
+        }
+      }
+    },
+    "Add to style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В стиль"
+          }
+        }
+      }
+    },
+    "Add your emails" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь свои письма"
+          }
+        }
+      }
+    },
+    "AI suggests" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ИИ предлагает"
+          }
+        }
+      }
+    },
+    "All Mail data included → keep only the Sent label → Export (.mbox)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все данные Почты → оставь только ярлык «Отправленные» → Экспорт (.mbox)."
+          }
+        }
+      }
+    },
+    "All set. SaySo works in every chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всё готово. SaySo работает в любом чате."
+          }
+        }
+      }
+    },
+    "Allow Full Access" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разреши полный доступ"
+          }
+        }
+      }
+    },
+    "Allow the microphone in Settings → SaySo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разреши микрофон: Настройки → SaySo"
+          }
+        }
+      }
+    },
+    "Answer: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответ: %@"
+          }
+        }
+      }
+    },
+    "Answering a question" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отвечаешь на вопрос"
+          }
+        }
+      }
+    },
+    "Answering an email? Paste it (optional)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отвечаешь на письмо? Вставь его (необязательно)"
+          }
+        }
+      }
+    },
+    "answers you liked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ответов понравилось"
+          }
+        }
+      }
+    },
+    "Anything to add? An instruction or some context, or leave it empty." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что-то добавить? Пожелание или контекст — или оставь пустым."
+          }
+        }
+      }
+    },
+    "Apple Mail as PDF" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Почта Apple в PDF"
+          }
+        }
+      }
+    },
+    "Are you coming tonight? We start at 8" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ты придёшь вечером? Начинаем в 8"
+          }
+        }
+      }
+    },
+    "Ask for a note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спрашивать пожелание"
+          }
+        }
+      }
+    },
+    "Ask my manager for Friday off" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попроси у руководителя выходной в пятницу"
+          }
+        }
+      }
+    },
+    "Ask Professor Kim to move my defense to Thursday" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попроси профессора Кима перенести мою защиту на четверг"
+          }
+        }
+      }
+    },
+    "Ask who wants pizza tonight" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спроси, кто хочет пиццу вечером"
+          }
+        }
+      }
+    },
+    "Audience" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кому"
+          }
+        }
+      }
+    },
+    "Audiences & order" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кому и в каком порядке"
+          }
+        }
+      }
+    },
+    "Auto (from the chat)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Авто (по чату)"
+          }
+        }
+      }
+    },
+    "Back Tap" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Касание задней панели"
+          }
+        }
+      }
+    },
+    "Blue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синий"
+          }
+        }
+      }
+    },
+    "BUILDING" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "СОБИРАЕТСЯ"
+          }
+        }
+      }
+    },
+    "Building your profile…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Собираю твой профиль…"
+          }
+        }
+      }
+    },
+    "By kind of text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По виду текста"
+          }
+        }
+      }
+    },
+    "By who you're talking to" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По тому, с кем говоришь"
+          }
+        }
+      }
+    },
+    "Can you send me the notes from today's lecture?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Можешь скинуть конспект сегодняшней лекции?"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
+    "Capital letter at sentence start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заглавная в начале предложения"
+          }
+        }
+      }
+    },
+    "Capitalized" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С заглавной"
+          }
+        }
+      }
+    },
+    "Chat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чат"
+          }
+        }
+      }
+    },
+    "Chats" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты"
+          }
+        }
+      }
+    },
+    "Chats teach your messages; your own emails and essays teach your formal voice." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты учат твоим сообщениям, а твои письма и эссе — официальному голосу."
+          }
+        }
+      }
+    },
+    "Check the connection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверь связь"
+          }
+        }
+      }
+    },
+    "Checked on %lld of your real replies it hadn't seen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверено на твоих настоящих ответах, которых он не видел: %lld."
+          }
+        }
+      }
+    },
+    "Choose from List" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать из списка"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
+          }
+        }
+      }
+    },
+    "Connected in %.1f s · styles: %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено за %.1f с · стилей: %lld"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дальше"
+          }
+        }
+      }
+    },
+    "Control Center → Screen Recording, open the chat and scroll up slowly for a minute." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пункт управления → Запись экрана, открой чат и минуту медленно листай вверх."
+          }
+        }
+      }
+    },
+    "Copied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировано"
+          }
+        }
+      }
+    },
+    "Copies this reply" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Копирует этот ответ"
+          }
+        }
+      }
+    },
+    "Copy and paste" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать и вставить"
+          }
+        }
+      }
+    },
+    "Copy subject" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать тему"
+          }
+        }
+      }
+    },
+    "Copy their message first." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала скопируй их сообщение."
+          }
+        }
+      }
+    },
+    "Copy to Clipboard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать в буфер обмена"
+          }
+        }
+      }
+    },
+    "Couldn't build this style." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не получилось собрать этот стиль."
+          }
+        }
+      }
+    },
+    "Create style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать стиль"
+          }
+        }
+      }
+    },
+    "Dear friend, I regret to inform you that I will not be able to attend today." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дорогой друг, с сожалением сообщаю, что сегодня не смогу прийти."
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить"
+          }
+        }
+      }
+    },
+    "Delete style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить стиль"
+          }
+        }
+      }
+    },
+    "Delete this style?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить этот стиль?"
+          }
+        }
+      }
+    },
+    "Didn't catch that, try again" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не расслышал, попробуй ещё раз"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        }
+      }
+    },
+    "Double Tap" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Двойное касание"
+          }
+        }
+      }
+    },
+    "Double-tap the back of your iPhone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дважды коснись задней панели iPhone"
+          }
+        }
+      }
+    },
+    "Double-tap the back of your iPhone on any chat: SaySo writes three replies from a screenshot, you tap one and it's copied." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дважды коснись задней панели iPhone в любом чате: SaySo напишет три ответа по скриншоту, ты выберешь один — и он скопирован."
+          }
+        }
+      }
+    },
+    "Double-tap the back of your iPhone: the shortcut takes a screenshot, SaySo writes three replies from it, you pick one and it's copied." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дважды коснись задней панели iPhone: команда делает скриншот, SaySo пишет по нему три ответа, ты выбираешь один — и он скопирован."
+          }
+        }
+      }
+    },
+    "Download to device, format JSON → Create files." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скачать на устройство, формат JSON → Создать файлы."
+          }
+        }
+      }
+    },
+    "Download your information → Some of your information → Messages." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скачать информацию → Часть информации → Сообщения."
+          }
+        }
+      }
+    },
+    "e.g. Me with friends, Work me" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "например: Я с друзьями, Я на работе"
+          }
+        }
+      }
+    },
+    "e.g. shorter, warmer, no emoji" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "например: короче, теплее, без эмодзи"
+          }
+        }
+      }
+    },
+    "Each style checks itself on messages it hasn't seen and shows how much the result sounds like you." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждый стиль проверяет себя на сообщениях, которых не видел, и показывает, насколько результат похож на тебя."
+          }
+        }
+      }
+    },
+    "Elders" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Старшие"
+          }
+        }
+      }
+    },
+    "Elders / formal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Старшие / на «вы»"
+          }
+        }
+      }
+    },
+    "Email" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Письмо"
+          }
+        }
+      }
+    },
+    "Emails" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Письма"
+          }
+        }
+      }
+    },
+    "Emails you sent yourself teach SaySo how you greet, ask and sign off, so its emails and official messages sound like you." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Письма, которые ты отправлял сам, учат SaySo, как ты здороваешься, просишь и прощаешься, — и его письма и официальные сообщения звучат как ты."
+          }
+        }
+      }
+    },
+    "Emails, essays and papers you wrote yourself. Official messages, emails and essays then sound like your formal self, not a generic polite AI." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Письма, эссе и работы, которые ты написал сам. Тогда официальные сообщения, письма и эссе звучат как ты, а не как вежливый ИИ."
+          }
+        }
+      }
+    },
+    "Emoji" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эмодзи"
+          }
+        }
+      }
+    },
+    "emoji & laughs" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "эмодзи и смех"
+          }
+        }
+      }
+    },
+    "end punctuation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "точка в конце"
+          }
+        }
+      }
+    },
+    "ends with a dot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "с точкой в конце"
+          }
+        }
+      }
+    },
+    "Ends with punctuation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ставит точку в конце"
+          }
+        }
+      }
+    },
+    "Essay" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эссе"
+          }
+        }
+      }
+    },
+    "essay or document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "эссе или документ"
+          }
+        }
+      }
+    },
+    "Essay question or topic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вопрос или тема эссе"
+          }
+        }
+      }
+    },
+    "Essays & documents" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эссе и документы"
+          }
+        }
+      }
+    },
+    "essays & documents" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "эссе и документов"
+          }
+        }
+      }
+    },
+    "Essays, papers and other texts you wrote teach SaySo your longer, formal voice for essays and official texts." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эссе, работы и другие твои тексты учат SaySo твоему длинному, официальному голосу для эссе и официальных текстов."
+          }
+        }
+      }
+    },
+    "Failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка"
+          }
+        }
+      }
+    },
+    "Family" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Семья"
+          }
+        }
+      }
+    },
+    "Follow up on my internship application" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напомни о моей заявке на стажировку"
+          }
+        }
+      }
+    },
+    "For %@ · tap one to copy it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для: %@ · нажми, чтобы скопировать."
+          }
+        }
+      }
+    },
+    "For %@?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для: %@?"
+          }
+        }
+      }
+    },
+    "For SaySo's screens, keyboard and shortcut. What it writes for you stays in your own language." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для экранов SaySo, клавиатуры и быстрой команды. То, что он пишет за тебя, остаётся на твоём языке."
+          }
+        }
+      }
+    },
+    "Forget" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть"
+          }
+        }
+      }
+    },
+    "Formal writing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Официальный стиль"
+          }
+        }
+      }
+    },
+    "Format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат"
+          }
+        }
+      }
+    },
+    "Format HTML, turn off photos and videos → Export." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат HTML, фото и видео выключи → Экспорт."
+          }
+        }
+      }
+    },
+    "Formats" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Форматы"
+          }
+        }
+      }
+    },
+    "Friends" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Друзья"
+          }
+        }
+      }
+    },
+    "from your chats" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "из твоих чатов"
+          }
+        }
+      }
+    },
+    "From your fixes in Chat and what you type with the keyboard." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из твоих правок в Чате и того, что ты набираешь на клавиатуре."
+          }
+        }
+      }
+    },
+    "General" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основные"
+          }
+        }
+      }
+    },
+    "Generic AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычный ИИ"
+          }
+        }
+      }
+    },
+    "Get started" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать"
+          }
+        }
+      }
+    },
+    "Gmail as PDF" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gmail в PDF"
+          }
+        }
+      }
+    },
+    "Google Docs: ⋯ → Share & export → Save as Word (.docx) → Save to Files." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Документы: ⋯ → Поделиться и экспортировать → Сохранить как Word (.docx) → в «Файлы»."
+          }
+        }
+      }
+    },
+    "greetings, asks, sign-offs" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "приветствия, просьбы, подписи"
+          }
+        }
+      }
+    },
+    "Haptics on keys" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отклик клавиш"
+          }
+        }
+      }
+    },
+    "Hey! I'm SaySo 👋 I write like **you**, not like an AI." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Привет! Я SaySo 👋 Пишу как **ты**, а не как ИИ."
+          }
+        }
+      }
+    },
+    "Hi! I'll be there at 8 pm. Best," : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здравствуйте! Буду в 20:00. С уважением,"
+          }
+        }
+      }
+    },
+    "Hi, we'd like to invite you to an interview on Monday at 10. Please confirm." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здравствуйте! Приглашаем вас на собеседование в понедельник в 10:00. Пожалуйста, подтвердите."
+          }
+        }
+      }
+    },
+    "honestly best week ever 😭 tell u everything tmrw" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "честно лучшая неделя 😭 завтра всё расскажу"
+          }
+        }
+      }
+    },
+    "How to get them" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как их достать"
+          }
+        }
+      }
+    },
+    "How to get your chats" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как достать свои чаты"
+          }
+        }
+      }
+    },
+    "How you actually write" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как ты пишешь на самом деле"
+          }
+        }
+      }
+    },
+    "How you greet, ask and sign off" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как ты здороваешься, просишь и прощаешься"
+          }
+        }
+      }
+    },
+    "How your messages change with each kind of person." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как меняются твои сообщения с разными людьми."
+          }
+        }
+      }
+    },
+    "How ✨ can write: one message, a series, official or email." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как может писать ✨: одно сообщение, серия, официально или письмо."
+          }
+        }
+      }
+    },
+    "I've set it up" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроено"
+          }
+        }
+      }
+    },
+    "iMessage and any other app" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iMessage и любое другое приложение"
+          }
+        }
+      }
+    },
+    "IN USE" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ВЫБРАН"
+          }
+        }
+      }
+    },
+    "In your mail app open Sent." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В почте открой «Отправленные»."
+          }
+        }
+      }
+    },
+    "In your style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В твоём стиле"
+          }
+        }
+      }
+    },
+    "Indigo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Индиго"
+          }
+        }
+      }
+    },
+    "Instagram" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instagram"
+          }
+        }
+      }
+    },
+    "instead of: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вместо: %@"
+          }
+        }
+      }
+    },
+    "Its own model is training; until then Muse Spark writes in this style." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Своя модель учится; пока в этом стиле пишет Muse Spark."
+          }
+        }
+      }
+    },
+    "Its own model will train when the GPU is on; until then Muse Spark writes in this style." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Своя модель обучится, когда включат GPU; пока в этом стиле пишет Muse Spark."
+          }
+        }
+      }
+    },
+    "Keyboard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клавиатура"
+          }
+        }
+      }
+    },
+    "Keyboard preview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Превью клавиатуры"
+          }
+        }
+      }
+    },
+    "Keyboards" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клавиатуры"
+          }
+        }
+      }
+    },
+    "Kind" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что"
+          }
+        }
+      }
+    },
+    "Language" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Язык"
+          }
+        }
+      }
+    },
+    "Language, and a few taps so SaySo writes like you in every chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Язык и пара шагов, чтобы SaySo писал как ты в любом чате."
+          }
+        }
+      }
+    },
+    "Last screenshot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последний скриншот"
+          }
+        }
+      }
+    },
+    "Last screenshot replies" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответы по последнему скриншоту"
+          }
+        }
+      }
+    },
+    "laughs a lot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "много смеётся"
+          }
+        }
+      }
+    },
+    "Laughter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смех"
+          }
+        }
+      }
+    },
+    "Layout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Раскладка"
+          }
+        }
+      }
+    },
+    "Learn from what I type" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учиться на том, что я пишу"
+          }
+        }
+      }
+    },
+    "Learn my email voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выучить мой стиль писем"
+          }
+        }
+      }
+    },
+    "Learn my formal voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выучить мой официальный стиль"
+          }
+        }
+      }
+    },
+    "Learned from" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выучено из"
+          }
+        }
+      }
+    },
+    "Learned from %lld of your emails" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выучено по твоим письмам: %lld"
+          }
+        }
+      }
+    },
+    "Learned from %lld of your texts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выучено по твоим текстам: %lld"
+          }
+        }
+      }
+    },
+    "Learned from you" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выучено у тебя"
+          }
+        }
+      }
+    },
+    "Learned from your corrections" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выучено из твоих правок"
+          }
+        }
+      }
+    },
+    "Learned: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запомнил: %@"
+          }
+        }
+      }
+    },
+    "Learning how you react…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учусь, как ты реагируешь…"
+          }
+        }
+      }
+    },
+    "Learning your style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изучаю твой стиль"
+          }
+        }
+      }
+    },
+    "Less formal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Менее официально"
+          }
+        }
+      }
+    },
+    "Letters" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Буквы"
+          }
+        }
+      }
+    },
+    "Links ideas with" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Связывает мысли словами"
+          }
+        }
+      }
+    },
+    "Listening… %llds, tap ■ when done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слушаю… %lld с, нажми ■, когда закончишь"
+          }
+        }
+      }
+    },
+    "LIVE PREVIEW" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ПРЕВЬЮ"
+          }
+        }
+      }
+    },
+    "Loading your styles…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загружаю стили…"
+          }
+        }
+      }
+    },
+    "Longer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Длиннее"
+          }
+        }
+      }
+    },
+    "Make it stronger: answer one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать сильнее: ответь на один"
+          }
+        }
+      }
+    },
+    "Makes sense" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смысл"
+          }
+        }
+      }
+    },
+    "Makes sure SaySo can reach your styles." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверяет, что SaySo видит твои стили."
+          }
+        }
+      }
+    },
+    "Many at once (computer)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Много сразу (компьютер)"
+          }
+        }
+      }
+    },
+    "Message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сообщение"
+          }
+        }
+      }
+    },
+    "Messages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сообщения"
+          }
+        }
+      }
+    },
+    "Messages you send with SaySo's letter keys (and how you change a ✨ suggestion before sending) become examples of your style right away." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сообщения, которые ты отправляешь с клавиатуры SaySo (и как правишь подсказку ✨ перед отправкой), сразу становятся примерами твоего стиля."
+          }
+        }
+      }
+    },
+    "mixed case" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "по-разному"
+          }
+        }
+      }
+    },
+    "Mode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим"
+          }
+        }
+      }
+    },
+    "More personal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Личнее"
+          }
+        }
+      }
+    },
+    "mostly lowercase" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "в основном строчные"
+          }
+        }
+      }
+    },
+    "Muse Spark Open writes in this style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этом стиле пишет Muse Spark Open"
+          }
+        }
+      }
+    },
+    "My style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мой стиль"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название"
+          }
+        }
+      }
+    },
+    "Name it, for example SaySo reply, and tap Done." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назови её, например «Ответ SaySo», и нажми «Готово»."
+          }
+        }
+      }
+    },
+    "New chat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый чат"
+          }
+        }
+      }
+    },
+    "New style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый стиль"
+          }
+        }
+      }
+    },
+    "New style from chats…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый стиль из чатов…"
+          }
+        }
+      }
+    },
+    "NEXT" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ДАЛЬШЕ"
+          }
+        }
+      }
+    },
+    "No audiences yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока никого"
+          }
+        }
+      }
+    },
+    "No audiences yet. Add chats and SaySo learns how you write to each kind of person." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока никого. Добавь чаты — SaySo выучит, как ты пишешь разным людям."
+          }
+        }
+      }
+    },
+    "no end dot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "без точки в конце"
+          }
+        }
+      }
+    },
+    "No reply this time. Try again with a note." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этот раз без ответа. Попробуй ещё раз с пожеланием."
+          }
+        }
+      }
+    },
+    "No rules yet. Tell an answer in Chat “shorter” or “no emoji” and SaySo remembers." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Правил пока нет. Скажи ответу в Чате «короче» или «без эмодзи» — SaySo запомнит."
+          }
+        }
+      }
+    },
+    "No screenshot replies yet. Double-tap the back of your iPhone in a chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответов по скриншоту пока нет. Дважды коснись задней панели iPhone в чате."
+          }
+        }
+      }
+    },
+    "Not my words" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не мои слова"
+          }
+        }
+      }
+    },
+    "Not yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока нет"
+          }
+        }
+      }
+    },
+    "Note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожелание"
+          }
+        }
+      }
+    },
+    "Noted, I'll be there at 8 pm." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Принято, буду в 20:00."
+          }
+        }
+      }
+    },
+    "Nothing came back, try again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ничего не пришло, попробуй ещё раз."
+          }
+        }
+      }
+    },
+    "Nothing yet. Fix answers in Chat (“shorter”, “no emoji”) and SaySo remembers what you prefer." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока ничего. Поправляй ответы в Чате («короче», «без эмодзи») — SaySo запомнит, как тебе нравится."
+          }
+        }
+      }
+    },
+    "of %lld done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "из %lld готово"
+          }
+        }
+      }
+    },
+    "Off: letters stay lowercase unless you tap ⇧ (double-tap for caps lock)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключено: буквы строчные, пока не нажмёшь ⇧ (двойное нажатие — Caps Lock)."
+          }
+        }
+      }
+    },
+    "Official" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Официально"
+          }
+        }
+      }
+    },
+    "ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ок"
+          }
+        }
+      }
+    },
+    "ok see you at 8 🙂" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ок до встречи в 8 🙂"
+          }
+        }
+      }
+    },
+    "On the keyboard: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На клавиатуре: %@"
+          }
+        }
+      }
+    },
+    "Only on a phone? Use a screen recording or screenshots below." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только телефон? Подойдёт запись экрана или скриншоты ниже."
+          }
+        }
+      }
+    },
+    "Only your own messages are kept; the other side is read once to learn how you react, then dropped." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохраняются только твои сообщения; чужие читаются один раз, чтобы понять, как ты реагируешь, и сразу удаляются."
+          }
+        }
+      }
+    },
+    "Only your own typing: pasted text, password, email, link, code and search fields are never learned. Off until you turn it on. See and delete them in Styles → your style → Learned from you." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только то, что ты набираешь сам: вставленный текст, поля паролей, почты, ссылок, кодов и поиска не запоминаются. Выключено, пока не включишь. Посмотреть и удалить: Стили → твой стиль → «Выучено у тебя»."
+          }
+        }
+      }
+    },
+    "Only your own writing is kept. Screenshots and photos are read once and not stored." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохраняется только то, что написал ты. Скриншоты и фото читаются один раз и не хранятся."
+          }
+        }
+      }
+    },
+    "Open an email you wrote; take screenshots (scroll for a long one)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой своё письмо и сделай скриншоты (длинное — листая)."
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть Настройки"
+          }
+        }
+      }
+    },
+    "Open Shortcuts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть «Команды»"
+          }
+        }
+      }
+    },
+    "Open Shortcuts and tap + to make a new shortcut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой «Команды» и нажми +, чтобы создать новую команду."
+          }
+        }
+      }
+    },
+    "Open the chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой чат."
+          }
+        }
+      }
+    },
+    "Open the email → reply arrow ↩ → Print." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой письмо → стрелка ответа ↩ → Напечатать."
+          }
+        }
+      }
+    },
+    "Open the email → ⋯ (top right) → Print." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой письмо → ⋯ (вверху справа) → Напечатать."
+          }
+        }
+      }
+    },
+    "Open this style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть стиль"
+          }
+        }
+      }
+    },
+    "Opens with" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывается с"
+          }
+        }
+      }
+    },
+    "Opens with letters" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывается с буквами"
+          }
+        }
+      }
+    },
+    "Opens with the panel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывается с панелью"
+          }
+        }
+      }
+    },
+    "Optional: what to say or some context." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Необязательно: что сказать или немного контекста."
+          }
+        }
+      }
+    },
+    "Or build it yourself:" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Или собери сам:"
+          }
+        }
+      }
+    },
+    "Or say it like this" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Или скажи так"
+          }
+        }
+      }
+    },
+    "Or take a few screenshots of the chat instead." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Или просто сделай несколько скриншотов чата."
+          }
+        }
+      }
+    },
+    "Orange" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оранжевый"
+          }
+        }
+      }
+    },
+    "Other styles" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие стили"
+          }
+        }
+      }
+    },
+    "Page %lld of %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страница %lld из %lld"
+          }
+        }
+      }
+    },
+    "Pages: Share → Export → PDF or Word." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pages: Поделиться → Экспорт → PDF или Word."
+          }
+        }
+      }
+    },
+    "Partner" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Партнёр"
+          }
+        }
+      }
+    },
+    "paste it" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вставь"
+          }
+        }
+      }
+    },
+    "Paste text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вставить текст"
+          }
+        }
+      }
+    },
+    "Pasted text · %lld words" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Pasted text · %lld word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Pasted text · %lld words"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Вставленный текст · %lld слово"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Вставленный текст · %lld слова"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Вставленный текст · %lld слов"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Вставленный текст · %lld слова"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Photograph each page straight on, in good light (printed or handwritten)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сфотографируй каждую страницу прямо, при хорошем свете (печатную или рукописную)."
+          }
+        }
+      }
+    },
+    "Photos of pages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото страниц"
+          }
+        }
+      }
+    },
+    "Pink" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розовый"
+          }
+        }
+      }
+    },
+    "Preparing…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готовлю…"
+          }
+        }
+      }
+    },
+    "Profile → ☰ → Accounts Center → Your information and permissions." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профиль → ☰ → Центр аккаунтов → Ваша информация и разрешения."
+          }
+        }
+      }
+    },
+    "Put the .mbox on your iPhone and tap Add files (up to 20 MB)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скинь .mbox на iPhone и нажми «Добавить файлы» (до 20 МБ)."
+          }
+        }
+      }
+    },
+    "Reading your files…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читаю файлы…"
+          }
+        }
+      }
+    },
+    "Reading…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читаю…"
+          }
+        }
+      }
+    },
+    "Reads the chat on the screenshot and passes replies in your style to the next action. Add Choose from List and Copy to Clipboard after it to copy one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читает чат на скриншоте и передаёт ответы в твоём стиле следующему действию. Добавь после него «Выбрать из списка» и «Скопировать в буфер обмена», чтобы скопировать один."
+          }
+        }
+      }
+    },
+    "Reads the chat on the screenshot and writes replies in your style." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читает чат на скриншоте и пишет ответы в твоём стиле."
+          }
+        }
+      }
+    },
+    "Ready" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        }
+      }
+    },
+    "READY" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ГОТОВ"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать"
+          }
+        }
+      }
+    },
+    "Remove all formal writing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать все официальные тексты"
+          }
+        }
+      }
+    },
+    "Remove all formal writing from this style?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать из этого стиля все официальные тексты?"
+          }
+        }
+      }
+    },
+    "Remove formal writing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать официальные тексты"
+          }
+        }
+      }
+    },
+    "Repeat for 3–5 emails, then tap Add screenshots or photos." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повтори для 3–5 писем и нажми «Добавить скриншоты или фото»."
+          }
+        }
+      }
+    },
+    "Replies" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответы"
+          }
+        }
+      }
+    },
+    "Replies from your screenshot. Tap one to put it in the chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответы по твоему скриншоту. Нажми нужный — и он в чате."
+          }
+        }
+      }
+    },
+    "Replies to ${screenshot} for ${audience}" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответы на ${screenshot} для: ${audience}"
+          }
+        }
+      }
+    },
+    "Reply" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответить"
+          }
+        }
+      }
+    },
+    "Reply from a screenshot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответ по скриншоту"
+          }
+        }
+      }
+    },
+    "Reply from Screenshot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответ по скриншоту"
+          }
+        }
+      }
+    },
+    "Reply to ${screenshot} for ${audience}" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответить на ${screenshot} для: ${audience}"
+          }
+        }
+      }
+    },
+    "Reply with SaySo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответить через SaySo"
+          }
+        }
+      }
+    },
+    "Retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить"
+          }
+        }
+      }
+    },
+    "Rewrite" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переписать"
+          }
+        }
+      }
+    },
+    "Rewrite in my style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переписать в моём стиле"
+          }
+        }
+      }
+    },
+    "running late sorry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "опаздываю сорри"
+          }
+        }
+      }
+    },
+    "Same as iPhone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как на iPhone"
+          }
+        }
+      }
+    },
+    "Same you, different habits. Tap one to see all of it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ты тот же, привычки разные. Нажми, чтобы увидеть всё."
+          }
+        }
+      }
+    },
+    "Save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить"
+          }
+        }
+      }
+    },
+    "Save to Files, then come back and tap Add chat exports." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохрани в «Файлы», вернись и нажми «Добавить экспорт чатов»."
+          }
+        }
+      }
+    },
+    "Saved as an example of your style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранено как пример твоего стиля"
+          }
+        }
+      }
+    },
+    "Saved your version (copied)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твой вариант сохранён (и скопирован)"
+          }
+        }
+      }
+    },
+    "Say happy birthday to Dan" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поздравь Дана с днём рождения"
+          }
+        }
+      }
+    },
+    "SaySo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo"
+          }
+        }
+      }
+    },
+    "SAYSO" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SAYSO"
+          }
+        }
+      }
+    },
+    "SaySo guessed; fix anything that's wrong. It learns how you write to each kind of person." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo угадал сам — поправь, если что-то не так. Он учится, как ты пишешь разным людям."
+          }
+        }
+      }
+    },
+    "SaySo in your style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo в твоём стиле"
+          }
+        }
+      }
+    },
+    "SaySo is reading your chats and checking itself. This takes a few minutes." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo читает твои чаты и проверяет себя. Это займёт пару минут."
+          }
+        }
+      }
+    },
+    "SaySo keyboard opened with Full Access" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клавиатура SaySo открылась с полным доступом"
+          }
+        }
+      }
+    },
+    "SaySo learned from you" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что SaySo выучил у тебя"
+          }
+        }
+      }
+    },
+    "SaySo learns how you write (length, lowercase, punctuation, slang) and answers the way you'd say it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo учится тому, как ты пишешь (длина, строчные буквы, пунктуация, сленг), и отвечает так, как сказал бы ты."
+          }
+        }
+      }
+    },
+    "SaySo needs Full Access to reach your style: Settings → General → Keyboard → Keyboards → SaySo." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo нужен полный доступ, чтобы видеть твой стиль: Настройки → Основные → Клавиатура → Клавиатуры → SaySo."
+          }
+        }
+      }
+    },
+    "SaySo panel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панель SaySo"
+          }
+        }
+      }
+    },
+    "SaySo reads only what you wrote: no headers, no quoted replies from others." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo читает только то, что написал ты: без заголовков и чужих цитат."
+          }
+        }
+      }
+    },
+    "SaySo: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SaySo: %@"
+          }
+        }
+      }
+    },
+    "Screenshot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скриншот"
+          }
+        }
+      }
+    },
+    "Screenshots (easiest)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скриншоты (проще всего)"
+          }
+        }
+      }
+    },
+    "Scroll down → Export Chat → Without Media." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пролистай вниз → Экспорт чата → Без медиафайлов."
+          }
+        }
+      }
+    },
+    "See how close it gets." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смотри, насколько похоже."
+          }
+        }
+      }
+    },
+    "see you at 8 🙂" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "до встречи в 8 🙂"
+          }
+        }
+      }
+    },
+    "Select the text anywhere → Copy, then tap Paste text here." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выдели текст где угодно → Скопировать, потом нажми здесь «Вставить текст»."
+          }
+        }
+      }
+    },
+    "Self-check" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Самопроверка"
+          }
+        }
+      }
+    },
+    "Self-check: writing test replies…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Самопроверка: пишу тестовые ответы…"
+          }
+        }
+      }
+    },
+    "Send" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить"
+          }
+        }
+      }
+    },
+    "Send the folder (zipped) to your iPhone (AirDrop or Files), then tap Add chat exports." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправь папку (в zip) на iPhone (AirDrop или «Файлы») и нажми «Добавить экспорт чатов»."
+          }
+        }
+      }
+    },
+    "Send this one, then tap the next" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправь это, потом нажми следующее"
+          }
+        }
+      }
+    },
+    "Sending…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправляю…"
+          }
+        }
+      }
+    },
+    "sent with the keyboard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "отправлено с клавиатуры"
+          }
+        }
+      }
+    },
+    "Sent → open your email → touch and hold the text → Select All → Copy." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправленные → открой письмо → удерживай текст → Выбрать все → Скопировать."
+          }
+        }
+      }
+    },
+    "Series" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Серия"
+          }
+        }
+      }
+    },
+    "Series · %lld of %lld sent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Серия · отправлено %lld из %lld"
+          }
+        }
+      }
+    },
+    "Server" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер"
+          }
+        }
+      }
+    },
+    "Server error %lld." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка сервера %lld."
+          }
+        }
+      }
+    },
+    "Set up" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Первые шаги"
+          }
+        }
+      }
+    },
+    "Set up the Back Tap shortcut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настрой касание задней панели"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки"
+          }
+        }
+      }
+    },
+    "Shortcuts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Команды"
+          }
+        }
+      }
+    },
+    "Shortcuts and Siri switch after you close SaySo and open it again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Быстрые команды и Siri переключатся, когда закроешь SaySo и откроешь снова."
+          }
+        }
+      }
+    },
+    "Shorter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Короче"
+          }
+        }
+      }
+    },
+    "Signs off with" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписывается"
+          }
+        }
+      }
+    },
+    "Simpler words" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проще"
+          }
+        }
+      }
+    },
+    "Skip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пропустить"
+          }
+        }
+      }
+    },
+    "so how was the trip??" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ну как поездка??"
+          }
+        }
+      }
+    },
+    "sounds\nlike you" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "похоже\nна тебя"
+          }
+        }
+      }
+    },
+    "sounds like you" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "похоже на тебя"
+          }
+        }
+      }
+    },
+    "Sounds like you" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Похоже на тебя"
+          }
+        }
+      }
+    },
+    "Speak" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сказать"
+          }
+        }
+      }
+    },
+    "Starts lowercase" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начинает со строчной"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стоп"
+          }
+        }
+      }
+    },
+    "Stop the recording, then tap Add screenshots or a screen recording." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Останови запись и нажми «Добавить скриншоты или запись экрана»."
+          }
+        }
+      }
+    },
+    "Style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стиль"
+          }
+        }
+      }
+    },
+    "Styles" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стили"
+          }
+        }
+      }
+    },
+    "Subject copied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тема скопирована"
+          }
+        }
+      }
+    },
+    "Subject: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тема: %@"
+          }
+        }
+      }
+    },
+    "Suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подсказки"
+          }
+        }
+      }
+    },
+    "suggestions you changed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "подсказок ты поправил"
+          }
+        }
+      }
+    },
+    "Swearing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мат"
+          }
+        }
+      }
+    },
+    "Switch to the SaySo keyboard: your replies are there, tap one to put it in the chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переключись на клавиатуру SaySo: ответы там, нажми нужный — и он в чате."
+          }
+        }
+      }
+    },
+    "Take Screenshot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать снимок экрана"
+          }
+        }
+      }
+    },
+    "takeout.google.com → Deselect all → select Mail." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "takeout.google.com → Отменить выбор → выбери Почту."
+          }
+        }
+      }
+    },
+    "Tap Add files and pick the PDFs." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми «Добавить файлы» и выбери PDF."
+          }
+        }
+      }
+    },
+    "Tap Add files and pick them (.docx, .pdf, .txt)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми «Добавить файлы» и выбери их (.docx, .pdf, .txt)."
+          }
+        }
+      }
+    },
+    "Tap Add screenshots or photos and pick them in order." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми «Добавить скриншоты или фото» и выбери их по порядку."
+          }
+        }
+      }
+    },
+    "tap one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "выбери один"
+          }
+        }
+      }
+    },
+    "Tap one to copy it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми, чтобы скопировать."
+          }
+        }
+      }
+    },
+    "Tap Paste text here and paste. Add a blank line between emails." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми здесь «Вставить текст» и вставь. Между письмами — пустая строка."
+          }
+        }
+      }
+    },
+    "Tap SaySo in that list and turn on Allow Full Access, so it can reach your style. Then open the keyboard once, below." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми SaySo в этом списке и включи «Разрешить полный доступ», чтобы клавиатура видела твой стиль. Потом открой её один раз ниже."
+          }
+        }
+      }
+    },
+    "Tap Share (square with an arrow) → Save to Files." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми «Поделиться» (квадрат со стрелкой) → Сохранить в «Файлы»."
+          }
+        }
+      }
+    },
+    "Tap Share → Save to Files, then Add files." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми «Поделиться» → Сохранить в «Файлы», потом «Добавить файлы»."
+          }
+        }
+      }
+    },
+    "Tap the contact's name at the top." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми имя контакта вверху."
+          }
+        }
+      }
+    },
+    "Tap ✨ in any chat." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жми ✨ в любом чате."
+          }
+        }
+      }
+    },
+    "Teach me" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Научи меня"
+          }
+        }
+      }
+    },
+    "Teach SaySo more" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Научи SaySo большему"
+          }
+        }
+      }
+    },
+    "Teal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бирюзовый"
+          }
+        }
+      }
+    },
+    "Telegram" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegram"
+          }
+        }
+      }
+    },
+    "Telegram on a computer: open the chat → ⋮ → Export chat history." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegram на компьютере: открой чат → ⋮ → Экспорт истории чата."
+          }
+        }
+      }
+    },
+    "Tell Mira I'm 20 min late" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажи Мире, что опоздаю на 20 минут"
+          }
+        }
+      }
+    },
+    "Tell the guys about my weekend in the mountains" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расскажи ребятам про мои выходные в горах"
+          }
+        }
+      }
+    },
+    "Tell the landlord the heating is broken again" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажи арендодателю, что отопление опять сломалось"
+          }
+        }
+      }
+    },
+    "Test now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверить"
+          }
+        }
+      }
+    },
+    "Testing…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверяю…"
+          }
+        }
+      }
+    },
+    "The app's token was rejected." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер не принял токен приложения."
+          }
+        }
+      }
+    },
+    "The chips you can pick from. The AI's guess is marked with ✨." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из чего выбирать. Догадка ИИ отмечена ✨."
+          }
+        }
+      }
+    },
+    "The color of ✨ and the return key." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цвет ✨ и клавиши ввода."
+          }
+        }
+      }
+    },
+    "The email you got" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Письмо, которое тебе пришло"
+          }
+        }
+      }
+    },
+    "The keyboard and shortcut write in this style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клавиатура и быстрая команда пишут в этом стиле"
+          }
+        }
+      }
+    },
+    "The replies also wait in the SaySo keyboard: switch to it in the chat and tap one to put it in, no copying needed." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответы ещё ждут в клавиатуре SaySo: переключись на неё в чате и нажми нужный — копировать не надо."
+          }
+        }
+      }
+    },
+    "The request was rejected." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрос отклонён."
+          }
+        }
+      }
+    },
+    "The self-check runs when this style is built." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Самопроверка запустится, когда стиль соберётся."
+          }
+        }
+      }
+    },
+    "The trip was truly wonderful! I hope you are doing well. Let me know if you'd like to hear more." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поездка была поистине чудесной! Надеюсь, у тебя всё хорошо. Дай знать, если захочешь узнать больше."
+          }
+        }
+      }
+    },
+    "Their message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Их сообщение"
+          }
+        }
+      }
+    },
+    "this shortcut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "эта команда"
+          }
+        }
+      }
+    },
+    "This style has its own model." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У этого стиля своя модель."
+          }
+        }
+      }
+    },
+    "To" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кому"
+          }
+        }
+      }
+    },
+    "To %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кому: %@"
+          }
+        }
+      }
+    },
+    "To do" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать"
+          }
+        }
+      }
+    },
+    "Tone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тон"
+          }
+        }
+      }
+    },
+    "Too casual" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком небрежно"
+          }
+        }
+      }
+    },
+    "Too formal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком официально"
+          }
+        }
+      }
+    },
+    "Too long" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком длинно"
+          }
+        }
+      }
+    },
+    "Too rude" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком грубо"
+          }
+        }
+      }
+    },
+    "Touch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Касание"
+          }
+        }
+      }
+    },
+    "Touch and hold a style to use or delete it. The one in use is what the keyboard and Back Tap write in." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживай стиль, чтобы выбрать или удалить его. Клавиатура и касание задней панели пишут в выбранном."
+          }
+        }
+      }
+    },
+    "training its own model…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "учит свою модель…"
+          }
+        }
+      }
+    },
+    "Training your own model…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обучаю твою модель…"
+          }
+        }
+      }
+    },
+    "Try one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробуй"
+          }
+        }
+      }
+    },
+    "Turn on Back Tap below and pick this shortcut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ниже включи «Касание задней панели» и выбери эту команду."
+          }
+        }
+      }
+    },
+    "Turn on Full Access: Settings → General → Keyboard → Keyboards → SaySo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включи полный доступ: Настройки → Основные → Клавиатура → Клавиатуры → SaySo"
+          }
+        }
+      }
+    },
+    "Type a draft first." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала напиши черновик."
+          }
+        }
+      }
+    },
+    "Type here, then switch to SaySo 🌐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напиши тут и переключись на SaySo 🌐"
+          }
+        }
+      }
+    },
+    "Type or dictate a draft, then tap ✨." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напиши или надиктуй черновик и нажми ✨."
+          }
+        }
+      }
+    },
+    "Type something first, then ✨." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала напиши что-нибудь, потом ✨."
+          }
+        }
+      }
+    },
+    "Type what to say, e.g. “say I'm 20 min late”." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напиши, что сказать, например «скажи, что опоздаю на 20 минут»."
+          }
+        }
+      }
+    },
+    "Type what you want to say (“tell her I'm 20 min late”), then tap ✨." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напиши, что хочешь сказать («скажи, что опоздаю на 20 минут»), и нажми ✨."
+          }
+        }
+      }
+    },
+    "Type with the SaySo keyboard and tap ✨, or double-tap the back of your iPhone on a chat for three replies." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пиши на клавиатуре SaySo и жми ✨ или дважды коснись задней панели iPhone в чате — получишь три ответа."
+          }
+        }
+      }
+    },
+    "Typing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Набор"
+          }
+        }
+      }
+    },
+    "typing like you…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "печатает как ты…"
+          }
+        }
+      }
+    },
+    "Uploading…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загружаю…"
+          }
+        }
+      }
+    },
+    "Use this style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Писать в этом стиле"
+          }
+        }
+      }
+    },
+    "Usually" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычно"
+          }
+        }
+      }
+    },
+    "variant" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вариант"
+          }
+        }
+      }
+    },
+    "Variants" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Варианты"
+          }
+        }
+      }
+    },
+    "variants" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "варианта"
+          }
+        }
+      }
+    },
+    "Waiting for you" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ждёт тебя"
+          }
+        }
+      }
+    },
+    "What are we writing?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что пишем?"
+          }
+        }
+      }
+    },
+    "What should change?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что поменять?"
+          }
+        }
+      }
+    },
+    "What should it say?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что сказать?"
+          }
+        }
+      }
+    },
+    "What should the email say?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "О чём письмо?"
+          }
+        }
+      }
+    },
+    "What to change or add?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что поменять или добавить?"
+          }
+        }
+      }
+    },
+    "What you see first when you switch to SaySo." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что видно первым, когда переключаешься на SaySo."
+          }
+        }
+      }
+    },
+    "WhatsApp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp"
+          }
+        }
+      }
+    },
+    "WhatsApp, Telegram, Instagram, screenshots" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp, Telegram, Instagram, скриншоты"
+          }
+        }
+      }
+    },
+    "When Instagram emails you (minutes to hours), download the .zip and tap Add chat exports." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда Instagram пришлёт письмо (от минут до часов), скачай .zip и нажми «Добавить экспорт чатов»."
+          }
+        }
+      }
+    },
+    "Which one is you?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кто из них ты?"
+          }
+        }
+      }
+    },
+    "Who are these chats with?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С кем эти чаты?"
+          }
+        }
+      }
+    },
+    "Who is it for?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кому ответ?"
+          }
+        }
+      }
+    },
+    "Why do you want to study engineering?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Почему ты хочешь учиться на инженера?"
+          }
+        }
+      }
+    },
+    "Word, Pages, Google Docs" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Word, Pages, Google Документы"
+          }
+        }
+      }
+    },
+    "words per sentence" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "слов в предложении"
+          }
+        }
+      }
+    },
+    "Working…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работаю…"
+          }
+        }
+      }
+    },
+    "Write" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Написать"
+          }
+        }
+      }
+    },
+    "Write as" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Писать как"
+          }
+        }
+      }
+    },
+    "Write it like me" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Написать как я"
+          }
+        }
+      }
+    },
+    "writes as %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "пишет как %@"
+          }
+        }
+      }
+    },
+    "Writing it your way…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пишу по-твоему…"
+          }
+        }
+      }
+    },
+    "Writing your essay…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пишу эссе…"
+          }
+        }
+      }
+    },
+    "Wrong meaning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не тот смысл"
+          }
+        }
+      }
+    },
+    "YOU, FOR REAL" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ТЫ НА САМОМ ДЕЛЕ"
+          }
+        }
+      }
+    },
+    "You, with SaySo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ты, с SaySo"
+          }
+        }
+      }
+    },
+    "You: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ты: %@"
+          }
+        }
+      }
+    },
+    "Your draft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твой черновик"
+          }
+        }
+      }
+    },
+    "Your emails" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твои письма"
+          }
+        }
+      }
+    },
+    "Your formal voice for longer texts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твой официальный голос для длинных текстов"
+          }
+        }
+      }
+    },
+    "Your formal voice, from your own texts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твой официальный голос — из твоих текстов"
+          }
+        }
+      }
+    },
+    "your longer, formal voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "твой длинный, официальный голос"
+          }
+        }
+      }
+    },
+    "Your messages are the bubbles on the right; SaySo keeps only those." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твои сообщения — пузыри справа; SaySo сохраняет только их."
+          }
+        }
+      }
+    },
+    "Your model is waking up (about 2 minutes). Try again shortly." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Модель просыпается (около 2 минут). Попробуй чуть позже."
+          }
+        }
+      }
+    },
+    "Your newest messages are used as examples first, so suggestions follow how you write now." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Самые новые сообщения идут в примеры первыми, так что подсказки следуют тому, как ты пишешь сейчас."
+          }
+        }
+      }
+    },
+    "Your notes: facts, stories, thoughts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твои заметки: факты, истории, мысли"
+          }
+        }
+      }
+    },
+    "Your texts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твои тексты"
+          }
+        }
+      }
+    },
+    "Your version" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твой вариант"
+          }
+        }
+      }
+    },
+    "Your voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твой голос"
+          }
+        }
+      }
+    },
+    "Your voice, in every chat. Make it yours." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твой голос в любом чате. Настрой под себя."
+          }
+        }
+      }
+    },
+    "Your words. Not AI words." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Твои слова. Не слова ИИ."
+          }
+        }
+      }
+    },
+    "· ~%lld per paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· ~%lld на абзац"
+          }
+        }
+      }
+    },
+    "✨ gives %lld variants at a time." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "✨ gives %lld variant at a time."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "✨ gives %lld variants at a time."
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "✨ даёт %lld вариант за раз."
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "✨ даёт %lld варианта за раз."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "✨ даёт %lld вариантов за раз."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "✨ даёт %lld варианта за раз."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

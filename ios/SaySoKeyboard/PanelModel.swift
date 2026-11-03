@@ -99,7 +99,7 @@ final class PanelModel: ObservableObject {
         tab = .replies
         if let audience = Audience(rawValue: latest.context.audience) { self.audience = audience }
         options = latest.replies.map { PanelOption(label: $0.intent, text: $0.text, parts: $0.parts ?? []) }
-        message = "Replies from your screenshot. Tap one to put it in the chat."
+        message = L("Replies from your screenshot. Tap one to put it in the chat.")
         haptic.impactOccurred()
     }
 
@@ -266,7 +266,7 @@ final class PanelModel: ObservableObject {
     func sparkle() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
-            message = "Type something first, then ✨."
+            message = L("Type something first, then ✨.")
             return
         }
         let count = settings.variants
@@ -296,7 +296,7 @@ final class PanelModel: ObservableObject {
     private func generate(_ call: @escaping (String, Audience, ReplyFormat) async throws -> StyledResponse) {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
-            message = tab == .rewrite ? "Type a draft first." : "Type what to say, e.g. “say I'm 20 min late”."
+            message = L(tab == .rewrite ? "Type a draft first." : "Type what to say, e.g. “say I'm 20 min late”.")
             return
         }
         let audience = audience, format = format, limit = settings.variants
@@ -323,7 +323,7 @@ final class PanelModel: ObservableObject {
     func reply(to copied: String) {
         let copied = copied.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !copied.isEmpty else {
-            message = "Copy their message first."
+            message = L("Copy their message first.")
             return
         }
         let audience = audience, format = format
@@ -389,7 +389,7 @@ final class PanelModel: ObservableObject {
 
     private func perform(_ work: @escaping () async throws -> [PanelOption]) {
         guard hasFullAccess else {
-            message = "SaySo needs Full Access to reach your style: Settings → General → Keyboard → Keyboards → SaySo."
+            message = L("SaySo needs Full Access to reach your style: Settings → General → Keyboard → Keyboards → SaySo.")
             return
         }
         busy = true
@@ -399,7 +399,7 @@ final class PanelModel: ObservableObject {
         Task {
             do {
                 options = try await work()
-                if options.isEmpty { message = "Nothing came back, try again." }
+                if options.isEmpty { message = L("Nothing came back, try again.") }
             } catch SaySoError.warming {
                 warming = true
                 message = SaySoError.warming.errorDescription

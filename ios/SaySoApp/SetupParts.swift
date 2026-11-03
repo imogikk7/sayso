@@ -44,9 +44,9 @@ struct CardHeader: View {
         HStack(alignment: .center, spacing: 12) {
             IconTile(systemImage: icon, colors: colors)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(Theme.label(16)).foregroundStyle(.primary)
+                Text(L(title)).font(Theme.label(16)).foregroundStyle(.primary)
                 if let subtitle {
-                    Text(subtitle)
+                    Text(L(subtitle))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -108,7 +108,7 @@ struct ToggleCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 10) {
                 CardHeader(icon: icon, colors: colors, title: title, subtitle: subtitle)
-                Toggle(title, isOn: $isOn)
+                Toggle(L(title), isOn: $isOn)
                     .labelsHidden()
                     .tint(Color.accentColor)
             }
@@ -130,7 +130,7 @@ struct NoteBox: View {
             Image(systemName: icon)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
-            Text(text)
+            Text(L(text))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -155,7 +155,7 @@ struct SelectTile: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(selected ? Color.accentColor : Color.secondary)
                     .frame(width: 20)
-                Text(title)
+                Text(L(title))
                     .font(.subheadline.weight(selected ? .semibold : .regular))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -203,7 +203,7 @@ struct PathLine: View {
             Image(systemName: icon)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
-            Text(steps.joined(separator: "  ›  "))
+            Text(steps.map(L).joined(separator: "  ›  "))
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(Theme.navy)
                 .fixedSize(horizontal: false, vertical: true)
@@ -313,13 +313,13 @@ struct StepCard<Actions: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
                 StepBadge(number: number, done: done)
-                Text(title)
+                Text(L(title))
                     .font(Theme.label(17))
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 6)
                 StatusTag(done: done)
             }
-            Text(detail)
+            Text(L(detail))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -330,7 +330,7 @@ struct StepCard<Actions: View>: View {
     }
 }
 
-/// The Back Tap shortcut as a picture: double-tap → Take Screenshot → Reply from Screenshot → replies.
+/// The Back Tap shortcut as a picture: double-tap → Take Screenshot → Reply with SaySo → Choose from List → Copy.
 struct ShortcutFlow: View {
     var body: some View {
         VStack(spacing: 12) {
@@ -351,9 +351,11 @@ struct ShortcutFlow: View {
             HStack(alignment: .top, spacing: 2) {
                 FlowNode(icon: "camera.viewfinder", title: "Take Screenshot", caption: "Shortcuts", highlighted: false)
                 FlowArrow()
-                FlowNode(icon: "sparkles", title: "Reply from Screenshot", caption: "SaySo", highlighted: true)
+                FlowNode(icon: "sparkles", title: "Reply with SaySo", caption: "3 replies", highlighted: true)
                 FlowArrow()
-                FlowNode(icon: "keyboard", title: "3 replies", caption: "in your keyboard", highlighted: false)
+                FlowNode(icon: "list.bullet", title: "Choose from List", caption: "tap one", highlighted: false)
+                FlowArrow()
+                FlowNode(icon: "doc.on.clipboard", title: "Copy to Clipboard", caption: "paste it", highlighted: false)
             }
         }
         .padding(.vertical, 14)
@@ -362,7 +364,7 @@ struct ShortcutFlow: View {
         .background(Color.accentColor.opacity(0.06), in: .rect(cornerRadius: Theme.card))
         .overlay(RoundedRectangle(cornerRadius: Theme.card).stroke(Color.accentColor.opacity(0.12)))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Double-tap the back of your iPhone, the shortcut takes a screenshot, SaySo replies from it, you get three replies and the first one is copied.")
+        .accessibilityLabel("Double-tap the back of your iPhone: the shortcut takes a screenshot, SaySo writes three replies from it, you pick one and it's copied.")
     }
 }
 
@@ -375,9 +377,9 @@ struct FlowNode: View {
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 19, weight: .semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(highlighted ? Color.white : Color.accentColor)
-                .frame(width: 46, height: 46)
+                .frame(width: 42, height: 42)
                 .background {
                     if highlighted {
                         RoundedRectangle(cornerRadius: Theme.card).fill(Theme.accentGradient)
@@ -387,13 +389,13 @@ struct FlowNode: View {
                 }
                 .overlay(RoundedRectangle(cornerRadius: Theme.card).stroke(Color.primary.opacity(highlighted ? 0 : 0.08)))
                 .shadow(color: Color.accentColor.opacity(highlighted ? 0.4 : 0.1), radius: 6, y: 3)
-            Text(title)
+            Text(L(title))
                 .font(.caption.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(caption)
+            Text(L(caption))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -412,6 +414,32 @@ struct FlowArrow: View {
     }
 }
 
+/// Numbered steps to follow in another app (building the shortcut).
+struct NumberedSteps: View {
+    let steps: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(verbatim: "\(index + 1)")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 20, height: 20)
+                        .background(Theme.accentGradient, in: .circle)
+                    Text(L(step))
+                        .font(.footnote)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.accentColor.opacity(0.06), in: .rect(cornerRadius: Theme.chip))
+    }
+}
+
 /// The last screenshot's replies as tappable bubbles; tap copies one.
 struct LastRepliesCard: View {
     let response: ReplyResponse
@@ -419,9 +447,9 @@ struct LastRepliesCard: View {
 
     private var subtitle: String {
         if let audience = Audience(rawValue: response.context.audience) {
-            return "For \(audience.label) · tap one to copy it."
+            return Lf("For %@ · tap one to copy it.", audience.label)
         }
-        return "Tap one to copy it."
+        return L("Tap one to copy it.")
     }
 
     var body: some View {

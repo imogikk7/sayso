@@ -7,12 +7,12 @@ enum FormalKind: String, Identifiable {
 
     var id: String { rawValue }
 
-    var title: String { self == .email ? "Add emails" : "Add essays & documents" }
+    var title: String { L(self == .email ? "Add emails" : "Add essays & documents") }
     var guides: [SourceGuide] { self == .email ? SourceGuide.emails : SourceGuide.essays }
     var explanation: String {
-        self == .email
+        L(self == .email
             ? "Emails you sent yourself teach SaySo how you greet, ask and sign off, so its emails and official messages sound like you."
-            : "Essays, papers and other texts you wrote teach SaySo your longer, formal voice for essays and official texts."
+            : "Essays, papers and other texts you wrote teach SaySo your longer, formal voice for essays and official texts.")
     }
 }
 
@@ -73,7 +73,7 @@ struct FormalImportView: View {
                         if sending {
                             ProgressView("Reading…").frame(maxWidth: .infinity)
                         } else {
-                            Text(result == nil ? "Learn my \(kind == .email ? "email" : "formal") voice" : "Done")
+                            Text(result != nil ? "Done" : kind == .email ? "Learn my email voice" : "Learn my formal voice")
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -143,9 +143,9 @@ struct FormalImportView: View {
             try await SaySoAPI.addDocuments(to: target, files: files, text: pasted, kind: kind.rawValue)
             let style = try? await SaySoAPI.style(target)
             let count = style?.formal?.counts?[kind.rawValue] ?? 0
-            var summary = kind == .email ? "Learned from \(count) of your emails" : "Learned from \(count) of your texts"
+            var summary = kind == .email ? Lf("Learned from %lld of your emails", count) : Lf("Learned from %lld of your texts", count)
             if kind == .email, let openings = style?.formal?.profile?.openings, let first = openings.first {
-                summary += " · you open with “\(first)”"
+                summary += Lf(" · you open with “%@”", first)
             }
             result = summary
             files = []

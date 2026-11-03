@@ -84,7 +84,7 @@ struct Pill: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 if let icon { Image(systemName: icon).font(.caption.weight(.semibold)) }
-                Text(title).font(.subheadline.weight(selected ? .semibold : .regular))
+                Text(L(title)).font(.subheadline.weight(selected ? .semibold : .regular))
             }
             .padding(.horizontal, 12).padding(.vertical, 7)
             .foregroundStyle(selected ? Color.white : Color.primary)
@@ -102,7 +102,7 @@ struct Pill: View {
 struct SectionTitle: View {
     let text: String
     var body: some View {
-        Text(text).font(Theme.display(17)).foregroundStyle(.primary)
+        Text(L(text)).font(Theme.display(17)).foregroundStyle(.primary)
     }
 }
 
@@ -116,9 +116,9 @@ struct ScoreCard: View {
     var body: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.subheadline.weight(.medium))
+                Text(L(title)).font(.subheadline.weight(.medium))
                 Text(value).font(Theme.display(32)).foregroundStyle(Theme.navy)
-                if let detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
+                if let detail { Text(L(detail)).font(.caption).foregroundStyle(.secondary) }
             }
             Spacer()
             if trend {
@@ -161,8 +161,8 @@ struct ScoreRing: View {
                 Text("\(Int(value * 100))%").font(Theme.display(40)).foregroundStyle(Theme.navy)
             }
             .frame(width: 170, height: 170)
-            Text(caption).font(.headline)
-            if let detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
+            Text(L(caption)).font(.headline)
+            if let detail { Text(L(detail)).font(.caption).foregroundStyle(.secondary) }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)

@@ -26,7 +26,7 @@ struct AddStyleView: View {
                     form
                 }
             }
-            .navigationTitle(style?.name ?? "New style")
+            .navigationTitle(style?.name ?? L("New style"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(style == nil ? "Cancel" : "Close") { dismiss() } }
@@ -140,7 +140,7 @@ struct AddStyleView: View {
         preparing = true
         defer { preparing = false }
         do {
-            style = try await SaySoAPI.createStyle(name: name.isEmpty ? "My style" : name, files: files)
+            style = try await SaySoAPI.createStyle(name: name.isEmpty ? L("My style") : name, files: files)
             files = []
             error = nil
         } catch {
@@ -178,7 +178,7 @@ struct BuildProgressView: View {
             if style.stage == "needs_me" {
                 whoIsWho
             } else if style.status == "failed" {
-                Section { Label(style.error ?? "Couldn't build this style.", systemImage: "exclamationmark.triangle").foregroundStyle(.red) }
+                Section { Label(style.error.map(L) ?? L("Couldn't build this style."), systemImage: "exclamationmark.triangle").foregroundStyle(.red) }
             } else {
                 Section("Learning your style") {
                     ForEach(StageInfo.order.filter { $0 != "needs_me" && ($0 != "training" || style.lora == "training") }, id: \.self) { stage in
@@ -281,7 +281,7 @@ struct StageRow: View {
             case .working: ProgressView().controlSize(.small)
             case .waiting: Image(systemName: "circle").foregroundStyle(.tertiary)
             }
-            Text(title).foregroundStyle(state == .waiting ? .secondary : .primary)
+            Text(L(title)).foregroundStyle(state == .waiting ? .secondary : .primary)
         }
     }
 }
@@ -294,7 +294,7 @@ struct SelfCheckSection: View {
     var body: some View {
         Section {
             if let you = scores.soundsLikeYou {
-                ScoreRing(value: you, detail: scores.generic.map { "(generic AI \(Int($0 * 100))%)" })
+                ScoreRing(value: you, detail: scores.generic.map { Lf("(generic AI %lld%%)", Int($0 * 100)) })
                     .listRowBackground(Color.clear)
             }
             if let sense = scores.makesSense {
@@ -317,12 +317,12 @@ struct SelfCheckSection: View {
     }
 
     private var loraNote: String {
-        let checked = scores.checked.map { "Checked on \($0) of your real replies it hadn't seen. " } ?? ""
+        let checked = scores.checked.map { Lf("Checked on %lld of your real replies it hadn't seen.", $0) + " " } ?? ""
         switch lora {
-        case "ready": return checked + "This style has its own model."
-        case "training": return checked + "Its own model is training; until then Muse Spark writes in this style."
-        case "waiting for GPU": return checked + "Its own model will train when the GPU is on; until then Muse Spark writes in this style."
-        default: return checked + "Add more chats for this style to get its own model."
+        case "ready": return checked + L("This style has its own model.")
+        case "training": return checked + L("Its own model is training; until then Muse Spark writes in this style.")
+        case "waiting for GPU": return checked + L("Its own model will train when the GPU is on; until then Muse Spark writes in this style.")
+        default: return checked + L("Add more chats for this style to get its own model.")
         }
     }
 }

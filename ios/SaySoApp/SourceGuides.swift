@@ -87,16 +87,16 @@ struct SourceGuideList: View {
                         HStack(alignment: .top, spacing: 8) {
                             Text("\(index + 1)").font(.caption.weight(.bold)).foregroundStyle(.white)
                                 .frame(width: 18, height: 18).background(Color.accentColor, in: .circle)
-                            Text(step).font(.subheadline)
+                            Text(L(step)).font(.subheadline)
                         }
                     }
                     if let note = guide.note {
-                        Text(note).font(.footnote).foregroundStyle(.secondary)
+                        Text(L(note)).font(.footnote).foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 4)
             } label: {
-                Label(guide.name, systemImage: guide.systemImage)
+                Label(L(guide.name), systemImage: guide.systemImage)
             }
         }
     }
