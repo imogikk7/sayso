@@ -143,7 +143,8 @@ def api():
     POST /chat    {mode: write | rewrite | reply, text, audience, history: [{answer, feedback}]} → {text, parts,
                   alternatives, audience, audiences, learned}; feedback on the last answer revises it
     POST /feedback {audience, answer, edited?, liked?} → {learned}: the user's approved or own text becomes an example
-    POST /transcribe multipart audio (WAV) → {text}: the user's voice note, by Muse Voice Transcribe
+    POST /transcribe multipart audio (WAV) + optional language (en | ru), mode, audience, context, heard → {text}:
+                  the user's voice note, by Muse Voice Transcribe, then Muse Spark fixes what it misheard
     GET  /styles, GET /styles/{id}, POST /styles (multipart: name + files), PATCH /styles/{id} {name?, me?, chats?,
                   remove_preference?}, DELETE /styles/{id}
     GET  /latest  the last /reply options (for the keyboard panel)
@@ -393,14 +394,19 @@ def api():
                 "paragraphs": formal["profile"]["paragraphs"], "profile": formal["profile"]}
 
     @web.post("/transcribe")
-    async def transcribe(audio: UploadFile = File(...)):
-        """A voice note (mono 16-bit WAV, ≤ 10 MB, ≤ 10 min) → {text}; read in memory, not stored."""
+    async def transcribe(audio: UploadFile = File(...), language: str = Form(""), mode: str = Form(""),
+                         audience: str = Form(""), context: str = Form("", max_length=4000),
+                         heard: str = Form("", max_length=4000)):
+        """A voice note (mono 16-bit WAV, ≤ 10 MB, ≤ 10 min) → {text}; read in memory, not stored. Optional hints:
+        the app's language, the Chat mode and audience, the text the note is about (its names help) and what the
+        iPhone's on-device recognizer heard (a second hearing)."""
         wav = await audio.read(10 * 1024 * 1024 + 1)
         if len(wav) > 10 * 1024 * 1024:
             raise HTTPException(413, "the recording is larger than 10 MB")
         if wav[:4] != b"RIFF":
             raise HTTPException(422, "send a WAV recording")
-        return {"text": await writer.transcribe(wav)}
+        return {"text": await writer.transcribe(wav, language=language, mode=mode, audience=audience,
+                                                 context=context, heard=heard)}
 
     @web.post("/learn")
     async def learn(body: LearnBody):

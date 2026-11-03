@@ -436,12 +436,21 @@ struct ChatView: View {
         await finishVoice()
     }
 
-    /// Stops (or takes the recording the 2-minute limit already stopped) and sends what was said.
+    /// Stops (or takes the recording the 2-minute limit already stopped) and sends what was said. The iPhone hears it
+    /// too, on the device (a few seconds at most), and the server gives both hearings to Muse Spark with where the
+    /// note goes: the mode, the audience and the names in the text it is about.
     private func finishVoice() async {
+        let seconds = recorder.seconds
         guard let wav = recorder.stop() else { return }
         busy = true
         do {
-            let said = try await SaySoAPI.transcribe(wav: wav)
+            let language = OnDeviceSpeech.language
+            let heard = await OnDeviceSpeech.hear(wav, language: language, limit: min(8, max(3, Double(seconds) / 4)))
+            let parts: [String?] = [answering, fixing ? history.last?.answer : nil, replyTo]
+            let about = parts.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+            let said = try await SaySoAPI.transcribe(wav: wav, language: language,
+                                                     mode: fixing ? "fix" : apiMode.rawValue, audience: audience,
+                                                     context: about, heard: heard)
             busy = false
             guard !said.isEmpty else { return show("Didn't catch that, try again") }
             text = said

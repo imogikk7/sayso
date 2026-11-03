@@ -331,11 +331,22 @@ enum SaySoAPI {
         return try await send("feedback", body: try JSONEncoder().encode(body), contentType: "application/json", timeout: 30)
     }
 
-    /// A voice note (mono 16-bit WAV) → text, by Muse Voice Transcribe; the recording isn't kept.
-    static func transcribe(wav: Data) async throws -> String {
+    /// A voice note (mono 16-bit WAV) → text, by Muse Voice Transcribe, then Muse Spark fixes what it misheard; the
+    /// recording isn't kept. Hints for that fix: the app's language ("en"/"ru"), the Chat mode ("write", …, "fix")
+    /// and audience, the text the note is about (its names) and what the iPhone heard on the device.
+    static func transcribe(wav: Data, language: String? = nil, mode: String? = nil, audience: Audience? = nil,
+                           context: String? = nil, heard: String? = nil) async throws -> String {
         struct Transcript: Decodable { let text: String }
         let boundary = "sayso-\(UUID().uuidString)"
-        var body = Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"voice.wav\"\r\nContent-Type: audio/wav\r\n\r\n".utf8)
+        var body = Data()
+        let fields: [(String, String?)] = [("language", language), ("mode", mode), ("audience", audience?.rawValue),
+                                           ("context", context.map { String($0.prefix(3500)) }),
+                                           ("heard", heard.map { String($0.prefix(3500)) })]
+        for (name, value) in fields {
+            guard let value, !value.isEmpty else { continue }
+            body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".utf8))
+        }
+        body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"voice.wav\"\r\nContent-Type: audio/wav\r\n\r\n".utf8))
         body.append(wav)
         body.append(Data("\r\n--\(boundary)--\r\n".utf8))
         let result: Transcript = try await send("transcribe", body: body, contentType: "multipart/form-data; boundary=\(boundary)",
