@@ -39,6 +39,7 @@ import base64
 import binascii
 import datetime
 import hashlib
+import itertools
 import json
 import math
 import os
@@ -71,6 +72,7 @@ VOLUME = "sayso-data"
 META_URL = "https://api.meta.ai/v1/chat/completions"
 META_MODEL = "muse-spark-1.3"
 PLACEHOLDER = re.compile(r"\[(?:sticker|photo|video|voice|file|media|link|url|phone|email|card)[^\]]*\]", re.I)
+LAUGH_WORDS = re.compile(r"лол|lol|ору|ржу|kek|кек")
 LAUGHTER = re.compile(r"(?:[аaхxhеeи]*[хxh][аaхxhеeи]*|лол|lol|ору|ржу|kek|кек)+")
 DIGITS = re.compile(r"\d[\d\s()+-]{5,}\d")  # phone- or card-like: never on a page for many people
 
@@ -275,15 +277,16 @@ def incoming_of(user_content):
     return " ".join(match.group(1).split()) if match else None
 
 
-def load_pairs(path):
-    """Reply pairs only: {summary, real, audience, situation, turn_id}. Real = the user's own reply."""
+def load_pairs(path, splits=("test",)):
+    """Reply pairs only: {summary, real, audience, situation, turn_id}. Real = the user's own reply. Held-out (test)
+    turns by default; `splits` can add the training turns when the held-out ones are too few to fill a test."""
     pairs = []
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         row = json.loads(line)
         meta = row.get("meta") or {}
-        if meta.get("task") != "reply" or meta.get("split", "test") != "test":
+        if meta.get("task") != "reply" or meta.get("split", "test") not in splits:
             continue
         roles = {m["role"]: m["content"] for m in row.get("messages", [])}
         summary, real = incoming_of(roles.get("user", "")), (roles.get("assistant") or "").strip()
@@ -297,7 +300,11 @@ def load_pairs(path):
 def trivial(text):
     """Only emoji, punctuation or laughter ("ахахах", "))", "😂😂", "lol"): nothing to tell apart."""
     letters = "".join(ch for ch in text.casefold() if ch.isalpha())
-    return not letters or bool(LAUGHTER.fullmatch(letters))
+    if not letters:
+        return True
+    # Plain set checks: the old one-regex version backtracked exponentially on long messages made of those letters.
+    rest = LAUGH_WORDS.sub("", letters)  # «лол», «ору» and the like, then what's left must be «ахах»-letters only
+    return not rest or (set(rest) <= set("аaхxhеeи") and any(ch in "хxh" for ch in rest))
 
 
 def showable(parts):
@@ -345,12 +352,35 @@ def closest(spare, want, edges, lengths):
     return min(spare, key=lambda item: abs(item["chars"] - middle))
 
 
+MEDIA = re.compile(r"\b(?:media|file|photo|picture|image|screenshot|video|voice|sticker|forward\w*|link|"
+                   r"without (?:any )?text|no text|can't see|cannot see|attachment|gif|meme|emoji\w*|unclear|"
+                   r"without (?:any )?context|no context|single (?:letter|word)|one letter|random|meaningless|nonsense|"
+                   r"cryptic|incomprehensible|gibberish|just says|only says|typo\w*|fragment|unfinished)\b", re.I)
+
+
+def russian(parts):
+    """Cyrillic writing (the questions are in Russian, so a Latin or translit answer gives itself away) and no
+    keyboard-smash words («хмхсхаххааххахап»)."""
+    text = " ".join(parts)
+    cyr = sum("а" <= ch.casefold() <= "я" or ch.casefold() == "ё" for ch in text)
+    lat = sum("a" <= ch.casefold() <= "z" for ch in text)
+    words = re.findall(r"[^\W\d_]+", text)
+    return cyr > 0 and lat <= cyr * 0.1 and all(len(w) <= 14 for w in words)
+
+
+def run_all(fn, batch):
+    """fn over the batch on parallel threads (each call waits on the network), results in the batch's order."""
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=max(1, len(batch))) as pool:
+        return list(pool.map(fn, batch))
+
+
 def build(n=20, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, warmup=True, log=print, generic=0,
-          author="", post_url=None, max_draws=None):
+          author="", post_url=None, max_draws=None, workers=12, splits=("test",), max_parts=None):
     """→ the key. Writes <out_dir>/<test_id>/{test.html, questions.json, answers.json} and <out_dir>/latest.json."""
     rng = random.Random(seed)
     pairs, seen = [], set()
-    for pair in load_pairs(pairs_path):
+    for pair in load_pairs(pairs_path, splits):
         text = " ".join(parts_of(pair["real"])).casefold()
         if usable(pair) and text not in seen:
             seen.add(text)
@@ -385,19 +415,38 @@ def build(n=20, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, 
         if not parts or not showable(parts):
             dropped[f"{source}: too short, too long or has links/numbers"] += 1
             return False
+        if MEDIA.search(pair["summary"]):
+            dropped[f"{source}: the situation is about a file, photo or forward"] += 1
+            return False
+        if max_parts and len(parts) > max_parts:
+            dropped[f"{source}: more than {max_parts} message(s)"] += 1
+            return False
+        if not russian(parts):
+            dropped[f"{source}: not in Russian (Cyrillic) or a keyboard smash"] += 1
+            return False
         if not spark.vet(pair["summary"], " / ".join(parts)):
             dropped[f"{source}: Muse Spark said not safe, trivial or plain"] += 1
             return False
         return True
 
     log(f"picking {want['real']} real messages…")
-    for pair in pool:
-        if len(items["real"]) == want["real"]:
-            break
+    def screen_real(pair):
         parts = parts_of(pair["real"])
-        if screened(pair, parts, "real"):
-            items["real"].append(item(pair, "real", parts))
-            log(f"  real {len(items['real'])}/{want['real']}")
+        return pair, parts, screened(pair, parts, "real")
+
+    while len(items["real"]) < want["real"]:
+        batch = list(itertools.islice(pool, workers))
+        if not batch:
+            break
+        for pair, parts, ok in run_all(screen_real, batch):
+            if ok and len(items["real"]) < want["real"]:
+                items["real"].append(item(pair, "real", parts))
+                log(f"  real {len(items['real'])}/{want['real']}")
+
+    # A situation dropped above for the user's reply (a series, a smash, Spark's no) is still a fine one to answer:
+    # SaySo and the controls draw from every situation not shown with a real reply.
+    shown = {i["summary"] for i in items["real"]}
+    pool = iter([p for p in pairs if p["summary"] not in shown and not MEDIA.search(p["summary"])])
 
     if want["generic"]:
         log(f"writing {want['generic']} generic AI controls…")
@@ -415,27 +464,43 @@ def build(n=20, pairs_path=PAIRS, out_dir=OUT, api=None, spark=None, seed=None, 
     edges = length_edges(real_lengths)
     quota = quotas(real_lengths, edges, want["sayso"])
     filled, spare = [0] * len(quota), []
-    draws, limit = 0, max_draws if max_draws is not None else 4 * want["sayso"] + 10
+    draws, limit = 0, max_draws if max_draws is not None else 30 * want["sayso"] + 20
     log(f"writing {want['sayso']} SaySo messages (length groups {quota}, cut at {edges} chars)…")
-    for pair in pool:
-        if len(items["sayso"]) == want["sayso"] or draws >= limit:
-            break
-        draws += 1
+    def write_sayso(pair):
         try:
             parts = parts_of(api.reply(pair["summary"], pair["audience"]))
         except RuntimeError as error:
-            sys.exit(str(error))
-        if not screened(pair, parts, "sayso"):
-            continue
-        candidate = item(pair, "sayso", parts)
-        group = bin_of(candidate["chars"], edges)
-        if filled[group] < quota[group]:
-            filled[group] += 1
-            items["sayso"].append(candidate)
-            log(f"  SaySo {len(items['sayso'])}/{want['sayso']}")
-        else:
-            spare.append(candidate)
-            dropped["sayso: its length group was full"] += 1
+            return pair, None, str(error)
+        return pair, parts, screened(pair, parts, "sayso")
+
+    used_texts = set()
+    while len(items["sayso"]) < want["sayso"] and draws < limit:
+        batch = list(itertools.islice(pool, min(max(1, workers // 2), limit - draws)))  # the API: a few at a time
+        if not batch:
+            break
+        draws += len(batch)
+        results = run_all(write_sayso, batch)
+        if all(isinstance(ok, str) for _, _, ok in results):
+            sys.exit(results[0][2])
+        for pair, parts, ok in results:
+            if isinstance(ok, str):
+                dropped[f"sayso: the API failed ({ok[:60]})"] += 1
+            if ok is not True:
+                continue
+            key = " ".join(parts).casefold().strip(" .!?")
+            if key in used_texts:
+                dropped["sayso: the same text as another item"] += 1
+                continue
+            used_texts.add(key)
+            candidate = item(pair, "sayso", parts)
+            group = bin_of(candidate["chars"], edges)
+            if filled[group] < quota[group] and len(items["sayso"]) < want["sayso"]:
+                filled[group] += 1
+                items["sayso"].append(candidate)
+                log(f"  SaySo {len(items['sayso'])}/{want['sayso']}")
+            else:
+                spare.append(candidate)
+                dropped["sayso: its length group was full"] += 1
     while len(items["sayso"]) < want["sayso"] and spare:  # groups that never filled: the nearest lengths left
         group = max(range(len(quota)), key=lambda g: quota[g] - filled[g])
         best = closest(spare, group, edges, real_lengths)
@@ -879,6 +944,10 @@ def main(argv=None):
     b.add_argument("--pairs", default=str(PAIRS))
     b.add_argument("--seed", type=int)
     b.add_argument("--no-warmup", action="store_true", help="skip GET /warmup (the GPU is already warm or off)")
+    b.add_argument("--single", action="store_true",
+                   help="one message per item on both sides (a series of several next to one short reply is a tell)")
+    b.add_argument("--include-train", action="store_true",
+                   help="also draw from the training turns (when too few held-out ones pass the screen)")
     p = commands.add_parser("publish", help="upload the page to the sayso-data volume and print the link")
     p.add_argument("--test", help="the test id (default: the last build)")
     s = commands.add_parser("score", help="score the answers (server and/or codes)")
@@ -896,7 +965,9 @@ def main(argv=None):
         url = keys["SAYSO_API_URL"].rstrip("/")
         build(args.n, args.pairs, OUT, Api(url, keys["SAYSO_API_TOKEN"]), Spark(keys["META_API_KEY"]), args.seed,
               not args.no_warmup, generic=args.generic, author=author,
-              post_url=lambda test_id: f"{url}/blind/{test_id}/answers")
+              post_url=lambda test_id: f"{url}/blind/{test_id}/answers",
+              splits=("test", "train") if args.include_train else ("test",),
+              max_parts=1 if args.single else None)
     elif args.command == "publish":
         keys = env(("SAYSO_API_URL",))
         publish(args.test or latest_id(), Api(keys["SAYSO_API_URL"], None))
