@@ -197,10 +197,17 @@ struct ChatTurn: Codable, Hashable {
     var feedback: String = ""
 }
 
+/// One earlier turn of the chat thread, sent back so SaySo keeps the context: what the user asked and the main answer.
+struct PreviousTurn: Codable, Hashable {
+    let request: String
+    let answer: String
+}
+
 struct ChatAnswer: Codable, Hashable {
     let text: String
-    var parts: [String]? = nil
+    var parts: [String]? = nil  // the messages to send one by one (several even for a Message sometimes)
     var alternatives: [String]? = nil
+    var alternativeParts: [[String]]? = nil  // parallel to alternatives: each one's messages
     var audience: String? = nil
     var audiences: [String]? = nil
     var learned: String? = nil
@@ -208,6 +215,11 @@ struct ChatAnswer: Codable, Hashable {
     var outline: [String]? = nil  // essay: the plan it followed
     var questions: [String]? = nil  // essay: what to tell it to make the essay stronger
     var words: Int? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case text, parts, alternatives, alternativeParts = "alternative_parts", audience, audiences, learned, subject,
+             outline, questions, words
+    }
 }
 
 struct FeedbackResult: Codable { var learned: String? = nil }
@@ -279,20 +291,23 @@ enum SaySoAPI {
     // MARK: Chat
 
     /// history: the answers so far with the user's feedback; feedback on the last one revises it.
+    /// previous: the thread's earlier turns (request + main answer), oldest first; only the last 3 are sent.
     static func chat(mode: ChatMode, text: String, audience: Audience, format: ReplyFormat,
                      history: [ChatTurn] = [], question: String = "", words: Int = 250,
-                     replyTo: String = "") async throws -> ChatAnswer {
+                     replyTo: String = "", previous: [PreviousTurn] = []) async throws -> ChatAnswer {
         struct Body: Encodable {
             let mode, text, audience, format, style, question: String
             let history: [ChatTurn]
             let words: Int
             let replyTo: String
+            let previous: [PreviousTurn]?  // nil (left out) on the first request of a thread
             enum CodingKeys: String, CodingKey {
-                case mode, text, audience, format, style, question, history, words, replyTo = "reply_to"
+                case mode, text, audience, format, style, question, history, words, replyTo = "reply_to", previous
             }
         }
         let body = Body(mode: mode.rawValue, text: text, audience: audience.rawValue, format: format.rawValue,
-                        style: style, question: question, history: history, words: words, replyTo: replyTo)
+                        style: style, question: question, history: history, words: words, replyTo: replyTo,
+                        previous: previous.isEmpty ? nil : Array(previous.suffix(3)))
         return try await send("chat", body: try JSONEncoder().encode(body), contentType: "application/json",
                               timeout: mode == .essay ? 120 : 45)
     }
