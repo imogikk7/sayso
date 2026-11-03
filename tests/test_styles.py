@@ -197,6 +197,135 @@ class FormalWriting(unittest.TestCase):
         self.assertFalse(writer.CLICHES.search("Я закончил второй раздел курсовой"))
 
 
+class CustomLists(unittest.TestCase):
+    """custom.json: the greetings, sign-offs and phrases to avoid the user sets by hand in the Styles tab."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.saved = styles.DATA, styles.STYLES
+        styles.DATA = Path(self.tmp.name)
+        styles.STYLES = styles.DATA / "styles"
+        self.style = styles.create("Custom")["id"]
+
+    def tearDown(self):
+        styles.DATA, styles.STYLES = self.saved
+        self.tmp.cleanup()
+
+    def test_round_trip(self):
+        self.assertEqual(styles.custom(self.style), {})
+        before = styles.version(self.style)
+        saved = styles.set_custom(self.style, {"email": {
+            "openers": ["  Здравствуйте,  [Name]! ", "Hi [Name],", "здравствуйте, [name]!", ""],
+            "signoffs": ["С уважением", "Best"], "default_opener": "hi [name],", "default_signoff": "Nope"}})
+        self.assertEqual(saved["email"]["openers"], ["Здравствуйте, [Name]!", "Hi [Name],"])  # trimmed, no duplicates
+        self.assertEqual(saved["email"]["default_opener"], "Hi [Name],")  # matched to the stored spelling
+        self.assertNotIn("default_signoff", saved["email"])  # not one of the sign-offs: dropped
+        self.assertEqual(styles.custom(self.style), saved)
+        self.assertNotEqual(styles.version(self.style), before)  # the writer's cached context refreshes
+        # only the fields sent change
+        styles.set_custom(self.style, {"message": {"avoid": ["ахах", "кринж"]}, "email": {"signoffs": ["Спасибо"]}})
+        custom = styles.custom(self.style)
+        self.assertEqual(custom["email"]["openers"], ["Здравствуйте, [Name]!", "Hi [Name],"])
+        self.assertEqual(custom["email"]["signoffs"], ["Спасибо"])
+        self.assertEqual(custom["message"], {"avoid": ["ахах", "кринж"]})
+        # null forgets a list (back to the parsed ones), {kind: null} forgets the kind
+        styles.set_custom(self.style, {"email": {"openers": None}, "message": None})
+        self.assertEqual(styles.custom(self.style), {"email": {"signoffs": ["Спасибо"]}})
+        styles.set_custom(self.style, {"email": {"signoffs": [f"s{i}" for i in range(50)]}})
+        self.assertEqual(len(styles.custom(self.style)["email"]["signoffs"]), styles.MAX_CUSTOM_ITEMS)
+        for bad in ({"poem": {"avoid": []}}, {"essay": {"openers": ["x"]}}, {"email": {"openers": "x"}}):
+            with self.assertRaises(ValueError):
+                styles.set_custom(self.style, bad)
+
+    def test_parsed_ends_and_kinds(self):
+        text = (ROOT / "tests" / "fixtures" / "formal_fake.txt").read_text()
+        styles.add_documents(self.style, [("a.txt", text), ("b.txt", text)], kind="email")
+        styles.add_documents(self.style, [("essay.txt", "Первый абзац моего эссе достаточно длинный, чтобы его "
+                                                        "оставить.\n\nВторой абзац тоже длинный, и я пишу его сам.")],
+                             kind="essay")
+        openers, signoffs = styles.parsed_ends(self.style)
+        self.assertEqual(openers, ["Здравствуйте, [Name]"])
+        self.assertTrue(signoffs)
+        kinds = styles.formal_by_kind(self.style)
+        self.assertEqual((kinds["email"]["documents"], kinds["essay"]["documents"]), (2, 1))
+        self.assertEqual(kinds["essay"]["paragraphs_per_doc"], 2)
+        self.assertEqual(kinds["essay"]["openings"], [])  # greetings come from emails only
+
+    def test_preferred_ends_by_language(self):
+        custom = {"email": {"openers": ["Hi [Name],", "Здравствуйте, [Name]!", "Добрый день!"],
+                            "default_opener": "Добрый день!", "signoffs": ["Best,"]}}
+        self.assertEqual(writer.preferred_ends(custom, "перенеси встречу на пятницу"), ("Добрый день!", None))
+        self.assertEqual(writer.preferred_ends(custom, "move the meeting to Friday"), ("Hi [Name],", "Best,"))
+        self.assertEqual(writer.preferred_ends({}, "x"), (None, None))
+
+    def test_writer_uses_them(self):
+        text = (ROOT / "tests" / "fixtures" / "formal_fake.txt").read_text()
+        self.assertEqual(writer.Context(self.style).formal_block("x", kind="email"), "")
+        styles.set_custom(self.style, {"email": {"signoffs": ["Всего доброго"], "avoid": ["Надеюсь, у вас всё хорошо"]},
+                                       "message": {"avoid": ["кринж"]}, "essay": {"avoid": ["в современном мире"]}})
+        ctx = writer.Context(self.style)
+        block = ctx.formal_block("перенеси сдачу", kind="email")  # no documents yet: their picks still count
+        self.assertIn("«Всего доброго»", block)
+        self.assertIn("Надеюсь, у вас всё хорошо", block)
+        self.assertNotIn("в современном мире", block)
+        self.assertIn("в современном мире", ctx.formal_block("тема", kind="essay"))
+        self.assertIn("кринж", ctx.style_text)
+        self.assertIn("кринж", ctx.read_system)
+        styles.add_documents(self.style, [("letter.txt", text)], kind="email")
+        block = writer.Context(self.style).formal_block("перенеси сдачу", kind="email")
+        self.assertIn("linking words", block)
+        self.assertIn("use exactly the user's own sign-off: «Всего доброго»", block)
+        self.assertNotIn("use exactly the user's own: «", block)  # no custom greeting: the parsed one stays
+
+
+class CustomRoute(unittest.TestCase):
+    """PATCH /styles/{id}/custom on the real FastAPI app, built with the fakes of tests/test_api_auth.py."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(ROOT / "tests"))
+        from test_api_auth import HAVE_FASTAPI, TOKEN, build_app
+        if not HAVE_FASTAPI:
+            raise unittest.SkipTest("fastapi, httpx and python-multipart are not installed (see test_api_auth.py)")
+        import os
+        from fastapi.testclient import TestClient
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.saved_paths, cls.saved_env = (styles.DATA, styles.STYLES, styles.on_write), dict(os.environ)
+        cls.web, cls.writer, _ = build_app(cls.tmp.name)
+        cls.client = TestClient(cls.web, raise_server_exceptions=False)
+        cls.auth = {"Authorization": f"Bearer {TOKEN}"}
+
+    @classmethod
+    def tearDownClass(cls):
+        import os
+        styles.DATA, styles.STYLES, styles.on_write = cls.saved_paths
+        os.environ.clear()
+        os.environ.update(cls.saved_env)
+        cls.tmp.cleanup()
+
+    def test_patch_custom(self):
+        from test_writer_fakes import make_style
+        style = make_style(styles.create("Custom")["id"])
+        url = f"/styles/{style}/custom"
+        response = self.client.patch(url, headers=self.auth, json={
+            "email": {"openers": ["Hi [Name],", "Добрый день!"], "default_opener": "Добрый день!"},
+            "message": {"avoid": ["кринж"]}})
+        self.assertEqual(response.status_code, 200, response.text)
+        custom = response.json()["custom"]
+        self.assertEqual(custom["email"], {"openers": ["Hi [Name],", "Добрый день!"], "default_opener": "Добрый день!"})
+        self.assertEqual(custom["message"], {"avoid": ["кринж"]})
+        response = self.client.patch(url, headers=self.auth, json={"email": {"signoffs": ["Best,"]}})
+        self.assertEqual(response.json()["custom"]["email"]["openers"], ["Hi [Name],", "Добрый день!"])  # kept
+        self.assertIn("кринж", self.writer.context(style).style_text)  # the cached context refreshed
+        view = self.client.get(f"/styles/{style}", headers=self.auth).json()
+        self.assertEqual(view["custom"]["email"]["signoffs"], ["Best,"])
+        self.assertEqual((view["formal"]["openers"], view["formal"]["kinds"]), ([], {}))
+        for bad in ({"poem": {"avoid": []}}, {"essay": {"openers": ["x"]}}, {"email": {"openers": "x"}}):
+            self.assertEqual(self.client.patch(url, headers=self.auth, json=bad).status_code, 422, bad)
+        self.assertEqual(self.client.patch("/styles/nosuch/custom", headers=self.auth, json={}).status_code, 404)
+        self.assertEqual(self.client.patch(url, json={}).status_code, 401)
+
+
 class Helpers(unittest.TestCase):
     def test_merge_frames(self):
         a = [{"side": "them", "text": "привет"}, {"side": "me", "text": "го"}, {"side": "them", "text": "в 8?"}]

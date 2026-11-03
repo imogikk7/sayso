@@ -6,8 +6,9 @@ struct StyleRoute: Hashable {
     var focus: Audience? = nil
 }
 
-/// Your voice: the style in use (how much it sounds like you), split by kind of text and by who you talk to,
-/// what SaySo learned from you, your other styles and ways to teach it more.
+/// Your voice: the style in use, one section per kind of text. Messages: how much it sounds like you and how you
+/// write to each kind of person; Emails: greetings, sign-offs, tone and length; Essays: structure and voice. Lists the
+/// user edits by hand (greetings, sign-offs, phrases they never use) are saved on the server.
 struct StylesView: View {
     @State private var styles: [Style] = []
     @State private var activeID = SharedStore.styleID
@@ -17,6 +18,8 @@ struct StylesView: View {
     @State private var formal: FormalKind?
     @State private var error: String?
     @State private var path: [StyleRoute] = []
+    @State private var kind: StyleKind = .messages
+    @State private var editing: CustomList?
 
     /// The style in use, from the list (fresh status and progress).
     private var active: Style? { styles.first { $0.id == activeID } ?? styles.first }
@@ -54,29 +57,44 @@ struct StylesView: View {
             .sheet(item: $formal) { kind in
                 FormalImportView(kind: kind) { Task { await load() } }
             }
+            .sheet(item: $editing) { list in
+                if let full {
+                    CustomListEditor(list: list, styleID: full.id, items: full.shownItems(list),
+                                     defaultItem: full.customDefault(list), parsed: full.parsedItems(list),
+                                     canReset: full.customItems(list) != nil) { saved in
+                        detail = saved
+                    }
+                }
+            }
             .task { await poll() }
             .task(id: activeID) { await loadDetail() }
         }
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: 24) {
             header
             if let error {
                 errorCard(error)
             }
             if let active {
-                StyleHeroCard(style: mergedHero(active), isActive: active.id == activeID) {
-                    path.append(StyleRoute(id: active.id))
-                }
-                kinds(active)
-                audiences
-                learned
+                StyleKindTabs(selection: $kind, counts: counts(active))
+                section(active)
+                    .id(kind)
+                    .transition(.opacity)
             } else if error == nil {
                 loadingCard
             }
             if !others.isEmpty { otherStyles }
-            teach
+        }
+    }
+
+    @ViewBuilder
+    private func section(_ style: Style) -> some View {
+        switch kind {
+        case .messages: messages(style)
+        case .emails: emails(style)
+        case .essays: essays(style)
         }
     }
 
@@ -140,45 +158,116 @@ struct StylesView: View {
         return merged
     }
 
-    // MARK: By kind of text
+    // MARK: Kinds of text
 
-    private func kinds(_ style: Style) -> some View {
-        let turns = full?.counts?["turns"] ?? style.counts?["turns"] ?? 0
-        let chats = full?.counts?["chats"] ?? style.counts?["chats"] ?? 0
-        let typed = full?.learning?.typed ?? 0
-        let formalCounts = full?.formal?.counts ?? style.formal?.counts ?? [:]
-        let emails = formalCounts["email"] ?? 0
-        let essays = formalCounts["essay"] ?? 0
-        var messageDetail: String = chats > 0 ? "from \(chats) chats" : "from your chats"
-        if typed > 0 { messageDetail += " + \(typed) typed" }
-        return VStack(alignment: .leading, spacing: 12) {
-            StyleSectionHeader(title: "By kind of text", subtitle: "Chats teach your messages; your own emails and essays teach your formal voice.")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    StyleKindCard(icon: "bubble.left.and.bubble.right.fill", gradient: StylePalette.messages,
-                                  title: "Messages", count: turns + typed, unit: "messages", detail: messageDetail,
-                                  status: style.isBuilding ? StageInfo.title(style.stage) : "Ready") {
-                        if turns + typed > 0 { path.append(StyleRoute(id: style.id)) } else { adding = true }
-                    }
-                    StyleKindCard(icon: "envelope.fill", gradient: StylePalette.emails,
-                                  title: "Emails", count: emails, unit: emails == 1 ? "email" : "emails",
-                                  detail: emails > 0 ? "greetings, asks, sign-offs" : "How you greet, ask and sign off",
-                                  status: "Ready") {
-                        if emails > 0 { path.append(StyleRoute(id: style.id)) } else { formal = .email }
-                    }
-                    StyleKindCard(icon: "doc.text.fill", gradient: StylePalette.essays,
-                                  title: "Essays & documents", count: essays, unit: essays == 1 ? "text" : "texts",
-                                  detail: essays > 0 ? "your longer, formal voice" : "Your formal voice for longer texts",
-                                  status: "Ready") {
-                        if essays > 0 { path.append(StyleRoute(id: style.id)) } else { formal = .essay }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
+    private func formalCount(_ style: Style, _ key: String) -> Int {
+        (full?.formal?.counts ?? style.formal?.counts ?? [:])[key] ?? 0
+    }
+
+    private func messageCount(_ style: Style) -> Int {
+        (full?.counts?["turns"] ?? style.counts?["turns"] ?? 0) + (full?.learning?.typed ?? 0)
+    }
+
+    private func counts(_ style: Style) -> [StyleKind: Int] {
+        [.messages: messageCount(style), .emails: formalCount(style, "email"), .essays: formalCount(style, "essay")]
+    }
+
+    /// The traits of one formal kind on its own; the mixed profile when the server doesn't split them.
+    private func formalProfile(_ key: String) -> FormalProfile? {
+        full?.formal?.kinds?[key] ?? full?.formal?.profile
+    }
+
+    private func messages(_ style: Style) -> some View {
+        VStack(alignment: .leading, spacing: 28) {
+            StyleHeroCard(style: mergedHero(style), isActive: style.id == activeID) {
+                path.append(StyleRoute(id: style.id))
             }
-            .padding(.horizontal, -20)
-            .padding(.vertical, -10)
+            audiences
+            listSection(title: "Your words", subtitle: "Words and phrases SaySo should never put in your messages.",
+                        lists: [.messageAvoid])
+            learned(.messages)
+            TeachCard(icon: "bubble.left.and.bubble.right.fill", title: "Add chat exports",
+                      detail: "WhatsApp, Telegram, Instagram, screenshots", gradient: StylePalette.messages) { adding = true }
         }
+    }
+
+    private func emails(_ style: Style) -> some View {
+        let count = formalCount(style, "email")
+        return VStack(alignment: .leading, spacing: 28) {
+            if count > 0 {
+                KindSummaryCard(kind: .emails, count: count, unit: count == 1 ? "email" : "emails",
+                                line: "SaySo writes your emails with your greeting, your sign-off and your tone.")
+                if let profile = formalProfile("email") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        StyleSectionHeader(title: "Tone & length", subtitle: "How your own emails read.")
+                        FormalTraitsCard(kind: .email, profile: profile)
+                    }
+                } else if loadingDetail {
+                    detailLoading
+                }
+            } else {
+                KindEmptyState(kind: .emails, title: "Teach me your emails",
+                               detail: "Add a few emails you sent yourself. SaySo learns how you greet, ask and sign off, so its emails sound like you, not like a polite robot.",
+                               button: "Add emails") { formal = .email }
+            }
+            listSection(title: "Greetings & sign-offs",
+                        subtitle: "Edit them, put them in order and pick a default. SaySo uses yours, in the email's language.",
+                        lists: [.openers, .signoffs])
+            listSection(title: "Your words", subtitle: "Phrases SaySo should never put in your emails.", lists: [.emailAvoid])
+            learned(.emails)
+            if count > 0 {
+                TeachCard(icon: "envelope.fill", title: "Add more emails",
+                          detail: "How you greet, ask and sign off", gradient: StylePalette.emails) { formal = .email }
+            }
+        }
+    }
+
+    private func essays(_ style: Style) -> some View {
+        let count = formalCount(style, "essay")
+        return VStack(alignment: .leading, spacing: 28) {
+            if count > 0 {
+                KindSummaryCard(kind: .essays, count: count, unit: count == 1 ? "text" : "texts",
+                                line: "Essays and papers you wrote teach SaySo your longer, formal voice: never your topics.")
+                if let profile = formalProfile("essay") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        StyleSectionHeader(title: "Structure & voice", subtitle: "How your own essays are built.")
+                        FormalTraitsCard(kind: .essay, profile: profile)
+                    }
+                } else if loadingDetail {
+                    detailLoading
+                }
+            } else {
+                KindEmptyState(kind: .essays, title: "Teach me your essays",
+                               detail: "Add essays, papers or documents you wrote. SaySo learns your sentence length, linking words and how direct you are.",
+                               button: "Add essays") { formal = .essay }
+            }
+            listSection(title: "Your words", subtitle: "Phrases SaySo should never put in your essays.", lists: [.essayAvoid])
+            learned(.essays)
+            if count > 0 {
+                TeachCard(icon: "doc.text.fill", title: "Add more essays & documents",
+                          detail: "Your formal voice, from your own texts", gradient: StylePalette.essays) { formal = .essay }
+            }
+        }
+    }
+
+    /// Lists the user edits by hand, once the full style has loaded.
+    private func listSection(title: String, subtitle: String, lists: [CustomList]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            StyleSectionHeader(title: title, subtitle: subtitle)
+            if let full {
+                ForEach(lists) { list in
+                    CustomListCard(list: list, items: full.shownItems(list), defaultItem: full.customDefault(list),
+                                   isCustom: full.customItems(list) != nil) { editing = list }
+                }
+            } else {
+                detailLoading
+            }
+        }
+    }
+
+    private var detailLoading: some View {
+        HStack { Spacer(); ProgressView(); Spacer() }
+            .glassCard(radius: 20, padding: 28)
     }
 
     // MARK: By who you're talking to
@@ -256,35 +345,57 @@ struct StylesView: View {
 
     // MARK: Learned
 
-    private var learned: some View {
-        let rules = full?.preferences ?? []
-        let learning = full?.learning
-        return VStack(alignment: .leading, spacing: 12) {
-            StyleSectionHeader(title: "SaySo learned from you",
-                               subtitle: "From your fixes in Chat and what you type with the keyboard.")
-            VStack(alignment: .leading, spacing: 14) {
-                if rules.isEmpty {
-                    Text("No rules yet. Tell an answer in Chat \u{201C}shorter\u{201D} or \u{201C}no emoji\u{201D} and SaySo remembers.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                } else {
-                    StyleFlowLayout(spacing: 8) {
-                        ForEach(Array(rules.enumerated()), id: \.offset) { index, rule in
-                            StyleChip(text: rule, icon: "sparkles")
-                                .contextMenu {
-                                    Button(role: .destructive) { Task { await forget(index) } } label: {
-                                        Label("Forget", systemImage: "trash")
-                                    }
-                                }
-                        }
+    /// Rules learned from fixes in Chat, each under its kind: email and essay rules start "In emails…" / "In essays…".
+    private func learnedRules(for kind: StyleKind) -> [LearnedRule] {
+        (full?.preferences ?? []).enumerated().compactMap { index, rule in
+            let ruleKind: StyleKind = rule.hasPrefix("In emails") ? .emails : (rule.hasPrefix("In essays") ? .essays : .messages)
+            return ruleKind == kind ? LearnedRule(index: index, text: rule) : nil
+        }
+    }
+
+    @ViewBuilder
+    private func learned(_ kind: StyleKind) -> some View {
+        let rules = learnedRules(for: kind)
+        if kind == .messages {
+            let learning = full?.learning
+            VStack(alignment: .leading, spacing: 12) {
+                StyleSectionHeader(title: "SaySo learned from you",
+                                   subtitle: "From your fixes in Chat and what you type with the keyboard.")
+                VStack(alignment: .leading, spacing: 14) {
+                    if rules.isEmpty {
+                        Text("No rules yet. Tell an answer in Chat \u{201C}shorter\u{201D} or \u{201C}no emoji\u{201D} and SaySo remembers.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } else {
+                        ruleChips(rules)
+                    }
+                    HStack(spacing: 10) {
+                        StyleStat(value: learning?.typed ?? 0, label: "sent with the keyboard", icon: "keyboard")
+                        StyleStat(value: learning?.edited ?? 0, label: "suggestions you changed", icon: "pencil")
+                        StyleStat(value: learning?.liked ?? 0, label: "answers you liked", icon: "hand.thumbsup")
                     }
                 }
-                HStack(spacing: 10) {
-                    StyleStat(value: learning?.typed ?? 0, label: "sent with the keyboard", icon: "keyboard")
-                    StyleStat(value: learning?.edited ?? 0, label: "suggestions you changed", icon: "pencil")
-                    StyleStat(value: learning?.liked ?? 0, label: "answers you liked", icon: "hand.thumbsup")
-                }
+                .glassCard(radius: 20, padding: 16)
             }
-            .glassCard(radius: 20, padding: 16)
+        } else if !rules.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                StyleSectionHeader(title: "Learned from your fixes",
+                                   subtitle: "Touch and hold a rule to forget it.")
+                ruleChips(rules)
+                    .glassCard(radius: 20, padding: 16)
+            }
+        }
+    }
+
+    private func ruleChips(_ rules: [LearnedRule]) -> some View {
+        StyleFlowLayout(spacing: 8) {
+            ForEach(rules) { item in
+                StyleChip(text: item.text, icon: "sparkles")
+                    .contextMenu {
+                        Button(role: .destructive) { Task { await forget(item.index) } } label: {
+                            Label("Forget", systemImage: "trash")
+                        }
+                    }
+            }
         }
     }
 
@@ -311,18 +422,6 @@ struct StylesView: View {
             }
             Text("Touch and hold a style to use or delete it. The one in use is what the keyboard and Back Tap write in.")
                 .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    private var teach: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            StyleSectionHeader(title: "Teach SaySo more")
-            TeachCard(icon: "bubble.left.and.bubble.right.fill", title: "Add chat exports",
-                      detail: "WhatsApp, Telegram, Instagram, screenshots", gradient: StylePalette.messages) { adding = true }
-            TeachCard(icon: "envelope.fill", title: "Add your emails",
-                      detail: "How you greet, ask and sign off", gradient: StylePalette.emails) { formal = .email }
-            TeachCard(icon: "doc.text.fill", title: "Add essays & documents",
-                      detail: "Your formal voice, from your own texts", gradient: StylePalette.essays) { formal = .essay }
         }
     }
 
@@ -406,6 +505,13 @@ struct StylesView: View {
             detail = style
         }
     }
+}
+
+/// A rule learned from the user's fixes in Chat; index = its place in the style's preferences (to forget it).
+struct LearnedRule: Identifiable {
+    let index: Int
+    let text: String
+    var id: Int { index }
 }
 
 enum StageInfo {

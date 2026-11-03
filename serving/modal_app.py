@@ -146,6 +146,8 @@ def api():
     POST /transcribe multipart audio (WAV) → {text}: the user's voice note, by Muse Voice Transcribe
     GET  /styles, GET /styles/{id}, POST /styles (multipart: name + files), PATCH /styles/{id} {name?, me?, chats?,
                   remove_preference?}, DELETE /styles/{id}
+    PATCH /styles/{id}/custom {email?: {openers?, signoffs?, default_opener?, default_signoff?, avoid?}, essay?: {avoid?},
+                  message?: {avoid?}} → the style: the user's own greetings, sign-offs and phrases they never use
     GET  /latest  the last /reply options (for the keyboard panel)
     GET  /warmup  wakes the GPU and waits (a cold start takes minutes); the app calls it from a button
     While the GPU is cold, generation routes answer at once with Muse Spark in the style and start waking it.
@@ -268,6 +270,23 @@ def api():
         me: str | None = Field(None, max_length=200)
         chats: dict[str, str] | None = None
         remove_preference: int | None = None
+
+    Items = list[str] | None  # a list replaces the stored one; null forgets it (back to what SaySo parsed)
+
+    class EmailCustom(BaseModel, extra="forbid"):
+        openers: Items = Field(None, max_length=40)
+        signoffs: Items = Field(None, max_length=40)
+        default_opener: str | None = Field(None, max_length=200)
+        default_signoff: str | None = Field(None, max_length=200)
+        avoid: Items = Field(None, max_length=40)
+
+    class AvoidCustom(BaseModel, extra="forbid"):
+        avoid: Items = Field(None, max_length=40)
+
+    class CustomPatch(BaseModel, extra="forbid"):
+        email: EmailCustom | None = None
+        essay: AvoidCustom | None = None
+        message: AvoidCustom | None = None
 
     class ReplyBody(BaseModel):
         image: str = Field("", max_length=6_000_000)  # base64 screenshot (≤ 4 MB decoded)
@@ -422,9 +441,12 @@ def api():
             view["preferences"] = styles.preferences(sid)
             learned, feedback = styles.learned(sid), styles.feedback(sid)
             formal = styles.formal(sid)
+            openers, signoffs = styles.parsed_ends(sid)
             view["formal"] = {"documents": formal.get("documents", 0), "counts": formal.get("counts") or {},
                               "paragraphs": (formal.get("profile") or {}).get("paragraphs", 0),
-                              "profile": formal.get("profile")}
+                              "profile": formal.get("profile"), "kinds": styles.formal_by_kind(sid),
+                              "openers": openers, "signoffs": signoffs}
+            view["custom"] = styles.custom(sid)
             view["learning"] = {
                 "typed": sum(r.get("kind") == "typed" for r in learned),
                 "edited": sum(r.get("kind") == "edited" for r in learned) + sum(f.get("kind") == "edited" for f in feedback),
@@ -501,6 +523,18 @@ def api():
         if body.clear_documents:
             styles.clear_documents(style_id)
         meta = styles.update(style_id, **fields) if fields else meta
+        data.commit()
+        return style_view(meta, full=True)
+
+    @web.patch("/styles/{style_id}/custom")
+    async def patch_custom(style_id: str, body: CustomPatch):
+        """What the user set by hand in the Styles tab: only the fields sent change (exclude_unset)."""
+        await asyncio.to_thread(data.reload)
+        meta = style_or_404(style_id)
+        try:
+            styles.set_custom(style_id, body.model_dump(exclude_unset=True))
+        except ValueError as error:
+            raise HTTPException(422, str(error))
         data.commit()
         return style_view(meta, full=True)
 

@@ -48,8 +48,12 @@ Open first, then Spark 1.3 twice; then 502.
   (chat: Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; Email/Essay: Shorter, Longer, More
   personal, Simpler words, Less formal) or free text; a lasting preference becomes a rule ("✨ Learned: …"). Email
   returns a subject; Essay returns an outline, word count and up to 3 "make it stronger" questions.
-- **Styles** (`StylesView`, `AddStyleView`, `FormalImportView`, `SourceGuides`, `StyleCardView`): an **Add** menu with
-  **Messages (chats) / Emails / Essays & documents**, each with step-by-step source guides. Style card: per-audience
+- **Styles** (`StylesView`, `StyleKinds`, `AddStyleView`, `FormalImportView`, `SourceGuides`, `StyleCardView`): an
+  **Add** menu with **Messages (chats) / Emails / Essays & documents**, each with step-by-step source guides. The tab
+  is split by kind with tabs at the top: **Messages** (hero score, audience cards), **Emails** (tone and length,
+  **Opens with** / **Signs off with**), **Essays** (structure and voice); empty kinds show "Teach me". Lists edited by
+  hand (greetings, sign-offs with a default, "phrases I never use" per kind) live in the style's `custom.json`
+  (`PATCH /styles/{id}/custom`); the writer uses them (`writer.preferred_ends`, `avoid_line`). Style card: per-audience
   profile, self-check, **Formal writing** (counts, sentence length, linking words, openings, sign-offs), **Learned from
   you** (keyboard messages, deletable) and **Learned from your corrections** (rules, deletable).
 - **Setup** tab: keyboard + Full Access + Back Tap checklist, last screenshot replies.
@@ -91,7 +95,7 @@ External: Muse Spark Open (Baseten) · Muse Spark 1.3 + Muse Voice Transcribe (M
 ```
 
 Routes: `/rewrite`, `/compose`, `/reply`, `/chat`, `/transcribe`, `/learn`, `/feedback`, `/styles` (GET/POST),
-`/styles/{id}` (GET/PATCH/DELETE), `/styles/{id}/documents`, `/latest`, `/warmup`. Request/response fields: README
+`/styles/{id}` (GET/PATCH/DELETE), `/styles/{id}/custom` (PATCH), `/styles/{id}/documents`, `/latest`, `/warmup`. Request/response fields: README
 "API reference". Env flags at deploy: `SAYSO_GPU` (off | modal | baseten), `SAYSO_WRITER` (open | meta),
 `SAYSO_TRAIN` (off | on: new styles train their own LoRA, ≥150 turns).
 
