@@ -41,6 +41,10 @@ import styles  # noqa: E402
 from lexicon import words  # noqa: E402
 from situations import ACTS, DETAIL_SYSTEM, SITUATIONS  # noqa: E402
 from style_stats import MIN_CELL, StyleStats  # noqa: E402
+import guards  # noqa: E402  (no placeholders or self-introductions; serving/guards.py)
+import length  # noqa: E402  (essay length loop; serving/length.py)
+import memory  # noqa: E402  (the chat thread; serving/memory.py)
+import series  # noqa: E402  (auto-series; serving/series.py)
 
 SYSTEM = "You write chat messages exactly the way this user writes them."
 REASONING = "Reasoning strength: low."
@@ -72,6 +76,9 @@ FORMATS["essay"] = ("as an essay: paragraphs separated by blank lines, first per
 FORMAT_WORDS = {"message": 40, "series": 50, "official": 60, "email": 200, "essay": 900}
 CHAT_FORMATS = {"message", "series"}  # the LoRA was trained on chats: it rewrites only these
 FORMAL = {"official", "email", "essay"}
+# Auto-series (serving/series.py): a long "message" to an audience the user writes to in series may come as several.
+FORMATS[series.AUTO], FORMAT_WORDS[series.AUTO] = series.AUTO_FORMAT, series.AUTO_WORDS
+CHAT_FORMATS.add(series.AUTO)
 # Formal writing overrides the casual habits the shared style prompt asks for (slang, swearing, emoji, splitting).
 FORMAL_NOTE = ("\n\nThis is formal writing: ignore the casual chat habits above (no slang, swearing, emoji or splitting "
                "into short messages); keep only the user's formal voice.")  # written in the user's formal voice (their own documents), not their chat one
@@ -91,7 +98,7 @@ by blank lines>"}}."""
 
 ESSAY_TASK = """The user needs an essay.
 Question or topic: {question}
-Length: up to about {words} words.
+Length: {length}.
 The user's notes (the ONLY source of facts; maybe dictated): {notes}
 First plan it (4 to 6 points), then write it in the structure the question or notes ask for (an argumentative
 essay, a personal statement, a story, a letter...); if they say nothing, a natural flowing essay without headings. Never
@@ -261,8 +268,10 @@ def shape(text, format="message"):
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if format in FORMAL:
         lines = [capitalize(line) for line in lines]
-    if format == "series" and len(lines) > 1:
-        parts = lines[:4]
+    if format == "series" and len(lines) == 1:
+        lines = series.split(lines[0])  # an explicit series always splits
+    if format in ("series", series.AUTO) and len(lines) > 1:
+        parts = lines[:4] if format == "series" else series.cap(lines, series.MAX_PARTS)
         return "\n".join(parts), parts
     if format in {"email", "essay"}:
         return "\n\n".join(lines), ["\n\n".join(lines)]
@@ -412,8 +421,8 @@ class Context:
                           "Never copy its structure, headings, format or topic: follow the structure the task asks for",
                  "email": "copy ONLY their manner: how they greet, ask and sign off, how formal and direct they are. "
                           "Never copy what those emails say"}[kind if kind in ("essay", "email") else "email"]
-        return (f"\nThe user's own formal writing, to {rules}:\n" + parse.profile_text(self.formal) + "\n"
-                + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked))
+        return guards.for_prompt(f"\nThe user's own formal writing, to {rules}:\n" + parse.profile_text(self.formal) + "\n"
+                                 + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked)) + guards.PROMPT_RULE
 
     @property
     def pool(self):
@@ -569,6 +578,7 @@ class Writer:
         open_ = ([(FALLBACK_URL, self.fallback_key, {"model": FALLBACK_MODEL, "reasoning_effort": "low"})]
                  if self.fallback_key else [])
         tries = open_ + meta if writes and self.writer == "open" else meta + open_
+        user = memory.with_note(user)  # the chat thread's earlier turns, while a new-topic answer is written
         for url, api_key, model in tries:
             try:
                 response = await self.client.post(
@@ -784,25 +794,28 @@ class Writer:
                 "alternatives": [], "audience": "elder_informal", "audiences": ["elder_informal"], "learned": None}
 
     async def essay(self, ctx, question, notes, words=250):
-        """Plan from the user's own notes, write in their formal voice, then check length and AI clichés (one fix)."""
+        """Plan from the user's own notes, write in their formal voice, then fit the length (serving/length.py: target
+        ±10 %, expand or trim passes) and remove AI clichés."""
         words = max(80, min(int(words), 900))
         system = self.formal_system(ctx, f"{question} {notes}", kind="essay")
-        args = {"question": clean(question) or "(none given)", "notes": clean(notes)[:4000], "words": words}
+        args = {"question": clean(question) or "(none given)", "notes": clean(notes)[:4000], "words": words,
+                "length": length.target(words)}
         label = await self.spark(system, ESSAY_TASK.format(**args), "text", max_tokens=6000, timeout=90)
         as_list = lambda value: value if isinstance(value, list) else [value] if isinstance(value, str) else []
         outline = [clean(str(point)) for point in as_list(label.get("outline")) if clean(str(point))][:8]
         questions = [clean(str(q)) for q in as_list(label.get("questions")) if clean(str(q))][:3]
         text = clean(label["text"])
-        problems = []
-        count = len(text.split())
-        if count > words * 1.15:  # shorter is allowed: thin notes make a shorter essay, not a padded one
-            problems.append(f"it has {count} words, cut it to about {words} without losing facts")
-        found = sorted({m.group(0) for m in CLICHES.finditer(text)})
-        if found:
-            problems.append("remove phrases that sound AI-written: " + ", ".join(found))
-        if problems:
-            fixed = await self.spark(system, ESSAY_FIX.format(problems="; ".join(problems), text=text), "text",
-                                     max_tokens=6000, timeout=90)
+
+        def cliches(t):
+            found = sorted({m.group(0) for m in CLICHES.finditer(t)})
+            return ["remove phrases that sound AI-written: " + ", ".join(found)] if found else []
+
+        async def call(prompt):
+            return await self.spark(system, prompt, "text", max_tokens=6000, timeout=90)
+        # Under 90 % of the target: expand (up to 2 passes); over 115 %: trim; clichés go into the same pass.
+        text, passes = await length.fit(call, text, words, args["notes"], cliches, clean)
+        if not passes and cliches(text):
+            fixed = await call(ESSAY_FIX.format(problems="; ".join(cliches(text)), text=text))
             text = clean(fixed["text"])
         text, parts = shape(text, "essay")
         return {"text": text, "parts": parts, "outline": outline, "questions": questions, "words": len(text.split()),
