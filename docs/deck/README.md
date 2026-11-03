@@ -8,8 +8,9 @@ Marp slides for the video intro, the submission page and judge Q&A.
 - `img/` — put screenshots here
 
 ## Screenshots
-Slide 3 has two dashed placeholders. Drop `img/keyboard.png` and `img/backtap.png` here, then in `sayso.md`
-replace each `<div class="ph">…</div>` with the image line given in the comment above it, e.g. `![h:400](img/keyboard.png)`.
+The repo has no app screenshots yet, so the deck uses none (the title slide shows the app icon from
+`ios/SaySoApp/Assets.xcassets`). To add real ones later, drop them in `img/` and reference them from `sayso.md`, e.g.
+`![h:400](img/keyboard.png)`. Never put a mock-up in place of a screenshot.
 
 ## Rebuild the PDF
 ```bash
@@ -21,5 +22,6 @@ For a live preview run `npx @marp-team/marp-cli@4 -s docs/deck --config-file doc
 ## Numbers
 Every number comes from the repo: `eval/results/style_gain.json` and `style_gain_open.json` (slide 6, "Results · the
 live path"), `eval/results/bench_v4.json` (slides 2, 7; slide 7's intent ceiling and guessing baseline come from
-`docs/PLAN_v4_thinking.md`). Cost and price on the scaling slide are estimates. Blind test is still TODO.
+`docs/PLAN_v4_thinking.md`), `eval/results/blind_test.json` (slide 8, "Results · blind test"). Cost and price on the
+scaling slide are estimates.
 `sayso.pdf` must be rebuilt after any change to `sayso.md`.

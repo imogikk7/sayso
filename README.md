@@ -4,20 +4,24 @@ SaySo writes messages the way **you** write them: your length, your case and pun
 react to good news or a complaint, and how all of that changes between your partner, friends, family and elders.
 It also writes your **emails and essays** in your own formal voice, learned from emails and essays you wrote yourself.
 It lives where you type: **its own iOS keyboard** (normal letter keys plus a ✨ key that rewrites or writes in your
-style), a **Back Tap shortcut** (double-tap the back of the iPhone → screenshot → three replies in your voice) and an
-**in-app chat** for longer things (Write, Rewrite, Reply, Email, Essay, with 🎙 voice input). It keeps learning:
-once you turn learning on, messages you type and send with the SaySo keyboard become new examples, and every 👍, 👎 or
-edit in the chat becomes an example or a short rule ("keep messages to family short").
+style), a **Back Tap shortcut** (double-tap the back of the iPhone → screenshot → three replies in your voice, pick
+one and it's copied) and an **in-app chat** for longer things (Write, Rewrite or Reply, as a message, a series, an
+official message, an email or an essay, with 🎙 voice input). The chat remembers the thread, so «на русском» or
+"shorter" changes the last answer instead of starting over. It keeps learning: once you turn learning on, messages
+you type and send with the SaySo keyboard become new examples, and every 👍, 👎 or edit in the chat becomes an example
+or a short rule ("keep messages to family short").
 
 Built solo during the **Meta Global AI Developer Hackathon** (indie track, Oct 27 – Nov 4, 2026) on four Meta
 models: the open-weights **Muse Spark Open** writes, **Muse Spark 1.3** reads, **Muse Voice Transcribe 1.0** listens,
 and the open-weights **Muse Glimmer 30B** carries the user's own LoRA.
 
-> **Status, honestly.** Every message, email and rewrite in the live app is written by **Muse Spark Open**, Meta's
-> open-weights model, served by Baseten (hackathon key, `reasoning_effort: low`, about 2–8 s per answer), guided by
-> the user's style profile, their real example messages and the rules learned from their feedback. **Muse Spark 1.3**
-> (Meta Model API) reads screenshots, pasted chats and photos, drafts the Back Tap replies and writes essays, and each
-> of the two is the fallback for the other.
+> **Status, honestly.** In the live app, ✨ in the keyboard, Write and Rewrite in the chat, official messages and
+> emails are written by **Muse Spark Open**, Meta's open-weights model, served by Baseten (hackathon key,
+> `reasoning_effort: low`, about 2–8 s per answer), guided by the user's style profile, their real example messages
+> and the rules learned from their feedback. **Muse Spark 1.3** (Meta Model API) reads screenshots, pasted chats and
+> photos, and with the GPU off its three drafts *are* the replies you get from Back Tap and from the chat's Reply mode
+> (written with the same style profile and examples). It also writes essays, fixes voice-note transcripts and turns
+> feedback into rules. Each of the two is the fallback for the other.
 > The user's own **LoRA on Muse Glimmer 30B** is trained and benchmarked (numbers below), and the server can run it on
 > Modal or Baseten, but nothing is hosting it right now: Modal credits are nearly used up, Fireworks uploads are
 > disabled service-wide, and the hackathon Baseten key serves only Muse Spark Open. So the deployed server runs with
@@ -29,11 +33,12 @@ and the open-weights **Muse Glimmer 30B** carries the user's own LoRA.
 
 | Surface | What happens |
 |---|---|
-| **SaySo keyboard** | Its own RU/EN letter keys (Kazakh letters on long-press). The strip on top has an audience chip (the AI suggests one), a format chip, and ✨. Type a draft, tap ✨, get 1–3 versions in your style, tap one to insert. A *series* comes as a stack you send one message at a time. The **panel** has Rewrite / Write / Replies (the latest screenshot replies, or paste their messages). Settings in the app's Keyboard tab: audiences, formats, number of variants, haptics, accent, "Capital letter at sentence start" (off by default, since most people who write like this write lowercase) and "Learn from what I type" (off by default). You always send the message yourself. |
-| **Back Tap → replies** | One iOS Shortcut: *Take Screenshot* → *Reply with SaySo* (App Intent → `/reply`) → *Choose from List* → *Copy to Clipboard*. Muse Spark 1.3 reads the chat, guesses the audience and situation, and returns three replies with different intents (for example agree / refuse / joke). You pick one from the list and Shortcuts copies it (an intent running in the background can't write the clipboard itself, so the copy is Shortcuts' own step). The keyboard's Replies tab shows the same three. |
-| **Chat in the app** | Five modes, each with an audience and a format. **Write** (an instruction → your message), **Rewrite** (your draft → your wording), **Reply** (paste their messages). **Email**: subject + body from your notes, optionally answering an email you paste. **Essay**: a plan and the text, built only from your own notes, then up to 3 questions whose answers would make it stronger. 🎙 records a voice note and Muse Voice Transcribe turns it into text, so notes, drafts and answers to those questions can be spoken. Under each answer: Copy, 👍, 👎, ✏️. 👎 offers one-tap reasons (Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; for emails and essays: Shorter, Longer, More personal, Simpler words, Less formal) or your own words, typed or spoken. The answer is rewritten, and if the feedback says something lasting, it becomes a rule of the style ("✨ Learned: …"). |
-| **Styles** | An **Add** menu with three kinds of source, each with step-by-step guides per app. **Messages (chats)**: WhatsApp, Telegram, Instagram exports, or screenshots / a screen recording for iMessage and any other app. SaySo asks which participant is you and who each chat is with, then builds a style: profile, examples, a self-check score, and optionally its own LoRA. **Emails** and **Essays & documents**: your own writing as files (.txt, .docx, .pdf, Google Takeout .mbox), photos or screenshots, or pasted text, which becomes your formal voice. The tab has one section per kind of text, picked with tabs at the top: **Messages** (the self-check score, how you write to each audience), **Emails** (tone and length, your greetings and sign-offs) and **Essays** (structure, sentence length, linking words), each with a "Teach me" card when it is empty. Lists can be edited by hand: **Opens with** and **Signs off with** for emails (add, remove, reorder, mark a default; the writer uses yours in the email's language) and **phrases you never use** for each kind. |
+| **SaySo keyboard** | Its own RU/EN letter keys (Kazakh letters on long-press) with the stock iOS look and sizes, light and dark, and keys that type on touch-down. The strip on top has an audience chip (the AI's guess is marked ✨), a format chip, and ✨. Type a draft, tap ✨, get 1–3 versions in your style (`In your style · tap one to put it in`), tap one to put it in place of the draft. A *series* comes as a stack you send one message at a time (`Series · 1 of 3 sent`, then `NEXT`). The **panel** has Rewrite / Write / Replies (the latest screenshot replies, or paste their message). Settings in the app's **Keyboard** tab, with a live preview: opens with letters or the panel, audiences, formats, number of variants, haptics, accent color, "Capital letter at sentence start" (off by default, since most people who write like this write lowercase) and "Learn from what I type" (off by default). You always send the message yourself. |
+| **Back Tap → replies** | One iOS Shortcut: *Take Screenshot* → *Reply with SaySo* (App Intent → `/reply`, returns the replies as a list) → *Choose from List* → *Copy to Clipboard*. It asks **Who is it for?** (Auto, Partner, Friends, Family, Elders / formal) and an optional note ("politely decline, I'm busy"). Muse Spark 1.3 reads the chat, guesses the situation, and writes three replies with different intents (for example agree / refuse / joke) in your style. You pick one and Shortcuts copies it (an intent running in the background can't write the clipboard itself, so copying is Shortcuts' own step). The same replies also wait in the SaySo keyboard, which shows them on its own the next time it opens (`From your screenshot · tap one to put it in`). Setting it up is one tap: **Settings → Add the SaySo shortcut** imports the ready shortcut from an iCloud link; then assign it to Back Tap. |
+| **Chat in the app** | A messenger-style thread with SaySo (the horizontal SAY So logo on top, ✎ starts a new chat). Three menus above the field: **mode** (Write: an instruction → your message; Rewrite: your draft → your wording; Reply: paste their message → your reply), **kind** (Message, Series, Official, Email, Essay; Essay only in Write) and **To** (Partner, Friends, Family, Elders; hidden for Email and Essay). SaySo's welcome message has one-tap starts (Message, Email, Essay, Series, Rewrite, Reply) and example chips. **Write → Email** writes a subject and body from your notes; **Reply → Email** answers an email you paste. **Write → Essay** has a question field and a length picker (150 / 250 / 400 / 650 words or Custom, 100–900), writes a plan and the text only from your notes, shows the word count, and ends with up to 3 questions (**Make it stronger: answer one**). The send button is 🎙 when the field is empty: Muse Voice Transcribe turns the note into text. A series answer is a run of bubbles, each with its own copy button; the alternatives (**Or say it like this**) are cards, and a series alternative is a collapsed stack like a notification group (`+2`) that opens on tap. Long-press any bubble: Copy, Copy all messages, Share. Under the answer: Copy, 👍, 👎, ✏️, and, when SaySo guessed more than one audience, a `For Friends?` menu to switch. 👎 offers one-tap reasons (Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; for emails and essays: Shorter, Longer, More personal, Simpler words, Less formal) or your own words, typed or spoken; the answer is rewritten, and if the feedback says something lasting, it becomes a rule of the style (`✨ Learned: …`). The thread is remembered: «на русском», "in English", "shorter" or "add that I'm sick" revises the last answer. |
+| **Styles** | Titled **Your voice**. The pill on top switches the style in use and adds sources: **New style from chats…** (WhatsApp, Telegram, Instagram exports, or screenshots / a screen recording for iMessage and any other app; SaySo asks which participant is you and who each chat is with, then builds a profile, examples, a self-check score and optionally its own LoRA), **Add emails** and **Add essays** (your own writing as files: .txt, .md, .docx, .pdf, Google Takeout .mbox; photos or screenshots; or pasted text, which becomes your formal voice). Each source has step-by-step guides per app. The tab is split by kind with tabs at the top: **Messages** (the "sounds like you" score vs generic AI, how you write to each audience), **Emails** (tone and length, **Opens with** and **Signs off with**) and **Essays** (structure and voice), each with a "Teach me" card when it is empty. Lists can be edited by hand: greetings and sign-offs for emails (add, remove, reorder, mark a default; the writer uses yours in the email's language) and phrases SaySo must never use, per kind. |
 | **Learned from you** | The style card lists every message the keyboard learned from and every rule taken from your corrections. Each one can be deleted. Its **Formal writing** section shows what was learned from your emails and essays (sentence length, linking words, how you open and sign off). |
+| **Settings** | **Language** (System, English, Русский; the app and keyboard switch at once, Shortcuts and Siri after SaySo is reopened; what SaySo writes stays in your own language), then **Set up** with a progress ring: 1 add the keyboard, 2 allow Full Access (type in the test field to confirm), 3 the Back Tap shortcut (**Add the SaySo shortcut**, or **Build it yourself** step by step), 4 **Check the connection**. A six-page tour shows the tabs on first launch. |
 
 **Formats:** `message` (one chat message), `series` (2–4 short messages, the way you split a thought), `official`
 (a polite message for a work or study chat) and `email`; the chat's Essay mode writes `essay`. The formal ones use
@@ -105,12 +110,14 @@ flowchart TD
    summary of the other person's messages, and **three drafts with different intents**. With the GPU off (now), these
    drafts are the replies the user sees. Nothing from the screenshot is stored. Only the user's suggested replies are
    cached for the keyboard, never the summary.
-2. **Write in the user's style.** For ✨, rewrite, compose, chat answers and emails, **Muse Spark Open** writes with
+2. **Write in the user's style.** For ✨, rewrite, compose, the chat's Write and Rewrite, official messages and
+   emails, **Muse Spark Open** writes with
    the style profile, up to 8 of the user's real messages to that audience (their newest and approved ones first, then
    the ones closest in words and spelling, picked on our own server with TF-IDF), and the rules learned from their
    feedback. The prompt tells it to keep the user's habits (fillers, laughter, swearing, emoji, splitting a thought
    into several messages) at the user's own rate for that audience, instead of writing cleaner than they do. It
-   returns its answer plus 4 more variants, which become the alternatives under ✨. Spark Open always
+   returns its answer plus 4 more variants: the keyboard shows 1–3 of them, the chat shows the answer and up to 2
+   alternatives. Spark Open always
    reasons; `reasoning_effort: low` keeps the thought short (2.7 s instead of 5.5 s in our test). If it fails, Muse
    Spark 1.3 answers instead, and if Spark 1.3 fails, Spark Open does. A compose answer that just repeats the
    instruction ("tell her…") is rewritten by Spark 1.3.
@@ -129,6 +136,18 @@ flowchart TD
    draft is returned at once (`styled: false`), so the app never waits on a GPU. Without a chat (summary only), the
    main style's v4 adapter "thinks first": it writes `act · tone · gist` in Glimmer's `to=self` channel, then the
    message.
+5. **Last checks on every answer** (`serving/postprocess.py`). **Guards** (`serving/guards.py`): no template
+   placeholders (`[Name]`, `<company>`), no self-introduction (name, job, school) the user didn't ask for, no remarks
+   about the request; the main answer is fixed and alternatives that break a rule are dropped. **Auto-series**
+   (`serving/series.py`): when the user usually splits a thought into several messages to that audience and the
+   content is long, a `message` may come back as 2–5 messages. **Essay length** (`serving/length.py`): the asked word
+   count ±10 %, with up to two "expand" passes and one "trim" pass that only use the user's own facts.
+
+**Chat memory** (`serving/memory.py`). Each chat request carries up to 3 earlier `{request, answer}` turns of the
+thread. A short follow-up that changes the last answer («на русском», "in English", "shorter", "more formal", "add that
+I'm sick") revises that answer and keeps its facts, addressee and kind (an email stays an email); anything else is a
+new request, with the earlier turns given only as context. It is a heuristic (no extra model call), unit-tested in
+`tests/test_memory.py`.
 
 ### Emails and essays in the user's formal voice (`serving/documents.py`)
 
@@ -153,15 +172,16 @@ and sign off) and keeps their paragraphs as examples. The two kinds teach differ
 The author's own style currently holds 8 emails they sent and 11 handwritten essay pages (photographed, names masked
 as `[Name]`); only those paragraphs and the formal profile are stored, on the private volume.
 
-**Email mode** writes a subject and a body from the user's notes (spoken or typed), optionally answering an email they
-paste, with every fact from the notes and nothing invented. **Essay mode** plans first (4–6 points), then writes in
+**Email** (Write → Email) writes a subject and a body from the user's notes, spoken or typed; **Reply → Email** answers
+an email they paste. Every fact comes from the notes and nothing is invented. **Essay mode** plans first (4–6 points), then writes in
 the structure the question asks for (an argument, a personal statement, a story, …; a natural essay without headings
 if nothing is asked), in the first person and active voice when it is about the user, using only facts from the
 user's notes. It reaches the length by explaining the user's facts, never by padding; if the notes are too thin it
 writes shorter and asks. Then it checks itself: too long or containing AI clichés ("in today's fast-paced world",
 "plays a crucial role", "delve", and their Russian counterparts) → one fix pass. It ends with up to 3 questions whose
-answers would make the essay stronger; the user answers by voice or text and the essay is revised. Essays are written
-by Muse Spark 1.3; emails by Muse Spark Open.
+answers would make the essay stronger; the user taps one, answers by voice or text and the essay is revised. The
+length is held to the asked word count ±10 % (`serving/length.py`) and the count is shown under the essay. Essays are
+written by Muse Spark 1.3; emails by Muse Spark Open.
 
 ### Voice notes (`/transcribe`)
 
@@ -169,7 +189,7 @@ by Muse Spark 1.3; emails by Muse Spark Open.
 (an instruction, a draft, notes for an essay, an answer to one of its questions). The audio is read in memory and not
 stored.
 
-- **Recording:** mono 16-bit **24 kHz** WAV (Muse Voice Transcribe takes 16 or 24 kHz; 24 kHz keeps more of the
+- **Recording:** up to 2 minutes, mono 16-bit **24 kHz** WAV (Muse Voice Transcribe takes 16 or 24 kHz; 24 kHz keeps more of the
   consonants that tell English words apart), the raw microphone (`.measurement`, no system voice processing).
 - **Before recognition** (`writer.prepare_wav`): silence before and after the speech trimmed (in silence recognizers
   invent and repeat words), quiet speech raised to about −3 dBFS (at most ×10), other rates resampled.
@@ -179,7 +199,7 @@ stored.
 - **A second hearing on the iPhone:** Apple's on-device recognizer (`SFSpeechRecognizer`, on-device only, en-US or
   ru-RU from the app's language, at most a few seconds) hears the same note. Muse Voice Transcribe stays the
   recognizer; the iPhone's text goes to the fix pass as a second opinion, and is used alone only if Muse fails.
-- **The fix pass** (Muse Spark, `fix_transcript`): repeated words and doubled stops are removed first
+- **The fix pass** (Muse Spark 1.3, Spark Open as its fallback, `fix_transcript`): repeated words and doubled stops are removed first
   (`tidy_transcript`), then Spark fixes recognition slips with a prompt for the note's language, detected from its
   letters: the English one knows sound-alike words (their/there, your/you're, to/too, four/for), broken words, missing
   apostrophes and names. It is told what the note is for (the Chat mode and audience) and the known names. The fix is
@@ -228,9 +248,9 @@ server loads when the GPU is on.
 
 | Model | Where | Role in SaySo |
 |---|---|---|
-| **Muse Spark Open** (`meta-models/muse-spark-open-1026`, open weights) | Baseten, OpenAI-compatible, hackathon key, `reasoning_effort: low` | **Writes in the user's style** in the live app: ✨ in the keyboard, rewrite, compose, chat answers and revisions, emails. Fallback when Muse Spark 1.3 fails. Offline, it built the neutral drafts and instructions for the main style's training pairs. |
-| **Muse Spark 1.3** | Meta Model API (`muse-spark-1.3`) | **Reads**: screenshots and pasted chats (audience, situation, neutral summary, three reply drafts), photos and screenshots of the user's own emails and essays. Writes essays. Tags uploaded chats when building a style, judges the self-check, and turns feedback into rules. Fallback when Muse Spark Open fails. |
-| **Muse Voice Transcribe 1.0** | Meta Model API (`muse-voice-transcribe-1.0`) | 🎙 voice notes in the chat → text (`/transcribe`). Audio is not stored. |
+| **Muse Spark Open** (`meta-models/muse-spark-open-1026`, open weights) | Baseten, OpenAI-compatible, hackathon key, `reasoning_effort: low` | **Writes in the user's style** in the live app: ✨ in the keyboard (`/rewrite`, `/compose`), the chat's Write and Rewrite answers, official messages, emails, and 👎 revisions of everything but essays (`spark(..., writes=True)`, `SAYSO_WRITER=open`, the default). Fallback for every other Spark call. Offline, it built the neutral drafts and instructions for the main style's training pairs. |
+| **Muse Spark 1.3** | Meta Model API (`muse-spark-1.3`, `reasoning_effort: low`) | **Reads**: screenshots and pasted chats (audience, situation, neutral summary, three reply drafts; with the GPU off these drafts are the Back Tap and chat Reply answers), photos and screenshots of the user's own emails and essays. **Writes essays** and their revisions. Fixes voice-note transcripts. Tags uploaded chats when building a style, judges the self-check, and turns feedback into rules. Rewrites a compose answer that only echoed the instruction, and an official message or email that still mixes languages. Fallback when Muse Spark Open fails. |
+| **Muse Voice Transcribe 1.0** | Meta Model API (`muse-voice-transcribe-1.0`, `/v1/asr/transcribe`) | 🎙 voice notes in the chat → text (`/transcribe`). Audio is not stored. |
 | **Muse Glimmer 30B** (open weights) + the user's LoRA | vLLM on Modal (`serving/modal_app.py`) or Baseten (`serving/baseten/`), switched with `SAYSO_GPU` | The personal model, **trained and benchmarked, not hosted live right now** (no GPU credits). With the GPU on, it rewrites drafts in the user's voice and writes on its own with a "thought first" (v4). Base Glimmer also tagged situations and thoughts for the training data, so other people's messages never left our own hosted model in the offline pipeline. |
 
 ---
@@ -315,25 +335,52 @@ Live writer: Muse Spark Open with `reasoning_effort: low` answers in about 2–8
 default effort in our test; emails take longer than chat messages). With the GPU warm (measured Oct 29): `/reply`
 from a summary 2.4 s, from pasted messages 6 s, from a screenshot 9.7 s, `/compose` 7 s (`docs/REVIEW.md`).
 
-### 5. Blind test
+### 5. Blind test: can friends tell SaySo from the real person?
 
-Protocol (v3, `eval/blind_test.py`): 20 questions, each one message and its situation in Russian («Друг
+**Result (v3, scored Nov 3, `eval/results/blind_test.json`): five friends could not reliably tell the user's real
+messages from SaySo's.**
+
+| | The user's real messages | SaySo's messages |
+|---|---:|---:|
+| Messages in the test | 10 | 10 |
+| Answers (5 friends × 10) | 50 | 50 |
+| Answered «Человек» (a person wrote it) | 31 (**62%**) | 28 (**56%**) |
+| Called «Человек» by most of the 5 | 7 of 10 | 8 of 10 |
+| Median length | 26 chars | 22 chars |
+
+- **Accuracy 53%** (53 of 100 answers right; 50% is chance; exact binomial p ≈ 0.62).
+- **Difference +6 points** in how often real vs SaySo messages were taken for a person: 95% CI about −13 to +24
+  points (Newcombe), Fisher's exact p ≈ 0.68.
+- Per friend, accuracy ranged from 40% to 70%; no single friend did better than chance with confidence (best p ≈ 0.12).
+
+**Caveats, stated plainly.**
+- **Small sample:** 5 people, 20 messages, 100 answers. The pooled p-values treat answers as independent; they are
+  not quite (each person answered 20). The interval still allows real messages to be taken for a person up to 24
+  points more often than SaySo's, so this rules out only a large gap.
+- **The author's own runs are excluded** (`score --skip`: the author tried the page before sending it).
+- **Items were filtered to be shareable:** friends and family only (no partner, no elders), one message each,
+  Russian only, nothing private, not trivial («ок», «ахах»). That is an easier, more neutral slice than real chats.
+- **Some real items come from the training split** (`build --include-train`, used because too few held-out messages
+  passed the filter), so they were among the messages the style learned from.
+- **No plain-AI control in this run** (`--generic 0`), so it doesn't show how often generic AI would pass.
+- SaySo's messages came from the live API's chat Reply mode with the GPU off, so they are Muse Spark 1.3 drafts in the
+  user's style; the JSON records the writer as `unknown` because the build skipped the warm-up check.
+
+**Protocol** (v3, `eval/blind_test.py`): 20 questions, each one message and its situation in Russian («Друг
 спрашивает, пойдёшь ли ты вечером в кино», written by Muse Spark from the neutral summary, never the other person's
 words), and one question: «Это написал(а) [the user] или ИИ?» with two buttons, «Человек» / «ИИ». About half the
 messages are the user's **real** replies (friends and family only), half **SaySo**'s (`/chat` in Reply mode, in the
 user's style) to other situations, never both for the same one; `--generic N` adds plain Muse Spark 1.3 answers as a
 control. Muse Spark 1.3 screens every shown message, real and generated alike, and keeps it only if it is safe to show
 to many people (no names, places, phones or addresses; nothing intimate, about a partner, sexual or about health; no
-heavy swearing or private details), friendly, not trivial («ок», «ахах») and has some personal manner; failing items
-are dropped and more are drawn. SaySo items are length-matched to the real ones (the same share in each length
-third). The test is served by the API at an unguessable link (`GET /blind/{test_id}`, no token, the page holds no
-key) and works in any phone browser, Telegram's included; answers are posted back (`POST /blind/{test_id}/answers`,
-rate-limited and size-capped), with an `SS3-…` code as the fallback. `score` reports the share answered «Человек»
-for real messages vs for SaySo's (close = people can't tell them apart), with a 95% CI of the difference (Newcombe),
-Fisher's exact p and accuracy vs 50% (exact binomial), per person and overall, and writes aggregate numbers only to
-`eval/results/blind_test.json` (version 3). v2 (three replies, pick the real one; `SS2-` codes) still scores.
-
-> **TODO:** results. Not run yet; no numbers until `eval/results/blind_test.json` exists.
+heavy swearing or private details), friendly, not trivial and has some personal manner; failing items are dropped and
+more are drawn. SaySo items are length-matched to the real ones (the same share in each length third). The test is
+served by the API at an unguessable link (`GET /blind/{test_id}`, no token, the page holds no key) and works in any
+phone browser, Telegram's included; answers are posted back (`POST /blind/{test_id}/answers`, rate-limited and
+size-capped), with an `SS3-…` code as the fallback. `score` reports the share answered «Человек» for real messages vs
+for SaySo's (close = people can't tell them apart), with a 95% CI of the difference (Newcombe), Fisher's exact p and
+accuracy vs 50% (exact binomial), per person and overall, and writes aggregate numbers only (no message text, no names;
+the test is named by an 8-character hash of its id, not the link). v2 (three replies, pick the real one; `SS2-` codes) still scores.
 
 ---
 
@@ -358,7 +405,8 @@ Fisher's exact p and accuracy vs 50% (exact binomial), per person and overall, a
 - **Where text goes.** Writing requests (the user's draft or notes, an email they are answering, their style and
   example messages) go to Muse Spark Open on Baseten; reading requests (screenshots, pasted chats, photos of the user's
   documents) and essays go to Muse Spark 1.3 on the Meta Model API. When one fails, the same request goes to the
-  other. Voice notes go to Muse Voice Transcribe. Nothing else leaves the server: examples are picked locally.
+  other. Voice notes go to Muse Voice Transcribe, and the transcript (with the iPhone's own hearing) to Muse Spark for
+  the fix pass. Nothing else leaves the server: examples are picked locally.
 - **Keys live in `.env` and Modal secrets, never in the repo.** vLLM has its own key, never shipped in the app.
   `data/`, exports, adapters and generated iOS secrets are gitignored.
 - Styles, formal writing, learned items and rules can be deleted from the app. SaySo describes *how you write*, never
@@ -400,6 +448,10 @@ serving/    modal_app.py    Modal app: vLLM (Glimmer + LoRAs, H100) and the Fast
             documents.py    the user's own emails and essays → paragraphs + formal profile (txt/md/docx/pdf/mbox, photos)
             styles.py       per-style storage: meta, own turns, profile, pairs, formal writing, rules, feedback, learned
             build_style.py  uploads → parse → which one is you → Spark tagging → profile → pairs → self-check → LoRA
+            memory.py       the chat thread (`previous`): refinements revise the last answer
+            guards.py       no placeholders, no unasked self-introductions, no remarks about the request
+            series.py       auto-series and the parts of a series; length.py: essay length ±10 %
+            postprocess.py  the last step of every route: guards, parts, alternative_parts
             blind.py        blind test v3 on the API: the public page and answer post, the token-gated responses
             baseten/        the same vLLM server as a Truss (SAYSO_GPU=baseten)
             fireworks.py    Fireworks client (blocked: uploads disabled)
@@ -411,11 +463,14 @@ training/   modal_train.py (Unsloth QLoRA), build_prefs.py + modal_prefs.py (Sim
 eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, blind_test.py + blind_template.html,
             results/ (aggregated metrics only)
 tests/      test_api_auth.py, test_blind_test.py, test_blind_api.py, test_parsers.py, test_privacy.py, test_styles.py,
-            test_writer_fakes.py, fixtures/ (made-up chats and documents only)
-ios/        SaySoApp/ (Styles with the Add menu and source guides, formal writing import, Chat with 🎙, Keyboard
-            settings, Settings (language + setup checklist), App Intents), SaySoKeyboard/, Shared/ (incl.
-            Localizable.xcstrings: English + Russian), scripts/
-docs/       SUBMISSION.md, VIDEO_SCRIPT.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
+            test_writer_fakes.py, test_formal.py, test_memory.py, test_guards.py, test_series.py, test_length.py,
+            test_thread_api.py, test_voice.py, test_sec_review.py, test_cov_*.py,
+            fixtures/ (made-up chats and documents only)
+ios/        SaySoApp/ (Chat with 🎙, Styles split by kind with source guides and editable lists, formal writing
+            import, Keyboard settings, Settings (language + setup checklist + "Add the SaySo shortcut"), the
+            onboarding tour, App Intents), SaySoKeyboard/ (letter keys with a UIKit touch layer, panel, result
+            stack), Shared/ (API client, Localizable.xcstrings: English + Russian), scripts/
+docs/       SUBMISSION.md, VIDEO_SCRIPT.md, X_POST.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
 ```
 
 ## API reference
@@ -432,8 +487,8 @@ warming up (only when `SAYSO_GPU` is on).
 | `POST /rewrite` | JSON `{text` (≤ 2000), `audience, situation?, style?, format?, previous?}` | `{text, parts, candidates, styled, audiences}`: `parts` = the messages of a series (also of a long `message`, see auto-series below), `candidates` = alternatives, `styled` = written by the LoRA |
 | `POST /compose` | JSON `{instruction` (≤ 1000), `audience, situation?, style?, format?, previous?}` | same as `/rewrite` |
 | `POST /reply` | a screenshot as the raw body (`image/*`, ≤ 4 MB; `?audience=&style=&format=` in the query), or JSON `{image` (base64) `, image_type` \| `messages` (≤ 4000) \| `summary` (≤ 400) `+ situation, options, audience?, instruction?` (≤ 300) `, style?, format?, previous?}`. Sending back `summary` + `options` with another audience restyles without reading again | `{context: {audience, audiences, situation, summary}, replies: [{intent, tone, thought, styled, text, parts}] × 3, options: [{act, draft}], ms: {read, total}}` |
-| `POST /chat` | JSON `{mode: write \| rewrite \| reply \| email \| essay, text` (≤ 4000) `, audience, style?, format?, instruction?, history: [{answer, feedback}]` (≤ 12) `, question?` (essay, ≤ 1000) `, words?` (essay, 50–900, default 250) `, reply_to?` (email being answered, ≤ 6000) `, previous?}`. Feedback on the last history item revises that answer | `{text, parts, alternatives, alternative_parts, audience, audiences, learned}` (`learned` = a new rule or null); email adds `subject`; essay adds `outline, questions, words, cliches` |
-| `POST /transcribe` | multipart `audio`: mono 16-bit WAV, ≤ 10 MB; optional `language` (en \| ru), `mode`, `audience`, `context` (text the note is about), `heard` (the iPhone's on-device transcript) | `{text}` (Muse Voice Transcribe, then the Muse Spark fix pass; audio not stored) |
+| `POST /chat` | JSON `{mode: write \| rewrite \| reply \| email \| essay, text` (≤ 4000) `, audience, style?, format?, instruction?, history: [{answer, feedback}]` (≤ 12) `, question?` (essay, ≤ 1000) `, words?` (essay, 50–900, default 250) `, reply_to?` (email being answered, ≤ 6000; the app's Reply → Email sends it) `, previous?}`. Feedback on the last history item revises that answer | `{text, parts, alternatives, alternative_parts, audience, audiences, learned}` (`learned` = a new rule or null); email adds `subject`; essay adds `outline, questions, words, cliches` |
+| `POST /transcribe` | multipart `audio`: mono 16-bit WAV (must start with `RIFF`, else 422), ≤ 10 MB; optional form fields `language` (en \| ru: English adds `languageBias`), `mode` (the Chat mode), `audience`, `context` (≤ 4000, the text the note is about; its names become `keywords`), `heard` (≤ 4000, the iPhone's on-device transcript) | `{text}` (Muse Voice Transcribe, then the Muse Spark fix pass; audio not stored) |
 | `POST /learn` | JSON `{style?, items: [{text` (≤ 2000) `, audience, suggested?}]` (≤ 50)`}` from the keyboard | `{learned, rules}` |
 | `POST /feedback` | JSON `{audience, style?, format?, answer, edited?, liked}` | `{learned}` (a rule or null) |
 | `GET /styles` | | `{styles: [{id, name, status, stage, progress, error, source, counts, scores, lora, adapter_ready, created, needs, participants, chats, me}]}` |
@@ -442,15 +497,15 @@ warming up (only when `SAYSO_GPU` is on).
 | `PATCH /styles/{id}` | JSON `{name?, me?, chats?: {chat: audience}, remove_preference?, remove_learned?, clear_documents?}`; `me`/`chats` only while `stage = needs_me` (else 409) | the full style view |
 | `PATCH /styles/{id}/custom` | JSON, only the fields that change: `{email?: {openers?, signoffs?, default_opener?, default_signoff?, avoid?}, essay?: {avoid?}, message?: {avoid?}}`; a list replaces the stored one, `null` forgets it (back to what SaySo parsed), `{kind: null}` forgets the kind; unknown fields 422 | the full style view |
 | `DELETE /styles/{id}` | | `{deleted}`; 409 for the main style |
-| `POST /styles/{id}/documents` | multipart `kind` (`email` \| `essay`), `files` (≤ 40, ≤ 25 MB in all: .txt .md .docx .pdf .mbox, photos/screenshots .jpg .png .heic .webp) and/or `text` | `{documents, counts, paragraphs, profile}` (the formal voice) |
+| `POST /styles/{id}/documents` | multipart `kind` (`email` \| `essay`, default `essay`), `files` (≤ 40, each ≤ 20 MB, ≤ 25 MB in all: .txt .md .docx .pdf .mbox, photos/screenshots .jpg .png .heic .webp, at most 30 images read) and/or `text` (pasted, first 50,000 characters) | `{documents, counts, paragraphs, profile}` (the formal voice) |
 | `GET /latest` | | the last `/reply` for the keyboard: `{audience, situation, replies, at}` or `{}` |
-| `GET /warmup` | | `{ready, gpu}`; wakes the GPU when `SAYSO_GPU` is on |
+| `GET /warmup` | | `{ready, gpu}`; with `SAYSO_GPU=off` (now) it answers `{ready: false, gpu: "off"}` at once, otherwise it wakes the GPU and waits |
 | `GET /blind/{test_id}` | **no token** (the id is 24 random characters) | the blind-test page (`text/html`, `no-store`, `noindex`) or 404 |
 | `POST /blind/{test_id}/answers` | **no token**; body (any content type) `{sid, name?, answers: ["H" \| "A" × questions]}`, ≤ 8 KB | `{ok}`; 422 junk, 413 too large, 429 rate limit (8 per 10 min per address, 120 per hour per test), 507 full (400 responses); stored without IP or headers |
 | `GET /blind/{test_id}/responses` | | `{responses: [{sid, name, answers, at}]}` |
 
-- **`previous`** (`/rewrite`, `/compose`, `/reply`, `/chat`, including email and essay): up to 3 `{request, answer}`,
-  oldest first, the earlier turns of this chat thread. A request that refines the last answer ("на русском", "in
+- **`previous`** (`/rewrite`, `/compose`, JSON `/reply`, `/chat`, including email and essay): up to 3 `{request, answer}`
+  (each ≤ 6000 characters), oldest first, the earlier turns of this chat thread. A request that refines the last answer ("на русском", "in
   English", "shorter", "more formal", "add that I'm sick") revises that answer and keeps its content; a new topic is
   written as usual, with the earlier turns only as context for consistency (`serving/memory.py`, a heuristic, no
   extra model call). In `/reply`, a refinement with no new chat returns the last reply revised (`intent: "other"`).
@@ -550,10 +605,18 @@ python3 eval/blind_test.py score --server
 one code per line; a v2 test: `score --answers data/blind/answers.json SS2-...`.) `score` writes
 `eval/results/blind_test.json`, aggregate numbers only.
 
-**iOS** (Xcode, iOS 26): generate the API URL and token for the app from `.env`, then open the project, set your
-signing team, and run the `SaySo` scheme on a device. Add the keyboard in Settings → Keyboards, and create the
-*Take Screenshot → Reply with SaySo → Choose from List → Copy to Clipboard* shortcut for Back Tap (the app's
-Settings tab lists the steps). The app, keyboard and shortcut are in English and Russian (Settings → Language).
+**iOS** (Xcode, deployment target iOS 26): generate the API URL and token for the app from `.env`, then open the
+project, set your signing team, and run the `SaySo` scheme on a device. Then, in the app's **Settings** tab:
+
+1. **Add the SaySo keyboard**: Settings → General → Keyboard → Keyboards → Add New Keyboard → SaySo.
+2. **Allow Full Access** for SaySo (needed to reach the API), then type in the test field and switch to SaySo 🌐 once.
+3. **Set up the Back Tap shortcut**: tap **Add the SaySo shortcut** (it opens the ready shortcut, an iCloud link) →
+   **Add Shortcut**, then Settings → Accessibility → Touch → Back Tap → Double Tap → that shortcut. **Build it
+   yourself** shows the same thing by hand: *Take Screenshot → Reply with SaySo* (leave Audience empty, so it asks every
+   time) *→ Choose from List → Copy to Clipboard*. Turn on **I've set it up**.
+4. **Check the connection**: **Test now**.
+
+The app, keyboard and shortcut are in English and Russian (Settings → Language).
 
 ```bash
 sh ios/scripts/gen_secrets.sh
@@ -568,7 +631,7 @@ open ios/SaySo.xcodeproj
 - **Single-user server.** One bearer token for the whole API, readable from the app binary. Fine for a demo, not for
   release. Next: per-device tokens (Sign in with Apple / App Attest).
 - **GPU off by default** (`SAYSO_GPU=off`). The personal LoRA is trained and benchmarked but not hosted live right now,
-  so the demo's text comes from Muse Spark Open (and Muse Spark 1.3 for screenshots and essays) with the style profile,
+  so the demo's text comes from Muse Spark Open (and Muse Spark 1.3 for screenshot and Reply answers and essays) with the style profile,
   examples and rules.
 - **Per-style LoRA is behind `SAYSO_TRAIN`** (off). New styles get a profile, examples and a self-check; their own
   LoRA needs a GPU run (~10–30 min on an H100) and at least 150 of the user's turns.
@@ -576,7 +639,9 @@ open ios/SaySo.xcodeproj
   Spark in the user's formal voice. That voice is only as good as the emails and essays the user adds; without them
   SaySo writes plainly.
 - The keyboard needs Full Access for network features. Free signing expires every 7 days.
-- Blind test not run yet (see Results).
+- Chat memory decides "refine the last answer" vs "new request" with a word-list heuristic, so an unusual follow-up
+  can be taken as a new request (the earlier turns still go along as context).
+- The blind test is small (5 friends, 100 answers) and has no plain-AI control; see Results for its caveats.
 - Muse Spark reads other people's messages in screenshots and uploads to understand them (in memory, not stored by
   SaySo). The offline pipeline used our own hosted Glimmer for that instead; moving live reading there is planned.
 

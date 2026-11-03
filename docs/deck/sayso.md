@@ -11,6 +11,8 @@ footer: SaySo · Meta Global AI Developer Hackathon 2026
 <!-- _paginate: false -->
 <!-- _footer: "" -->
 
+![w:120](../../ios/SaySoApp/Assets.xcassets/AppIcon.appiconset/icon.png)
+
 # SaySo
 
 AI that writes the way *you'd* say it.
@@ -53,30 +55,32 @@ Your own voice, adapted to who you're talking to — in any messenger.
 
 <div class="kicker">The product</div>
 
-## A keyboard that writes like you
+## Writes like you, where you type
 
-<div class="cols" style="grid-template-columns: 1.4fr 1fr 1fr; gap: 28px;">
-<div style="font-size: 21px;">
+<div class="cols wide-left">
+<div style="font-size: 22px;">
 
-- **Own keyboard**, RU / EN letter keys; tap ✨ → *in your style*
-- Pick **audience** and **format**: message · series · official · email
-- **Series** come as a stack, sent part by part
-- **Back Tap** on the iPhone: screenshot → ready replies
-- **Chat**: Write · Rewrite · Reply · **Email** · **Essay**, 🎙 voice input
-- **Styles** from your chats, emails and essays, with a self-check
-- **Keyboard and chat keep learning** from what you send (opt-in) and fix (👎 with one-tap reasons)
-
-</div>
-<div>
-
-<!-- Replace this div with: ![h:400](img/keyboard.png) -->
-<div class="ph">screenshot:<br>keyboard → ✨ → variants<br>(img/keyboard.png)</div>
+- **Own keyboard**, RU / EN keys, stock iOS look; ✨ → 1–3 versions *in your style*
+- **Audience** and **format**: message · series (a stack, sent part by part) · official · email
+- **Back Tap**: screenshot → three replies in your voice → pick one, it's copied
+- **Chat**: Write · Rewrite · Reply → message, series, official, **email**, **essay**; 🎙 voice; remembers the thread ("in English")
+- **Styles** by kind: Messages · Emails · Essays, with a self-check
+- **Keeps learning** from what you send (opt-in) and fix (👎)
+- English and Russian UI
 
 </div>
-<div>
+<div style="font-size: 18px;">
 
-<!-- Replace this div with: ![h:400](img/backtap.png) -->
-<div class="ph">screenshot:<br>Back Tap → replies<br>or style self-check<br>(img/backtap.png)</div>
+<div class="card" style="margin-bottom: 16px;">
+<span class="who">Back Tap · one iOS Shortcut</span>
+<b>Take Screenshot → Reply with SaySo → Choose from List → Copy to Clipboard</b>
+One tap installs it (<em>Add the SaySo shortcut</em>). Replies also wait in the keyboard.
+</div>
+<div class="card">
+<span class="who">Chat answers</span>
+<b>A series is separate bubbles</b>
+Each with a copy button; other versions fold into stacks.
+</div>
 
 </div>
 </div>
@@ -114,16 +118,16 @@ Your own voice, adapted to who you're talking to — in any messenger.
 
 ## Four Meta models, one voice
 
-<div class="cols-4" style="font-size: 19px;">
+<div class="cols-4" style="font-size: 17px;">
 <div class="card accent">
 <span class="who">Open weights · Baseten</span>
 <b>Muse Spark Open</b>
-<strong>Writes</strong> in your style: ✨, rewrite, compose, chat, email. Fallback for Spark 1.3.
+<strong>Writes</strong> in your style: ✨, chat Write / Rewrite, official, email. Fallback for Spark 1.3.
 </div>
 <div class="card">
 <span class="who">Meta Model API</span>
 <b>Muse Spark 1.3</b>
-<strong>Reads</strong> screenshots, chats and photos of your pages; drafts replies, writes essays. Fallback for Spark Open.
+<strong>Reads</strong> screenshots, chats, photos; writes replies in your style and essays. Fallback for Spark Open.
 </div>
 <div class="card">
 <span class="who">Meta Model API</span>
@@ -192,7 +196,7 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 </div>
 <div class="card">
 <span class="who">Tone mix distance</span>
-<div class="stat accent nowrap" style="font-size: 50px; line-height: 1.68;">0.05–0.07</div>
+<div class="stat accent">0.06</div>
 <div class="stat-label">vs 0.09 earlier LoRA</div>
 </div>
 <div class="card">
@@ -206,11 +210,48 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 
 - 499 held-out test pairs. The model writes a short thought (intent + tone) in Glimmer's reasoning channel, then the message. Trained and benchmarked; not hosted live (no GPU credits).
 - The intent is a control: *agree*, *refuse*, *joke* → three replies with different intents, all in your voice.
-- **Blind test** (friends see a situation and three replies: the real one, SaySo's, a generic AI's — can they find the user?): *TODO — results pending.*
 
 </div>
 
 <p class="note">Source: <code>eval/results/bench_v4.json</code> (v4 with act/tone from the profile vs v2, all tasks; intent match = v4 + rerank). Ceiling and guessing baseline: <code>docs/PLAN_v4_thinking.md</code>; intent ceiling = how often the tagger agrees with itself.</p>
+
+---
+
+<div class="kicker">Results · blind test</div>
+
+## Friends couldn't reliably tell SaySo from the user
+
+<div class="cols-4">
+<div class="card accent">
+<span class="who">Accuracy</span>
+<div class="stat accent">53%</div>
+<div class="stat-label">chance 50% · exact binomial p ≈ 0.62</div>
+</div>
+<div class="card">
+<span class="who">"A person wrote it" · real</span>
+<div class="stat">62%</div>
+<div class="stat-label">of answers on the user's real messages</div>
+</div>
+<div class="card">
+<span class="who">"A person wrote it" · SaySo</span>
+<div class="stat accent">56%</div>
+<div class="stat-label">of answers on SaySo's messages</div>
+</div>
+<div class="card">
+<span class="who">Difference</span>
+<div class="stat">+6</div>
+<div class="stat-label">points · 95% CI −13…+24 · Fisher p ≈ 0.68</div>
+</div>
+</div>
+
+<div style="font-size: 18px; margin-top: 14px;">
+
+- 5 friends × 20 messages (10 real, 10 SaySo) = 100 answers; one message per question, tap «Человек» or «ИИ».
+- **Small sample**, author's own runs excluded; shareable items only (friends and family, one message, Russian); some real items from the training split; no plain-AI control. SaySo: Muse Spark 1.3 replies in the user's style.
+
+</div>
+
+<p class="note">Source: <code>eval/results/blind_test.json</code> (aggregate numbers only) · <code>eval/blind_test.py</code>.</p>
 
 ---
 

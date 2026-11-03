@@ -1,192 +1,188 @@
 1
-00:00:00,300 --> 00:00:04,300
+00:00:00,300 --> 00:00:03,800
 Every AI reply sounds the same.
 Polite, tidy, nothing like you.
 
 2
-00:00:04,400 --> 00:00:07,800
+00:00:03,900 --> 00:00:06,800
 My friends would spot it in a second.
 
 3
-00:00:08,200 --> 00:00:12,500
+00:00:07,200 --> 00:00:11,300
 This is SaySo, a keyboard
 that writes the way you'd say it.
 
 4
-00:00:12,600 --> 00:00:16,000
+00:00:11,400 --> 00:00:14,600
 I type a plain draft,
 tap the sparkle,
 
 5
-00:00:16,100 --> 00:00:20,000
+00:00:14,700 --> 00:00:18,500
 and get versions in my own voice.
 
 6
-00:00:20,500 --> 00:00:24,500
+00:00:19,000 --> 00:00:23,000
 And I don't send one long paragraph,
 I send bursts.
 
 7
-00:00:24,600 --> 00:00:29,000
-So SaySo does too: a series,
-stacked like notifications.
+00:00:23,100 --> 00:00:26,500
+So SaySo does too: a stack.
 
 8
-00:00:29,100 --> 00:00:32,000
+00:00:26,600 --> 00:00:30,700
 Tap, send. Next. Send.
 
 9
-00:00:32,100 --> 00:00:34,800
-Same meaning, my rhythm.
+00:00:31,200 --> 00:00:33,800
+Setting it up is one tap.
 
 10
-00:00:35,200 --> 00:00:38,500
-A friend asks for help on Saturday,
+00:00:34,000 --> 00:00:38,300
+Then a friend asks for help on Saturday,
 and I can't.
 
 11
-00:00:38,600 --> 00:00:41,500
-I double-tap the back of my phone.
+00:00:38,400 --> 00:00:41,500
+I double-tap the back of my phone,
 
 12
-00:00:41,600 --> 00:00:45,000
-SaySo grabs the screen
-and asks who it's for.
-
-13
-00:00:45,100 --> 00:00:48,000
-I add a note:
+00:00:41,600 --> 00:00:46,300
+say who it's for and add a note:
 politely decline.
 
+13
+00:00:46,500 --> 00:00:50,000
+Three replies, the way I would.
+
 14
-00:00:48,500 --> 00:00:54,500
-Muse Spark reads the chat and writes
-three replies the way I would.
+00:00:50,100 --> 00:00:54,700
+Pick one, it's copied.
+Paste, send.
 
 15
-00:00:55,000 --> 00:00:58,800
-Pick one, paste, send.
+00:00:55,200 --> 00:00:57,800
+In the app's chat it's the same voice.
 
 16
-00:00:59,200 --> 00:01:02,500
-My voice comes from my own chats.
+00:00:57,900 --> 00:01:03,000
+A story comes back the way I'd actually send it:
+in a few messages, each one copyable.
 
 17
-00:01:02,600 --> 00:01:06,500
-I drop in a WhatsApp export,
-SaySo asks which one is me,
+00:01:03,100 --> 00:01:05,800
+Other versions fold into stacks.
 
 18
-00:01:06,600 --> 00:01:10,500
+00:01:05,900 --> 00:01:12,700
+And it remembers the thread:
+"in English" changes this answer.
+
+19
+00:01:13,200 --> 00:01:15,800
+My voice comes from my own writing.
+
+20
+00:01:15,900 --> 00:01:20,000
+Chats teach how I text:
+SaySo asks which one is me
+
+21
+00:01:20,100 --> 00:01:24,000
 and tests itself on messages
 it hasn't seen.
 
-19
-00:01:10,800 --> 00:01:16,800
-Sounds like me: 78%.
-Generic AI: 41%.
-
-20
-00:01:17,200 --> 00:01:19,500
-Chats are how I text.
-
-21
-00:01:19,600 --> 00:01:25,000
-For emails and essays, I add things I wrote myself:
-photos of old essays, a few sent emails.
-
 22
-00:01:25,100 --> 00:01:30,800
-SaySo takes my voice from them,
-not their structure or content.
+00:01:24,100 --> 00:01:28,000
+Emails and essays are their own kinds:
 
 23
-00:01:31,200 --> 00:01:33,000
-Now an essay.
+00:01:28,100 --> 00:01:34,700
+my sent emails teach how I greet and sign off,
+never what they said.
 
 24
-00:01:33,100 --> 00:01:37,500
-I paste the question and just talk:
-what I built, what broke, what I learned.
+00:01:35,200 --> 00:01:39,000
+Now an essay. I paste the question
+and just talk.
 
 25
-00:01:37,600 --> 00:01:40,500
-Muse Voice Transcribe writes it down.
+00:01:39,100 --> 00:01:42,000
+Muse Voice Transcribe writes it down;
 
 26
-00:01:40,600 --> 00:01:45,500
-SaySo plans it and writes it in my formal voice,
-only from my own facts.
+00:01:42,100 --> 00:01:48,500
+SaySo writes it in my formal voice,
+only from my facts, at the length I asked.
 
 27
-00:01:45,600 --> 00:01:48,500
-No "in today's fast-paced world".
-
-28
-00:01:48,600 --> 00:01:52,000
+00:01:48,600 --> 00:01:53,500
 Then it asks what would make it stronger.
 
+28
+00:01:53,600 --> 00:01:58,700
+Emails too.
+
 29
-00:01:52,100 --> 00:01:55,500
-I answer out loud, and it's revised.
+00:01:59,200 --> 00:02:01,800
+Too long? Thumbs down.
 
 30
-00:01:55,600 --> 00:01:59,800
-Emails work the same way.
+00:02:01,900 --> 00:02:05,600
+It rewrites, and remembers the rule
+for next time.
 
 31
-00:02:00,200 --> 00:02:03,500
-Too long? Thumbs down: "shorter."
+00:02:05,700 --> 00:02:10,700
+Everything it learns is listed,
+and I can forget any of it.
 
 32
-00:02:03,600 --> 00:02:06,500
-It rewrites and remembers the rule.
-
-33
-00:02:06,600 --> 00:02:10,500
-Every message I send with SaySo's keys
-becomes a new example right away,
-
-34
-00:02:10,600 --> 00:02:13,800
-and I can delete any of them.
-
-35
-00:02:14,200 --> 00:02:16,500
+00:02:11,200 --> 00:02:13,500
 Under the hood, four Meta models.
 
-36
-00:02:16,600 --> 00:02:20,500
+33
+00:02:13,600 --> 00:02:17,300
 Muse Spark Open, open weights,
 writes in my style.
 
-37
-00:02:20,600 --> 00:02:23,500
-Muse Spark 1.3 reads screenshots.
+34
+00:02:17,400 --> 00:02:19,300
+Muse Spark 1.3 reads.
 
-38
-00:02:23,600 --> 00:02:25,800
+35
+00:02:19,400 --> 00:02:21,600
 Muse Voice Transcribe listens.
 
-39
-00:02:25,900 --> 00:02:32,800
-And my own LoRA on Muse Glimmer 30B
-is trained and benchmarked, waiting for a GPU.
+36
+00:02:21,700 --> 00:02:26,500
+My own LoRA on Muse Glimmer is trained,
+waiting for a GPU.
 
-40
-00:02:33,200 --> 00:02:35,500
+37
+00:02:26,700 --> 00:02:32,800
+In a blind test, five friends guessed right
+53% of the time.
+
+38
+00:02:32,900 --> 00:02:37,700
+Chance is 50%.
+
+39
+00:02:38,200 --> 00:02:40,700
 Only my own writing is stored.
 
-41
-00:02:35,600 --> 00:02:41,000
+40
+00:02:40,800 --> 00:02:45,800
 Other people's messages, screenshots and voice notes
-are read in memory, then dropped.
+are read, then dropped.
 
-42
-00:02:41,500 --> 00:02:44,500
+41
+00:02:46,300 --> 00:02:49,500
 SaySo.
 Your words, your voice.
 
-43
-00:02:44,600 --> 00:02:47,800
+42
+00:02:49,600 --> 00:02:53,700
 And you always press send.

@@ -9,7 +9,7 @@ Built solo for the **Meta Global AI Developer Hackathon** (indie track). This fi
 personal data, names of contacts, message text or keys. README.md is the judge-facing description; keep this file and
 README consistent, and check claims against `serving/*.py` and `ios/` (the code is the source of truth).
 
-_Last updated: 2026-11-02 (after the feature freeze)._
+_Last updated: 2026-11-03 (after the feature freeze; blind test v3 scored)._
 
 ## Hackathon rules that constrain everything
 
@@ -46,13 +46,16 @@ Open first, then Spark 1.3 twice; then 502.
   List* → *Copy to Clipboard*. The intent never writes the clipboard (iOS drops pasteboard writes from a background
   intent); Shortcuts copies. The older *Reply from Screenshot* action shows the replies in a snippet; both save them
   for the keyboard.
-- **Chat** (`ChatView.swift`): modes **Write / Rewrite / Reply / Email / Essay**, audience + format pickers, 🎙 voice
-  input (`VoiceRecorder.swift` → `/transcribe`). Under each answer: Copy, 👍, 👎, ✏️. 👎 shows **quick reason chips**
+- **Chat** (`ChatView.swift`): menus **Write / Rewrite / Reply** (mode) × **Message / Series / Official / Email /
+  Essay** (kind; Essay only in Write; Reply → Email answers a pasted email via `reply_to`) × **To** (audience, hidden
+  for Email/Essay); the API's `/chat` modes are write, rewrite, reply, email, essay. 🎙 voice input
+  (`VoiceRecorder.swift` → `/transcribe`). A series is a run of bubbles with copy buttons; series alternatives are
+  collapsed stacks; long-press any bubble to copy. Under each answer: Copy, 👍, 👎, ✏️. 👎 shows **quick reason chips**
   (chat: Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; Email/Essay: Shorter, Longer, More
   personal, Simpler words, Less formal) or free text; a lasting preference becomes a rule ("✨ Learned: …"). Email
   returns a subject; Essay returns an outline, word count and up to 3 "make it stronger" questions.
-- **Styles** (`StylesView`, `StyleKinds`, `AddStyleView`, `FormalImportView`, `SourceGuides`, `StyleCardView`): an
-  **Add** menu with **Messages (chats) / Emails / Essays & documents**, each with step-by-step source guides. The tab
+- **Styles** (`StylesView`, `StyleKinds`, `AddStyleView`, `FormalImportView`, `SourceGuides`, `StyleCardView`): the
+  style pill's menu has **New style from chats… / Add emails / Add essays**, each with step-by-step source guides. The tab
   is split by kind with tabs at the top: **Messages** (hero score, audience cards), **Emails** (tone and length,
   **Opens with** / **Signs off with**), **Essays** (structure and voice); empty kinds show "Teach me". Lists edited by
   hand (greetings, sign-offs with a default, "phrases I never use" per kind) live in the style's `custom.json`
@@ -60,7 +63,9 @@ Open first, then Spark 1.3 twice; then 502.
   profile, self-check, **Formal writing** (counts, sentence length, linking words, openings, sign-offs), **Learned from
   you** (keyboard messages, deletable) and **Learned from your corrections** (rules, deletable).
 - **Settings** tab (`SetupView`): language (System / English / Русский, `appLanguage` in the App Group, applied at once),
-  then the keyboard + Full Access + Back Tap checklist, last screenshot replies.
+  then the keyboard + Full Access + Back Tap checklist (**Add the SaySo shortcut** opens the ready shortcut from an
+  iCloud link; "Build it yourself" lists the steps) + connection test, last screenshot replies. First launch shows a
+  six-page tour (`Welcome.swift`).
 - **Languages**: English (source) and Russian in `ios/Shared/Localizable.xcstrings` (app + keyboard + intents),
   `SaySoApp/AppShortcuts.xcstrings`, `SaySoApp/InfoPlist.xcstrings`. Strings kept in variables go through `L()` /
   `Lf()` (`Shared/Localization.swift`).
@@ -149,8 +154,10 @@ the user's moves (agree, refuse, joke, ask_back, …). Style is conditioned on *
   screens every shown text (safe for many people, not trivial, some personal manner), SaySo length-matched to real.
   `build` → `data/blind/<id>/`, `publish` → the `sayso-data` volume, served at `GET /blind/{id}` (no token; answers
   `POST /blind/{id}/answers`, rate-limited), `score --server` → `eval/results/blind_test.json` (v3: human-rate real vs
-  SaySo, Fisher p, Newcombe CI, accuracy). SS1/SS2 codes and v2 keys still score. **Not run yet (TODO); never invent
-  its numbers.**
+  SaySo, Fisher p, Newcombe CI, accuracy). SS1/SS2 codes and v2 keys still score. **Result (Nov 3):** 5 friends, 100
+  answers (10 real + 10 SaySo items), accuracy 0.53 (binomial p 0.62), «Человек» real 0.62 vs SaySo 0.56, difference
+  CI −0.13…+0.24, Fisher p 0.68. Caveats to state with it: small sample, author's runs excluded (`--skip`), shareable
+  single-message Russian items only, some real items from the training split (`--include-train`), no generic control.
 - Any number in README, deck or video must match those files exactly.
 
 ## Demo language
@@ -187,7 +194,7 @@ tests/      test_api_auth.py, test_blind_test.py, test_blind_api.py, test_parser
             test_writer_fakes.py, test_memory.py, test_guards.py, test_series.py, test_length.py,
             test_thread_api.py, fixtures/ (made-up data only)
 ios/        SaySoApp/, SaySoKeyboard/, Shared/ (API.swift, Settings.swift, Generated/), scripts/gen_secrets.sh
-docs/       SUBMISSION.md, VIDEO_SCRIPT.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
+docs/       SUBMISSION.md, VIDEO_SCRIPT.md, X_POST.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
 ```
 
 ## How to run (details in README)
