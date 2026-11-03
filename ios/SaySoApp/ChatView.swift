@@ -7,7 +7,7 @@ enum WriteKind: String, CaseIterable, Identifiable {
     case message, series, official, email, essay
 
     var id: String { rawValue }
-    var label: String { rawValue.capitalized }
+    var label: String { L(rawValue.capitalized) }
     var icon: String {
         switch self {
         case .message: "bubble.left.fill"
@@ -228,15 +228,15 @@ struct ChatView: View {
 
     private var examples: [String] {
         switch (mode, kind) {
-        case (.write, .essay): ["Why do you want to study engineering?", "A challenge you overcame"]
+        case (.write, .essay): ["Why do you want to study engineering?", "A challenge you overcame"].map(L)
         case (.write, .email): ["Ask Professor Kim to move my defense to Thursday",
-                                "Follow up on my internship application"]
-        case (.reply, .email): ["Hi, we'd like to invite you to an interview on Monday at 10. Please confirm."]
-        case (.write, .official): ["Ask my manager for Friday off", "Tell the landlord the heating is broken again"]
-        case (.write, .series): ["Tell the guys about my weekend in the mountains"]
-        case (.write, _): ["Tell Mira I'm 20 min late", "Ask who wants pizza tonight", "Say happy birthday to Dan"]
-        case (.rewrite, _): ["Dear friend, I regret to inform you that I will not be able to attend today."]
-        default: ["Are you coming tonight? We start at 8", "Can you send me the notes from today's lecture?"]
+                                "Follow up on my internship application"].map(L)
+        case (.reply, .email): ["Hi, we'd like to invite you to an interview on Monday at 10. Please confirm."].map(L)
+        case (.write, .official): ["Ask my manager for Friday off", "Tell the landlord the heating is broken again"].map(L)
+        case (.write, .series): ["Tell the guys about my weekend in the mountains"].map(L)
+        case (.write, _): ["Tell Mira I'm 20 min late", "Ask who wants pizza tonight", "Say happy birthday to Dan"].map(L)
+        case (.rewrite, _): ["Dear friend, I regret to inform you that I will not be able to attend today."].map(L)
+        default: ["Are you coming tonight? We start at 8", "Can you send me the notes from today's lecture?"].map(L)
         }
     }
 
@@ -258,13 +258,13 @@ struct ChatView: View {
                 .frame(maxWidth: .infinity)
         case .answer(let id, let answer, let audience, let format):
             AnswerView(answer: answer, format: format, audience: audience, isLast: items.last?.id == id,
-                       onCopy: { UIPasteboard.general.string = answer.text; show("Copied") },
+                       onCopy: { UIPasteboard.general.string = answer.text; show(L("Copied")) },
                        onLike: { Task { await like(answer, audience: audience, format: format) } },
                        onFix: { fixing = true; focused = true },
                        onEdit: { editing = (answer.text, answer.text) },
                        onAudience: { picked in self.audience = picked; Task { await run(again: true) } },
                        onQuestion: { q in answering = q; fixing = true; focused = true },
-                       onCopySubject: { subject in UIPasteboard.general.string = subject; show("Subject copied") })
+                       onCopySubject: { subject in UIPasteboard.general.string = subject; show(L("Subject copied")) })
         }
     }
 
@@ -322,7 +322,7 @@ struct ChatView: View {
                         Picker("To", selection: $audience) {
                             ForEach(Audience.allCases) { a in Text(a.label).tag(a) }
                         }
-                    } label: { MenuPill(title: "To \(audience.label)", icon: "person.2.fill") }
+                    } label: { MenuPill(title: Lf("To %@", audience.label), icon: "person.2.fill") }
                 }
             }
         }
@@ -397,7 +397,7 @@ struct ChatView: View {
                 ForEach(fixReasons, id: \.self) { reason in
                     Pill(title: reason, selected: false) {
                         focused = false
-                        Task { await fix(reason) }
+                        Task { await fix(reason, shown: L(reason)) }
                     }
                 }
             }
@@ -412,16 +412,16 @@ struct ChatView: View {
     }
 
     private var placeholder: String {
-        if recorder.isRecording { return "Listening… \(recorder.seconds)s, tap ■ when done" }
-        if let answering { return "Answer: \(answering)" }
-        if fixing { return kind.isFormal ? "What to change or add?" : "e.g. shorter, warmer, no emoji" }
+        if recorder.isRecording { return Lf("Listening… %llds, tap ■ when done", recorder.seconds) }
+        if let answering { return Lf("Answer: %@", answering) }
+        if fixing { return L(kind.isFormal ? "What to change or add?" : "e.g. shorter, warmer, no emoji") }
         switch (mode, kind) {
-        case (.write, .essay): return "Your notes: facts, stories, thoughts"
-        case (.write, .email): return "What should the email say?"
-        case (.reply, .email): return "The email you got"
-        case (.write, _): return "What should it say?"
-        case (.rewrite, _): return "Your draft"
-        default: return "Their message"
+        case (.write, .essay): return L("Your notes: facts, stories, thoughts")
+        case (.write, .email): return L("What should the email say?")
+        case (.reply, .email): return L("The email you got")
+        case (.write, _): return L("What should it say?")
+        case (.rewrite, _): return L("Your draft")
+        default: return L("Their message")
         }
     }
 
@@ -430,7 +430,7 @@ struct ChatView: View {
     private func voice() async {
         if !recorder.isRecording {
             recorder.onLimit = { Task { await finishVoice() } }
-            if await !recorder.start() { show("Allow the microphone in Settings → SaySo") }
+            if await !recorder.start() { show(L("Allow the microphone in Settings → SaySo")) }
             return
         }
         await finishVoice()
@@ -443,7 +443,7 @@ struct ChatView: View {
         do {
             let said = try await SaySoAPI.transcribe(wav: wav)
             busy = false
-            guard !said.isEmpty else { return show("Didn't catch that, try again") }
+            guard !said.isEmpty else { return show(L("Didn't catch that, try again")) }
             text = said
             await send()
         } catch {
@@ -491,14 +491,14 @@ struct ChatView: View {
                                                  replyTo: answeringEmail ? thread : replyTo)
             history.append(ChatTurn(answer: answer.text))
             items.append(.answer(UUID(), answer, audience, kind.format))
-            if let learned = answer.learned { show("Learned: \(learned)") }
+            if let learned = answer.learned { show(Lf("Learned: %@", learned)) }
         } catch {
             items.append(.note(UUID(), error.localizedDescription))
         }
     }
 
     private func like(_ answer: ChatAnswer, audience: Audience, format: ReplyFormat) async {
-        show("Saved as an example of your style")
+        show(L("Saved as an example of your style"))
         _ = try? await SaySoAPI.feedback(answer: answer.text, liked: true, audience: audience, format: format)
     }
 
@@ -511,7 +511,7 @@ struct ChatView: View {
         if !history.isEmpty { history[history.count - 1] = ChatTurn(answer: edited) }
         UIPasteboard.general.string = edited
         let result = try? await SaySoAPI.feedback(answer: original, edited: edited, audience: audience, format: format)
-        show(result?.learned.map { "Learned: \($0)" } ?? "Saved your version (copied)")
+        show(result?.learned.map { Lf("Learned: %@", $0) } ?? L("Saved your version (copied)"))
     }
 
     private func show(_ message: String) {
@@ -584,7 +584,7 @@ struct QuickAction: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon).font(.caption.weight(.bold))
-                Text(title).font(.footnote.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                Text(L(title)).font(.footnote.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 10).padding(.vertical, 9)
@@ -774,7 +774,7 @@ struct AnswerView: View {
                             }
                         }
                     } label: {
-                        MenuPill(title: "For \(audience.label)?", icon: "sparkles")
+                        MenuPill(title: Lf("For %@?", audience.label), icon: "sparkles")
                     }
                 }
             }

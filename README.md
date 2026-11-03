@@ -30,7 +30,7 @@ and the open-weights **Muse Glimmer 30B** carries the user's own LoRA.
 | Surface | What happens |
 |---|---|
 | **SaySo keyboard** | Its own RU/EN letter keys (Kazakh letters on long-press). The strip on top has an audience chip (the AI suggests one), a format chip, and ✨. Type a draft, tap ✨, get 1–3 versions in your style, tap one to insert. A *series* comes as a stack you send one message at a time. The **panel** has Rewrite / Write / Replies (the latest screenshot replies, or paste their messages). Settings in the app's Keyboard tab: audiences, formats, number of variants, haptics, accent, "Capital letter at sentence start" (off by default, since most people who write like this write lowercase) and "Learn from what I type" (off by default). You always send the message yourself. |
-| **Back Tap → replies** | One iOS Shortcut: *Take Screenshot* → SaySo App Intent → `/reply`. Muse Spark 1.3 reads the chat, guesses the audience and situation, and returns three replies with different intents (for example agree / refuse / joke). You pick one from the list and it's copied. The keyboard's Replies tab shows the same three. |
+| **Back Tap → replies** | One iOS Shortcut: *Take Screenshot* → *Reply with SaySo* (App Intent → `/reply`) → *Choose from List* → *Copy to Clipboard*. Muse Spark 1.3 reads the chat, guesses the audience and situation, and returns three replies with different intents (for example agree / refuse / joke). You pick one from the list and Shortcuts copies it (an intent running in the background can't write the clipboard itself, so the copy is Shortcuts' own step). The keyboard's Replies tab shows the same three. |
 | **Chat in the app** | Five modes, each with an audience and a format. **Write** (an instruction → your message), **Rewrite** (your draft → your wording), **Reply** (paste their messages). **Email**: subject + body from your notes, optionally answering an email you paste. **Essay**: a plan and the text, built only from your own notes, then up to 3 questions whose answers would make it stronger. 🎙 records a voice note and Muse Voice Transcribe turns it into text, so notes, drafts and answers to those questions can be spoken. Under each answer: Copy, 👍, 👎, ✏️. 👎 offers one-tap reasons (Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; for emails and essays: Shorter, Longer, More personal, Simpler words, Less formal) or your own words, typed or spoken. The answer is rewritten, and if the feedback says something lasting, it becomes a rule of the style ("✨ Learned: …"). |
 | **Styles** | An **Add** menu with three kinds of source, each with step-by-step guides per app. **Messages (chats)**: WhatsApp, Telegram, Instagram exports, or screenshots / a screen recording for iMessage and any other app. SaySo asks which participant is you and who each chat is with, then builds a style: profile, examples, a self-check score, and optionally its own LoRA. **Emails** and **Essays & documents**: your own writing as files (.txt, .docx, .pdf, Google Takeout .mbox), photos or screenshots, or pasted text, which becomes your formal voice. |
 | **Learned from you** | The style card lists every message the keyboard learned from and every rule taken from your corrections. Each one can be deleted. Its **Formal writing** section shows what was learned from your emails and essays (sentence length, linking words, how you open and sign off). |
@@ -380,7 +380,8 @@ eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, blind_te
 tests/      test_api_auth.py, test_blind_test.py, test_parsers.py, test_privacy.py, test_styles.py,
             test_writer_fakes.py, fixtures/ (made-up chats and documents only)
 ios/        SaySoApp/ (Styles with the Add menu and source guides, formal writing import, Chat with 🎙, Keyboard
-            settings, Setup, App Intents), SaySoKeyboard/, Shared/, scripts/
+            settings, Settings (language + setup checklist), App Intents), SaySoKeyboard/, Shared/ (incl.
+            Localizable.xcstrings: English + Russian), scripts/
 docs/       SUBMISSION.md, VIDEO_SCRIPT.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
 ```
 
@@ -486,7 +487,8 @@ python3 eval/blind_test.py score SS2-... SS2-...
 
 **iOS** (Xcode, iOS 26): generate the API URL and token for the app from `.env`, then open the project, set your
 signing team, and run the `SaySo` scheme on a device. Add the keyboard in Settings → Keyboards, and create the
-*Take Screenshot → SaySo* shortcut for Back Tap.
+*Take Screenshot → Reply with SaySo → Choose from List → Copy to Clipboard* shortcut for Back Tap (the app's
+Settings tab lists the steps). The app, keyboard and shortcut are in English and Russian (Settings → Language).
 
 ```bash
 sh ios/scripts/gen_secrets.sh

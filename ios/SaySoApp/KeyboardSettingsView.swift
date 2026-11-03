@@ -107,7 +107,7 @@ struct KeyboardSettingsView: View {
             Image(systemName: "list.number")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
-            Text("On the keyboard: " + numbered.joined(separator: " · "))
+            Text(Lf("On the keyboard: %@", numbered.joined(separator: " · ")))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -118,7 +118,7 @@ struct KeyboardSettingsView: View {
 
     private var variantsCard: some View {
         SettingsCard(icon: "sparkles", colors: TileColors.sky, title: "Variants",
-                     subtitle: "✨ gives \(settings.variants) variant\(settings.variants == 1 ? "" : "s") at a time.") {
+                     subtitle: Lf("✨ gives %lld variants at a time.", settings.variants)) {
             HStack(spacing: 10) {
                 ForEach(1...3, id: \.self) { count in
                     variantButton(count)
@@ -150,7 +150,7 @@ struct KeyboardSettingsView: View {
             .contentShape(.rect(cornerRadius: Theme.card))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(count) variant\(count == 1 ? "" : "s")")
+        .accessibilityLabel(Lf("%lld variants", count))
         .accessibilityAddTraits(selected ? .isSelected : [])
         .animation(.snappy(duration: 0.2), value: selected)
     }
@@ -186,7 +186,7 @@ struct KeyboardSettingsView: View {
             .shadow(color: accent.color.opacity(selected ? 0.45 : 0.15), radius: 6, y: 2)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(accent.rawValue.capitalized)
+        .accessibilityLabel(L(accent.rawValue.capitalized))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -298,10 +298,10 @@ struct KeyboardPreview: View {
     /// Sample text for the first format, lowercase unless "Capital letter at sentence start" is on.
     private var bubbles: [String] {
         switch format {
-        case .message: [cased("ok see you at 8 🙂")]
-        case .series: [cased("ok"), cased("see you at 8 🙂")]
-        case .official: ["Noted, I'll be there at 8 pm."]
-        case .email: ["Hi! I'll be there at 8 pm. Best,"]
+        case .message: [cased(L("ok see you at 8 🙂"))]
+        case .series: [cased(L("ok")), cased(L("see you at 8 🙂"))]
+        case .official: [L("Noted, I'll be there at 8 pm.")]
+        case .email: [L("Hi! I'll be there at 8 pm. Best,")]
         }
     }
 
@@ -332,7 +332,7 @@ struct KeyboardPreview: View {
                     .fill(index == 0 ? accent : accent.opacity(0.3))
                     .frame(width: index == 0 ? 14 : 6, height: 6)
             }
-            Text("\(settings.variants) variant\(settings.variants == 1 ? "" : "s")")
+            Text(Lf("%lld variants", settings.variants))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -482,7 +482,7 @@ struct KeyboardPreview: View {
             Image(systemName: icon)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(accent)
-            Text(title)
+            Text(L(title))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.primary)
         }

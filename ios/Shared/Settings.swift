@@ -8,10 +8,10 @@ enum ReplyFormat: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .message: "Message"
-        case .series: "Series"
-        case .official: "Official"
-        case .email: "Email"
+        case .message: L("Message")
+        case .series: L("Series")
+        case .official: L("Official")
+        case .email: L("Email")
         }
     }
     var systemImage: String {

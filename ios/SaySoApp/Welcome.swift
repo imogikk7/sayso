@@ -31,7 +31,7 @@ struct WelcomeOnboarding: View {
                 }
                 TabView(selection: $page) {
                     ForEach(pages.indices, id: \.self) { index in
-                        OnboardingPage(title: pages[index].title, text: pages[index].text) {
+                        OnboardingPage(title: L(pages[index].title), text: L(pages[index].text)) {
                             illustration(index)
                         }
                         .tag(index)
@@ -118,7 +118,7 @@ private struct PageDots: View {
         }
         .animation(.snappy, value: current)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Page \(current + 1) of \(count)")
+        .accessibilityLabel(Lf("Page %lld of %lld", current + 1, count))
     }
 }
 
@@ -184,7 +184,7 @@ private struct VersusIllustration: View {
     }
 
     private func tag(_ title: String, systemImage: String, color: Color) -> some View {
-        Label(title, systemImage: systemImage)
+        Label(L(title), systemImage: systemImage)
             .font(.caption2.weight(.semibold))
             .foregroundStyle(color)
     }
@@ -270,7 +270,7 @@ private struct KeyboardIllustration: View {
     }
 
     private func miniChip(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
+        Label(L(title), systemImage: systemImage)
             .font(.caption2.weight(.semibold))
             .lineLimit(1)
             .padding(.horizontal, 8)
@@ -332,7 +332,7 @@ private struct ScoreIllustration: View {
 
     private func bar(_ title: String, value: Double, fill: AnyShapeStyle) -> some View {
         HStack(spacing: 8) {
-            Text(title)
+            Text(L(title))
                 .font(.caption.weight(.semibold))
                 .frame(width: 70, alignment: .leading)
             GeometryReader { proxy in

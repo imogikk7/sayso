@@ -6,10 +6,13 @@ import UIKit
 final class KeyboardViewController: UIInputViewController {
     private lazy var model = PanelModel(controller: self)
     private var watch: Timer?  // picks up the Back Tap shortcut's replies while the keyboard is up
+    private var host: UIHostingController<KeyboardRoot>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let host = UIHostingController(rootView: PanelView(model: model))
+        AppLanguage.install()
+        let host = UIHostingController(rootView: KeyboardRoot(model: model, language: AppLanguage.current.code))
+        self.host = host
         host.view.backgroundColor = .clear
         host.sizingOptions = []
         addChild(host)
@@ -29,6 +32,9 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // The language picked in the app's Settings (read again on every open, so a change there shows up here).
+        let language = AppLanguage.current.code
+        if host?.rootView.language != language { host?.rootView = KeyboardRoot(model: model, language: language) }
         model.appear(fullAccess: hasFullAccess, needsGlobe: needsInputModeSwitchKey)
         watch?.invalidate()
         watch = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
@@ -44,5 +50,18 @@ final class KeyboardViewController: UIInputViewController {
         super.viewWillDisappear(animated)
         watch?.invalidate()
         model.flush()
+    }
+}
+
+/// The keyboard in the app's language: the SwiftUI locale for `Text("…")`, and a rebuild when the language changes so
+/// strings kept in variables are read again.
+struct KeyboardRoot: View {
+    @ObservedObject var model: PanelModel
+    let language: String
+
+    var body: some View {
+        PanelView(model: model)
+            .environment(\.locale, AppLanguage.current.locale)
+            .id(language)
     }
 }

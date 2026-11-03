@@ -136,7 +136,7 @@ struct SeriesStack: View {
             Button { withAnimation(.snappy) { expanded.toggle() } } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "square.stack")
-                    Text("\(parts.count) messages\(label.map { " · \($0.replacingOccurrences(of: "_", with: " "))" } ?? "")")
+                    Text(Lf("%lld messages", parts.count) + (label.map { " · " + $0.replacingOccurrences(of: "_", with: " ") } ?? ""))
                     Image(systemName: expanded ? "chevron.up" : "chevron.down")
                 }
                 .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
