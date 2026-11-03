@@ -1,0 +1,363 @@
+{
+ "version": 3,
+ "test": "2bb6b2f0",
+ "scored": "2026-11-03",
+ "writer": "unknown",
+ "people": 5,
+ "questions": 20,
+ "items": {
+  "real": 10,
+  "sayso": 10,
+  "generic": 0
+ },
+ "via": {
+  "server": 5,
+  "code": 0
+ },
+ "answers": 100,
+ "real_answers": 50,
+ "sayso_answers": 50,
+ "generic_answers": 0,
+ "real_human": 31,
+ "sayso_human": 28,
+ "generic_human": 0,
+ "real_human_rate": 0.62,
+ "sayso_human_rate": 0.56,
+ "generic_human_rate": null,
+ "real_minus_sayso": 0.06,
+ "real_minus_sayso_ci95": [
+  -0.129,
+  0.243
+ ],
+ "p_real_vs_sayso": 0.6845,
+ "p_real_vs_generic": null,
+ "correct": 53,
+ "accuracy": 0.53,
+ "p_accuracy_vs_half": 0.6173,
+ "item_mean_human_rate": {
+  "real": 0.62,
+  "sayso": 0.56,
+  "generic": null
+ },
+ "sayso_items_judged_human_by_most": 8,
+ "median_chars": {
+  "real": 26.0,
+  "sayso": 22.0,
+  "generic": null
+ },
+ "per_person": [
+  {
+   "answers": 20,
+   "real_answers": 10,
+   "sayso_answers": 10,
+   "generic_answers": 0,
+   "real_human": 10,
+   "sayso_human": 6,
+   "generic_human": 0,
+   "real_human_rate": 1.0,
+   "sayso_human_rate": 0.6,
+   "generic_human_rate": null,
+   "real_minus_sayso": 0.4,
+   "real_minus_sayso_ci95": [
+    0.038,
+    0.687
+   ],
+   "p_real_vs_sayso": 0.0867,
+   "p_real_vs_generic": null,
+   "correct": 14,
+   "accuracy": 0.7,
+   "p_accuracy_vs_half": 0.1153
+  },
+  {
+   "answers": 20,
+   "real_answers": 10,
+   "sayso_answers": 10,
+   "generic_answers": 0,
+   "real_human": 7,
+   "sayso_human": 5,
+   "generic_human": 0,
+   "real_human_rate": 0.7,
+   "sayso_human_rate": 0.5,
+   "generic_human_rate": null,
+   "real_minus_sayso": 0.2,
+   "real_minus_sayso_ci95": [
+    -0.202,
+    0.526
+   ],
+   "p_real_vs_sayso": 0.6499,
+   "p_real_vs_generic": null,
+   "correct": 12,
+   "accuracy": 0.6,
+   "p_accuracy_vs_half": 0.5034
+  },
+  {
+   "answers": 20,
+   "real_answers": 10,
+   "sayso_answers": 10,
+   "generic_answers": 0,
+   "real_human": 5,
+   "sayso_human": 5,
+   "generic_human": 0,
+   "real_human_rate": 0.5,
+   "sayso_human_rate": 0.5,
+   "generic_human_rate": null,
+   "real_minus_sayso": 0.0,
+   "real_minus_sayso_ci95": [
+    -0.373,
+    0.373
+   ],
+   "p_real_vs_sayso": 1.0,
+   "p_real_vs_generic": null,
+   "correct": 10,
+   "accuracy": 0.5,
+   "p_accuracy_vs_half": 1.0
+  },
+  {
+   "answers": 20,
+   "real_answers": 10,
+   "sayso_answers": 10,
+   "generic_answers": 0,
+   "real_human": 4,
+   "sayso_human": 5,
+   "generic_human": 0,
+   "real_human_rate": 0.4,
+   "sayso_human_rate": 0.5,
+   "generic_human_rate": null,
+   "real_minus_sayso": -0.1,
+   "real_minus_sayso_ci95": [
+    -0.451,
+    0.29
+   ],
+   "p_real_vs_sayso": 1.0,
+   "p_real_vs_generic": null,
+   "correct": 9,
+   "accuracy": 0.45,
+   "p_accuracy_vs_half": 0.8238
+  },
+  {
+   "answers": 20,
+   "real_answers": 10,
+   "sayso_answers": 10,
+   "generic_answers": 0,
+   "real_human": 5,
+   "sayso_human": 7,
+   "generic_human": 0,
+   "real_human_rate": 0.5,
+   "sayso_human_rate": 0.7,
+   "generic_human_rate": null,
+   "real_minus_sayso": -0.2,
+   "real_minus_sayso_ci95": [
+    -0.526,
+    0.202
+   ],
+   "p_real_vs_sayso": 0.6499,
+   "p_real_vs_generic": null,
+   "correct": 8,
+   "accuracy": 0.4,
+   "p_accuracy_vs_half": 0.5034
+  }
+ ],
+ "per_question": [
+  {
+   "id": "q1",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "sharing",
+   "chars": 18,
+   "answers": 5,
+   "human": 5,
+   "human_rate": 1.0
+  },
+  {
+   "id": "q2",
+   "source": "real",
+   "audience": "friends",
+   "situation": "sharing",
+   "chars": 29,
+   "answers": 5,
+   "human": 4,
+   "human_rate": 0.8
+  },
+  {
+   "id": "q3",
+   "source": "real",
+   "audience": "friends",
+   "situation": "request",
+   "chars": 38,
+   "answers": 5,
+   "human": 4,
+   "human_rate": 0.8
+  },
+  {
+   "id": "q4",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "reaction",
+   "chars": 23,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  },
+  {
+   "id": "q5",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "reaction",
+   "chars": 22,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  },
+  {
+   "id": "q6",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "logistics",
+   "chars": 26,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  },
+  {
+   "id": "q7",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "other",
+   "chars": 19,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  },
+  {
+   "id": "q8",
+   "source": "real",
+   "audience": "friends",
+   "situation": "joke",
+   "chars": 23,
+   "answers": 5,
+   "human": 2,
+   "human_rate": 0.4
+  },
+  {
+   "id": "q9",
+   "source": "real",
+   "audience": "friends",
+   "situation": "sharing",
+   "chars": 60,
+   "answers": 5,
+   "human": 1,
+   "human_rate": 0.2
+  },
+  {
+   "id": "q10",
+   "source": "real",
+   "audience": "friends",
+   "situation": "other",
+   "chars": 15,
+   "answers": 5,
+   "human": 4,
+   "human_rate": 0.8
+  },
+  {
+   "id": "q11",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "logistics",
+   "chars": 23,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  },
+  {
+   "id": "q12",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "sharing",
+   "chars": 22,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  },
+  {
+   "id": "q13",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "sharing",
+   "chars": 22,
+   "answers": 5,
+   "human": 0,
+   "human_rate": 0.0
+  },
+  {
+   "id": "q14",
+   "source": "real",
+   "audience": "family",
+   "situation": "sharing",
+   "chars": 14,
+   "answers": 5,
+   "human": 2,
+   "human_rate": 0.4
+  },
+  {
+   "id": "q15",
+   "source": "real",
+   "audience": "friends",
+   "situation": "sharing",
+   "chars": 20,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  },
+  {
+   "id": "q16",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "request",
+   "chars": 19,
+   "answers": 5,
+   "human": 4,
+   "human_rate": 0.8
+  },
+  {
+   "id": "q17",
+   "source": "real",
+   "audience": "family",
+   "situation": "request",
+   "chars": 30,
+   "answers": 5,
+   "human": 4,
+   "human_rate": 0.8
+  },
+  {
+   "id": "q18",
+   "source": "real",
+   "audience": "friends",
+   "situation": "request",
+   "chars": 49,
+   "answers": 5,
+   "human": 4,
+   "human_rate": 0.8
+  },
+  {
+   "id": "q19",
+   "source": "sayso",
+   "audience": "friends",
+   "situation": "sadness",
+   "chars": 24,
+   "answers": 5,
+   "human": 1,
+   "human_rate": 0.2
+  },
+  {
+   "id": "q20",
+   "source": "real",
+   "audience": "friends",
+   "situation": "sharing",
+   "chars": 22,
+   "answers": 5,
+   "human": 3,
+   "human_rate": 0.6
+  }
+ ],
+ "note": "human_rate = share of answers «Человек»; pooled p-values treat answers as independent"
+}
