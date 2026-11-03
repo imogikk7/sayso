@@ -175,7 +175,11 @@ class Formats(WriterTestCase):
         for format in writer.FORMATS:
             spark, _ = self.styled("rewrite", format)
             user = spark.users()[0]
-            self.assertIn("Rewrite this draft the way the user would write it to their friends (logistics)", user)
+            if format in {"official", "email"}:  # formal: to the person it is for, never the chat style for friends
+                self.assertIn("Rewrite this draft the way the user would write it to the person it is for", user)
+                self.assertNotIn("from their own chats", spark.calls[0]["system"], format)
+            else:
+                self.assertIn("Rewrite this draft the way the user would write it to their friends (logistics)", user)
             self.assertIn(writer.FORMATS[format], user)
             self.assertEqual("Some of their real messages" in user, format not in writer.FORMAL, format)
             self.assertIn('"variants"', user)

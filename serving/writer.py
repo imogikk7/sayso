@@ -61,11 +61,11 @@ FORMATS = {
               "quick messages; put each message on its own line",
     "official": "as ONE polite message for a work, study or official chat: capitalized sentences, proper punctuation, "
                 "no slang, no swearing, no emoji (this overrides their casual habits), but still the user's own plain "
-                "wording, not bureaucratic",
-    "email": "as a short email: a polite greeting line (\"Здравствуйте, …\" / \"Hello …\"), one or two short "
-             "paragraphs, and a sign-off line (\"С уважением\" / \"Best regards\") without a name, each on its own "
-             "line; capitalized sentences, proper punctuation, no slang or emoji (this overrides their casual habits), "
-             "but the user's own plain wording",
+                "wording, not bureaucratic; a short greeting is fine, a sign-off usually isn't needed (never two)",
+    "email": "as a short email: one greeting line, one or two short paragraphs and one sign-off line without a "
+             "name, each on its own line, all in the language of the message (Russian: \"Здравствуйте, …\" … \"С "
+             "уважением\"; English: \"Hello …\" … \"Best regards\"; never both); capitalized sentences, proper "
+             "punctuation, no slang or emoji (this overrides their casual habits), but the user's own plain wording",
 }
 FORMATS["essay"] = ("as an essay: paragraphs separated by blank lines, first person, the user's own facts only, in their "
                     "formal voice")
@@ -82,12 +82,171 @@ CLICHES = re.compile(
     r"\bdelve|tapestry|in today's (fast-paced )?world|plays a (crucial|vital|pivotal) role|a testament to|"
     r"navigat(e|ing) the complexities|in conclusion,|ever-evolving|unlock (the|my) potential|embark on", re.I)
 
+# ---- official messages and emails: one language, nothing invented --------------------------------------------
+# The bug this guards against (Nov 3, Official, "Спроси у профессора, будет ли керф по физике"): an English greeting
+# and first sentence, then Russian filler ("Будем благодарны за обратную связь…"), "С уважением, Best regards". The
+# formal profile listed the user's English and Russian greetings and sign-offs side by side, English email paragraphs
+# were the only examples, and nothing said which language to write in or that nothing may be added.
+CYRILLIC = re.compile("[а-яёәғқңөұүһі]", re.I)
+LATIN = re.compile("[a-z]", re.I)
+LANGUAGES = {"ru": "Russian", "en": "English", "kk": "Kazakh"}
+SCRIPTS = {"ru": "cyr", "en": "lat", "kk": "cyr"}
+ASKED_LANGUAGE = [  # the request explicitly names the language to write in
+    ("en", re.compile(r"на английском|по-английски|на англ\b|\bin english\b|\binto english\b", re.I)),
+    ("ru", re.compile(r"на русском|по-русски|\bin russian\b|\binto russian\b", re.I)),
+    ("kk", re.compile(r"на казахском|по-казахски|қазақша|\bin kazakh\b", re.I)),
+    ("other", re.compile(r"на (немецком|французском|испанском|китайском|корейском|японском|турецком|итальянском)|"
+                         r"\bin (german|french|spanish|chinese|korean|japanese|turkish|italian)\b", re.I)),
+]
+SIGNOFF_WORDS = (r"с уважением|с наилучшими пожеланиями|всего доброго|всего хорошего|құрметпен|best regards|"
+                 r"kind regards|warm regards|best wishes|yours sincerely|yours faithfully|yours truly|sincerely|regards")
+# A sign-off starts a line or a sentence and ends the text, a line, or runs into another sign-off ("С уважением, Best
+# regards"); "I sincerely hope" or "with regards to" in the body are not sign-offs.
+SIGNOFF = re.compile(rf"(?:^|(?<=[\n.!?,;]))[ \t]*(?:{SIGNOFF_WORDS})[ \t]*[,.!]?"
+                     rf"(?=[ \t]*(?:$|\n|(?:{SIGNOFF_WORDS})))", re.I)
+# Things the model adds on its own in formal writing: offers, invented teams, thanks for feedback nobody asked for.
+FILLER = re.compile(
+    r"если у вас (возникнут|появятся|будут|есть) (какие-либо |какие-то |дополнительные )?вопрос|обратн\w+ связ|"
+    r"с радостью (её |ее |их )?предостав|готов\w* (предоставить|ответить)|дополнительн\w+ (информаци|сведени)|"
+    r"будем (рады|благодарны)|не стесняйтесь|уважаем\w+ команд|"
+    r"if you have any (further |other |more )?questions|feel free to|(happy|glad) to provide|"
+    r"(additional|further|more) (information|details)|do not hesitate|don't hesitate|dear [\w ]{0,20}team", re.I)
+WE = re.compile(r"\b(мы|нас|нам|нами|наш|наша|наше|наши|нашего|нашей|нашему|нашим|наших|we|us|our|ours|we're|we'd|"
+                r"we'll|we've)\b", re.I)
+OUR_TIME = re.compile(r"в наше время|в наши дни|в нашем (мире|обществе)", re.I)  # idioms, not "we" (CLICHES fixes them)
+# Who a formal message is for, when the text names them: this wins over the audience chip (often still "friends").
+ADDRESSEE = re.compile(
+    r"\b(профессор\w*|преподавател\w*|препод\w*|учител\w*|учительниц\w*|декан\w*|ректор\w*|куратор\w*|начальник\w*|"
+    r"руководител\w*|директор\w*|менеджер\w*|работодател\w*|эйчар\w*|HR|professor|teacher|lecturer|instructor|dean|"
+    r"boss|manager|supervisor|tutor|recruiter|employer)(?:e?s)?\b", re.I)
+FORMAL_AUDIENCE = "elder_informal"  # the closest of the trained audiences to a professor or a boss
+
+FORMAL_RULES = """Use only what the user gave you. Never invent facts, details, reasons, dates, names, numbers,
+places, offers ("happy to provide more information", "если возникнут вопросы"), thanks for feedback, questions or
+wishes that are not in the input. Never "we", "our team" or a company: the user writes as "I" (unless the input itself
+says "we"). Address the person the way the input names them (a professor → "профессор" / "Professor"); never invent a
+name, a title or a team, and never write placeholders like [Name]. Keep the user's own words for things exactly as they
+wrote them (a course, an exam, an abbreviation or slang like «керф»): do not translate, expand, explain or guess what
+they mean. A short or vague request gives a short, plain message (one to three sentences), not padding.
+At most one greeting and at most one sign-off, both in the language of the message, never one in each language."""
+
+FORMAL_SYSTEM = """You write official messages and emails for one specific user, the way they would write them
+themselves: plain, direct and polite, in their own formal voice (below), never like a template or an AI.
+{language}
+
+""" + FORMAL_RULES
+
+
+def script_of(text):
+    """"cyr" or "lat", whichever the letters of `text` mostly are; None without letters."""
+    c, l = len(CYRILLIC.findall(text or "")), len(LATIN.findall(text or ""))
+    return None if not c + l else "cyr" if c >= l else "lat"
+
+
+def language(text):
+    """The language to write a formal text in: the one the request names ("на английском"), else the one it is
+    written in ("ru", "en"; "kk" when Kazakh letters are a real share of it); "other" when it asks for a language we
+    can't check; None without letters."""
+    text = clean(text or "")
+    for lang, pattern in ASKED_LANGUAGE:
+        if pattern.search(text):
+            return lang
+    script = script_of(text)
+    if script == "lat":
+        return "en"
+    if script == "cyr":
+        kazakh = len(KAZAKH.findall(text))
+        return "kk" if kazakh >= 3 and kazakh >= 0.04 * len(CYRILLIC.findall(text)) else "ru"
+    return None
+
+
+def language_rule(lang):
+    if lang in LANGUAGES:
+        name = LANGUAGES[lang]
+        return (f"Language: {name}, the language of the user's request. Every sentence, the greeting, the sign-off and "
+                f"any subject line are in {name}; not one sentence or phrase in another language (the user's own terms "
+                f"stay exactly as they wrote them). The user's formal writing below may be in another language: take "
+                f"only their manner from it, never its language, greetings or sign-offs.")
+    if lang == "other":
+        return "Language: the one the user asks for in the request; the whole text in that one language."
+    return "Language: the language of the user's request; the whole text in that one language."
+
+
+def addressee(text):
+    """The person a formal message is for, as the text names them ("профессора"), or None."""
+    found = ADDRESSEE.search(clean(text or ""))
+    return found.group(0) if found else None
+
+
+def signoffs(text):
+    return list(SIGNOFF.finditer(text))
+
+
+def dedupe_signoffs(text, lang=None):
+    """One sign-off at most: "…предоставим. С уважением, Best regards" → "…предоставим. С уважением". Keeps the first
+    one in the message's language (the first one if none is), drops the others."""
+    found = signoffs(text)
+    if len(found) < 2:
+        return text
+    script = SCRIPTS.get(lang) or script_of(SIGNOFF.sub("", text))
+    keep = next((m for m in found if script_of(m.group(0)) == script), found[0])
+    out, last = [], 0
+    for m in found:
+        if m is not keep:
+            out.append(text[last:m.start()])
+            last = m.end()
+    out.append(text[last:])
+    lines = [line.rstrip() for line in "".join(out).splitlines()]
+    joined = "\n".join(line for i, line in enumerate(lines) if line or (i and lines[i - 1])).strip()
+    return joined.rstrip(",;").rstrip()  # "…С уважением," left at the end
+
+
+def foreign_sentences(text, lang, request=""):
+    """Sentences (or lines) mostly in the other script than `lang`'s; the user's own words from the request
+    ("керф", "Physics") don't count, and very short ones ("OK", a name) aren't judged."""
+    script = SCRIPTS.get(lang)
+    if not script:
+        return []
+    known = {w.casefold() for w in re.findall(r"[^\W\d_]+", clean(request))}
+    found = []
+    for sentence in re.split(r"(?<=[.!?…])\s+|\n+", text):
+        tokens = [w for w in re.findall(r"[^\W\d_]+", sentence) if w.casefold() not in known and w != "Name"]
+        joined = "".join(tokens)
+        c, l = len(CYRILLIC.findall(joined)), len(LATIN.findall(joined))
+        if c + l < 6:
+            continue
+        if (l if script == "cyr" else c) / (c + l) > 0.5:
+            found.append(sentence.strip())
+    return found
+
+
+def formal_problems(text, lang, request=""):
+    """What's wrong with an official message or email: mixed languages, two sign-offs, filler or "we" the user
+    didn't write. Empty when it's fine."""
+    problems = []
+    foreign = foreign_sentences(text, lang, request)
+    if foreign:
+        problems.append(f"it mixes languages: write everything in {LANGUAGES.get(lang, 'one language')}, "
+                        f"including «{foreign[0][:80]}»")
+    if len(signoffs(text)) > 1:
+        problems.append("it has more than one sign-off: keep one")
+    filler = FILLER.search(text)
+    if filler and not FILLER.search(request):
+        problems.append(f"it adds what the user didn't say («{filler.group(0)}»): remove it")
+    we = WE.search(OUR_TIME.sub("", text))
+    if we and not WE.search(request):
+        problems.append(f"it says «{we.group(0)}»: the user writes as I")
+    return problems
+
+
 EMAIL_TASK = """Write an email from the user{reply}.
 What the user wants to say (their notes, maybe dictated): {notes}
-Write it in their formal voice (below): greeting and sign-off the way they do it, plain and direct, every fact from the
-notes, nothing invented. Same language as the notes{reply_lang}.
+Write it in their formal voice (below): greeting and sign-off the way they do it (one of each, in the email's
+language), plain and direct, every fact from the notes, nothing invented. Same language as the notes{reply_lang}.
 Return JSON only: {{"subject": "<short subject line>", "text": "<the email: greeting, paragraphs, sign-off, separated
 by blank lines>"}}."""
+FORMAL_FIX = """\n\nYour last answer had problems: {problems}. Write it again following every rule, with only what the
+user gave you."""
 
 ESSAY_TASK = """The user needs an essay.
 Question or topic: {question}
@@ -131,6 +290,10 @@ def echoes(message, instruction):
 VARIANT_COUNT = 4
 VARIANTS = ("\nAlso put 4 other ways this user could write the same message (same meaning and facts, different wording, "
             "length or punctuation, all within their habits) in \"variants\": [\"...\", ...] next to \"text\".")  # the user's casual examples would pull these back to lowercase chat
+FORMAL_VARIANT_COUNT = 3
+FORMAL_RETURN = ("\nAlso put 3 other ways the user could write the same message in \"variants\": [\"...\", ...], "
+                 "different wording or length, but the same language, the same facts and the same rules (nothing "
+                 "added).\nReturn JSON only: {\"text\": \"<the message>\", \"variants\": [\"...\", ...]}.")
 
 # The three options for /reply: the user's most likely move first, then contrasting ones that fit the situation.
 CONTRASTS = {
@@ -396,9 +559,11 @@ class Context:
                         scores[i] += wq * w
         return [self.pool[i][1] for i, _ in sorted(scores.items(), key=lambda kv: -kv[1])[:k]]
 
-    def formal_block(self, query=None, k=3, kind=None):
+    def formal_block(self, query=None, k=3, kind=None, lang=None):
         """The user's formal voice for official messages, emails and essays: their formal profile and the paragraphs of
-        their own writing most like `query`, of the same kind first; empty if they haven't added any."""
+        their own writing most like `query`, of the same kind first; empty if they haven't added any. With `lang`,
+        only the greetings, sign-offs and paragraphs in that language's script (all paragraphs if none are), so an
+        English email doesn't pull a Russian message into English."""
         if not self.documents:
             return ""
         import documents as parse
@@ -406,13 +571,19 @@ class Context:
         def score(text):
             g = grams(text)
             return sum(min(n, g[gram]) for gram, n in q.items()) / (sum(g.values()) ** 0.5 or 1)
-        texts = sorted(self.documents, key=lambda r: (r.get("kind", "essay") != kind, -score(r["text"]) if q else 0))
+        docs, profile = self.documents, self.formal
+        script = SCRIPTS.get(lang)
+        if script:
+            docs = [r for r in docs if script_of(r["text"]) == script] or docs
+            profile = {**profile, **{key: [e for e in profile.get(key) or [] if script_of(e) in (script, None)]
+                                     for key in ("openings", "closings")}}
+        texts = sorted(docs, key=lambda r: (r.get("kind", "essay") != kind, -score(r["text"]) if q else 0))
         picked = [r["text"] for r in texts[:k]]
         rules = {"essay": "copy ONLY their voice: word choice, sentence length, linking words, how direct they are. "
                           "Never copy its structure, headings, format or topic: follow the structure the task asks for",
                  "email": "copy ONLY their manner: how they greet, ask and sign off, how formal and direct they are. "
                           "Never copy what those emails say"}[kind if kind in ("essay", "email") else "email"]
-        return (f"\nThe user's own formal writing, to {rules}:\n" + parse.profile_text(self.formal) + "\n"
+        return (f"\nThe user's own formal writing, to {rules}:\n" + parse.profile_text(profile) + "\n"
                 + "\n".join(f"«{' '.join(t.split()[:120])}»" for t in picked))
 
     @property
@@ -595,7 +766,9 @@ class Writer:
         `query` (random without one); none for official messages and emails. Picking by similarity scored the same as
         random examples on Nov 1 (eval/style_gain.py), but costs nothing and keeps the topic close."""
         if format in FORMAL:
-            return ctx.formal_block(query, kind="essay" if format == "essay" else "email")
+            if format == "essay":
+                return ctx.formal_block(query, kind="essay")
+            return ctx.formal_block(query, kind="email", lang=language(query or ""))
         first = ctx.approved.get(audience, [])[-2:] + ctx.recent.get(audience, [])[-2:]
         if self.retrieval == "local" and (query or "").strip():
             nearest = ctx.nearest(audience, clean(query)[:500])
@@ -603,7 +776,52 @@ class Writer:
                 return ctx.examples_for(audience, found=list(dict.fromkeys(first + nearest))[:EXAMPLES])
         return ctx.examples_for(audience, situation)
 
+    async def formal(self, ctx, task, text, audience, format):
+        """An official message or an email from rewrite/compose: the formal voice in the request's language, nothing
+        invented, the person the text names wins over the audience chip. Every candidate (the answer and its variants)
+        has its sign-offs deduplicated and is dropped if it still mixes languages or adds filler; if none is left,
+        Muse Spark 1.3 writes it once more with the problems named, and the least bad one is used at worst."""
+        lang = language(text)
+        person = addressee(text)
+        ask = {"rewrite": "Rewrite this draft the way the user would write it",
+               "compose": COMPOSE}[task]
+        to = (f" to the {person} the input names (politely formal to that person, whoever the user picked in the app)"
+              if person else " to the person it is for")
+        prompt = (f"{ask}{to}.{self.format_line(format)}\n{language_rule(lang)}{FORMAL_RETURN}\n\n{clean(text)}")
+        system = self.formal_system(ctx, text, lang=lang)
+        limit = FORMAT_WORDS.get(format, 60) * 2
+
+        def candidates_of(label):
+            variants = label.get("variants") if isinstance(label.get("variants"), list) else []
+            written = [label["text"]] + [v for v in variants if isinstance(v, str)][:FORMAL_VARIANT_COUNT]
+            if task == "compose":
+                written = [w for w in written if not echoes(w, text)] or written
+            shaped = (shape(dedupe_signoffs(clip(clean(v), limit), lang), format)[0] for v in written if clean(v))
+            return list(dict.fromkeys(c for c in shaped if c))
+
+        label = await self.spark(system, prompt, "text", writes=True)
+        candidates = candidates_of(label)
+        good = [c for c in candidates if not formal_problems(c, lang, text)]
+        if not good:
+            problems = formal_problems(candidates[0], lang, text) if candidates else ["it was empty"]
+            try:  # Muse Spark 1.3 (writes=False) follows the language rule more strictly than Spark Open
+                retry = candidates_of(await self.spark(system, prompt + FORMAL_FIX.format(problems="; ".join(problems)),
+                                                       "text"))
+            except Unavailable:
+                retry = []
+            good = [c for c in retry if not formal_problems(c, lang, text)]
+            candidates = candidates + retry
+            if not good:
+                good = sorted(candidates, key=lambda c: len(formal_problems(c, lang, text)))[:1]
+        if not good:
+            raise Unavailable(502, "Muse Spark gave an empty answer, try again")
+        out, parts = shape(good[0], format)
+        return {"text": out, "parts": parts, "candidates": [out] + [c for c in good if c != out], "styled": False,
+                "audiences": audiences_of({"audiences": [audience]}, FORMAL_AUDIENCE if person else audience)}
+
     async def styled(self, ctx, task, field, text, audience, situation, format="message"):
+        if format in {"official", "email"}:  # never the LoRA (chats only) and never the casual chat style
+            return await self.formal(ctx, task, text, audience, format)
         if not await self.uses_model(ctx, format):  # no LoRA for this, or it's asleep: Muse Spark writes in the style
             ask = {"rewrite": "Rewrite this draft the way the user would write it",
                    "compose": COMPOSE}[task]
@@ -705,6 +923,8 @@ class Writer:
                 draft = clip(clean(option["draft"]), FORMAT_WORDS.get(format, 40))
                 if format not in {"series", "email"}:
                     draft = one_message(draft)
+                if format in {"official", "email"}:
+                    draft = dedupe_signoffs(draft, language(messages or ""))
                 if draft and option["act"] not in {o["act"] for o in options}:
                     options.append({"act": option["act"], "draft": draft})
         chosen = audience or known or guessed
@@ -728,15 +948,19 @@ class Writer:
                     "reply": "Write the user's reply to these messages",
                     "email": "Write the user's email from these notes",
                     "essay": f"Write the user's essay ({question or 'from these notes'}) from these notes"}[mode]
+            lang = language(text) if format in {"official", "email"} else None
             voice = ctx.style_text if format not in FORMAL else (
-                (ctx.formal_block(text, kind="essay" if format == "essay" else "email") or "Write plainly and directly, like a real person, not like an AI.") + ctx.rules() + FORMAL_NOTE)
+                (ctx.formal_block(text, kind="essay" if format == "essay" else "email", lang=lang) or "Write plainly and directly, like a real person, not like an AI.") + ctx.rules() + FORMAL_NOTE
+                + ("" if format == "essay" else f"\n{language_rule(lang)}\n{FORMAL_RULES}"))
             label = await self.spark(
                 REVISE_SYSTEM.format(style=voice),
                 f"{task}, to their {audience}.{self.format_line(format)}{await self.examples(ctx, format, audience, query=text)}\n\n"
                 f"Input:\n{clean(text)}\n\nYour last answer:\n{clean(history[-1].get('answer', ''))}\n\n"
                 f"The user's feedback so far:\n{clean(feedback)}", "text", writes=mode not in {"essay"},
                 max_tokens=6000 if mode == "essay" else 3000, timeout=90 if mode == "essay" else 30)
-            out, parts = shape(clip(clean(label["text"]), FORMAT_WORDS.get(format, 40) * 2), format)
+            revised = clip(clean(label["text"]), FORMAT_WORDS.get(format, 40) * 2)
+            out, parts = shape(dedupe_signoffs(revised, lang) if lang or format in {"official", "email"} else revised,
+                               format)
             rule = clean(str(label.get("rule") or ""))
             if rule and format in FORMAL:  # scoped, so a rule learned on an essay doesn't change chat messages
                 rule = f"In {'essays' if format == 'essay' else 'emails and official messages'}: {rule}"
@@ -762,26 +986,48 @@ class Writer:
                 "alternatives": [c for c in result["candidates"] if c != result["text"]][:2],
                 "audience": audience, "audiences": result["audiences"], "learned": None}
 
-    def formal_system(self, ctx, query, kind="email"):
-        return (STYLE_SYSTEM.split("Return JSON only")[0].format(style="")
-                + "\n" + (ctx.formal_block(query, kind=kind) or "The user hasn't added formal writing yet: write plainly and "
-                                                     "directly, like a real person, not like an AI.") + ctx.rules() + FORMAL_NOTE)
+    def formal_system(self, ctx, query, kind="email", lang=None):
+        """The system prompt for official messages and emails (the language rule, nothing invented, the user's formal
+        voice) or, with kind="essay", for essays (the shared style prompt without the chat style)."""
+        voice = (ctx.formal_block(query, kind=kind, lang=lang if kind != "essay" else None)
+                 or "The user hasn't added formal writing yet: write plainly and directly, like a real person, not "
+                    "like an AI.")
+        if kind == "essay":
+            return STYLE_SYSTEM.split("Return JSON only")[0].format(style="") + "\n" + voice + ctx.rules() + FORMAL_NOTE
+        return FORMAL_SYSTEM.format(language=language_rule(lang)) + "\n" + voice + ctx.rules()
 
     async def email(self, ctx, notes, reply_to=""):
+        """Subject and body in the language of the user's notes (of the email being answered when the notes have no
+        words), only what the notes say; one sign-off. A mixed-language or padded email is written once more by Muse
+        Spark 1.3 with the problems named."""
         reply = f", answering this email:\n{clean(reply_to)[:3000]}\n" if reply_to.strip() else ""
-        label = await self.spark(self.formal_system(ctx, f"{reply_to} {notes}"),
-                                 EMAIL_TASK.format(reply=reply, notes=clean(notes),
-                                                   reply_lang=" (or of the email being answered)" if reply else ""),
-                                 "text", writes=True, timeout=60)
-        text, parts = shape(clip(clean(label["text"]), FORMAT_WORDS["email"] * 2), "email")
-        subject = clean(str(label.get("subject") or "")) or None  # the fix pass below returns only the text
-        if CLICHES.search(text):
-            fixed = await self.spark(self.formal_system(ctx, notes), ESSAY_FIX.format(
+        lang = language(notes) or language(reply_to)
+        system = self.formal_system(ctx, f"{reply_to} {notes}", lang=lang)
+        task = EMAIL_TASK.format(reply=reply, notes=clean(notes),
+                                 reply_lang=" (or of the email being answered)" if reply else "")
+        request = f"{notes}\n{reply_to}"
+
+        def shaped(label):
+            text = shape(dedupe_signoffs(clip(clean(label["text"]), FORMAT_WORDS["email"] * 2), lang), "email")[0]
+            subject = clean(str(label.get("subject") or "")) or None
+            return text, subject, formal_problems(f"{subject or ''}\n{text}", lang, request)
+
+        text, subject, problems = shaped(await self.spark(system, task, "text", writes=True, timeout=60))
+        if problems:
+            try:
+                again = shaped(await self.spark(system, task + FORMAL_FIX.format(problems="; ".join(problems)), "text",
+                                                timeout=60))
+                if len(again[2]) < len(problems):
+                    text, subject, problems = again[0], again[1] or subject, again[2]
+            except Unavailable:
+                pass
+        if CLICHES.search(text):  # the fix pass returns only the text: the subject stays
+            fixed = await self.spark(system, ESSAY_FIX.format(
                 problems="remove phrases that sound AI-written: " + ", ".join(sorted({m.group(0) for m in CLICHES.finditer(text)})),
                 text=text), "text", timeout=60)
-            text, parts = shape(clean(fixed["text"]), "email")
-        return {"text": text, "parts": parts, "subject": subject,
-                "alternatives": [], "audience": "elder_informal", "audiences": ["elder_informal"], "learned": None}
+            text = shape(dedupe_signoffs(clean(fixed["text"]), lang), "email")[0]
+        return {"text": text, "parts": [text], "subject": subject,
+                "alternatives": [], "audience": FORMAL_AUDIENCE, "audiences": [FORMAL_AUDIENCE], "learned": None}
 
     async def essay(self, ctx, question, notes, words=250):
         """Plan from the user's own notes, write in their formal voice, then check length and AI clichés (one fix)."""

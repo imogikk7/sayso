@@ -63,7 +63,10 @@ Spark 1.3, pasted text) → paragraphs + a formal profile. Quoted earlier messag
 sign-off are cut; section labels of old assignments ("Thesis:", "Argument 2:") are cut; links, emails, phones, card
 numbers removed; when Spark reads a photo or screenshot, names of other people and companies become `[Name]`. Two kinds
 with different rules in the prompt (`Context.formal_block`): **essays teach voice only** (never structure or topic),
-**emails teach manner only** (greeting, sign-off, directness; never content).
+**emails teach manner only** (greeting, sign-off, directness; never content). Official messages and emails
+(`Writer.formal`, `Writer.email`): the request's language only (`language()`), only greetings/sign-offs/paragraphs in
+that script, nothing invented, the named addressee (professor, boss…) wins over the chip (`elder_informal` first in
+`audiences`); every variant goes through `dedupe_signoffs` and `formal_problems` (mixed script, filler, "we").
 
 ### Learning from use
 - `/learn` (keyboard, opt-in): messages typed **and** sent with SaySo's letter keys; pasted text (more than one

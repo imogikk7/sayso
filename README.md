@@ -115,7 +115,12 @@ flowchart TD
    Spark 1.3 answers instead, and if Spark 1.3 fails, Spark Open does. A compose answer that just repeats the
    instruction ("tell her…") is rewritten by Spark 1.3.
 3. **Formal formats** (`official`, `email`, `essay`) get the user's formal voice instead of their chat messages, so
-   they don't drift back into lowercase chat (see below).
+   they don't drift back into lowercase chat (see below). Official messages and emails are written in the language
+   of the request (Russian in, Russian out, unless it asks for another), with only the greetings, sign-offs and
+   paragraphs of the user's formal writing in that language, nothing the request doesn't say (no "we", no offers,
+   no invented details), and the person the text names ("ask the professor…") wins over the audience chip. Every
+   variant is checked: a second sign-off is removed, and one that still mixes languages or adds filler is dropped;
+   if none is left, Muse Spark 1.3 writes it once more with the problems named.
 4. **When the GPU is on** (`SAYSO_GPU=modal` or `baseten`), the style's LoRA on Muse Glimmer 30B rewrites each chat
    draft in the user's voice (rewriting is its strongest task, see the benchmark), samples 5 candidates, and a
    reranker (`pipeline/style_stats.py`) draws one of the user's real messages from the same audience × situation and
