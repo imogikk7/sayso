@@ -317,14 +317,21 @@ from a summary 2.4 s, from pasted messages 6 s, from a screenshot 9.7 s, `/compo
 
 ### 5. Blind test
 
-Protocol (v2, `eval/blind_test.py`): each question shows who the other person is (partner, friend, family, an elder)
-and a neutral retelling of what they wrote (Muse Spark's summary translated to Russian, never their words), then three
-replies in random order: the user's **real** reply, **SaySo's** (`/chat` in Reply mode, in the user's style) and a
-**generic** Muse Spark 1.3 answer with no style. Pairs where the real reply doesn't fit the situation or contains names
-are skipped (Muse Spark checks each one), as are questions with two identical replies. Friends pick the reply they
-think is the user's and send back a code; `score` reports how often they found the real one (chance = 1/3, exact
-binomial p), how often SaySo fooled them vs the generic AI, and splits by audience, writing aggregate numbers only to
-`eval/results/blind_test.json`.
+Protocol (v3, `eval/blind_test.py`): 20 questions, each one message and its situation in Russian («Друг
+спрашивает, пойдёшь ли ты вечером в кино», written by Muse Spark from the neutral summary, never the other person's
+words), and one question: «Это написал(а) [the user] или ИИ?» with two buttons, «Человек» / «ИИ». About half the
+messages are the user's **real** replies (friends and family only), half **SaySo**'s (`/chat` in Reply mode, in the
+user's style) to other situations, never both for the same one; `--generic N` adds plain Muse Spark 1.3 answers as a
+control. Muse Spark 1.3 screens every shown message, real and generated alike, and keeps it only if it is safe to show
+to many people (no names, places, phones or addresses; nothing intimate, about a partner, sexual or about health; no
+heavy swearing or private details), friendly, not trivial («ок», «ахах») and has some personal manner; failing items
+are dropped and more are drawn. SaySo items are length-matched to the real ones (the same share in each length
+third). The test is served by the API at an unguessable link (`GET /blind/{test_id}`, no token, the page holds no
+key) and works in any phone browser, Telegram's included; answers are posted back (`POST /blind/{test_id}/answers`,
+rate-limited and size-capped), with an `SS3-…` code as the fallback. `score` reports the share answered «Человек»
+for real messages vs for SaySo's (close = people can't tell them apart), with a 95% CI of the difference (Newcombe),
+Fisher's exact p and accuracy vs 50% (exact binomial), per person and overall, and writes aggregate numbers only to
+`eval/results/blind_test.json` (version 3). v2 (three replies, pick the real one; `SS2-` codes) still scores.
 
 > **TODO:** results. Not run yet; no numbers until `eval/results/blind_test.json` exists.
 
@@ -393,6 +400,7 @@ serving/    modal_app.py    Modal app: vLLM (Glimmer + LoRAs, H100) and the Fast
             documents.py    the user's own emails and essays → paragraphs + formal profile (txt/md/docx/pdf/mbox, photos)
             styles.py       per-style storage: meta, own turns, profile, pairs, formal writing, rules, feedback, learned
             build_style.py  uploads → parse → which one is you → Spark tagging → profile → pairs → self-check → LoRA
+            blind.py        blind test v3 on the API: the public page and answer post, the token-gated responses
             baseten/        the same vLLM server as a Truss (SAYSO_GPU=baseten)
             fireworks.py    Fireworks client (blocked: uploads disabled)
 pipeline/   parse_telegram.py, parse_whatsapp.py, parse_instagram.py, sources.py   parsers → one turn format
@@ -402,7 +410,7 @@ pipeline/   parse_telegram.py, parse_whatsapp.py, parse_instagram.py, sources.py
 training/   modal_train.py (Unsloth QLoRA), build_prefs.py + modal_prefs.py (SimPO, v3), fireworks_sft.py
 eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, blind_test.py + blind_template.html,
             results/ (aggregated metrics only)
-tests/      test_api_auth.py, test_blind_test.py, test_parsers.py, test_privacy.py, test_styles.py,
+tests/      test_api_auth.py, test_blind_test.py, test_blind_api.py, test_parsers.py, test_privacy.py, test_styles.py,
             test_writer_fakes.py, fixtures/ (made-up chats and documents only)
 ios/        SaySoApp/ (Styles with the Add menu and source guides, formal writing import, Chat with 🎙, Keyboard
             settings, Settings (language + setup checklist), App Intents), SaySoKeyboard/, Shared/ (incl.
@@ -437,6 +445,9 @@ warming up (only when `SAYSO_GPU` is on).
 | `POST /styles/{id}/documents` | multipart `kind` (`email` \| `essay`), `files` (≤ 40, ≤ 25 MB in all: .txt .md .docx .pdf .mbox, photos/screenshots .jpg .png .heic .webp) and/or `text` | `{documents, counts, paragraphs, profile}` (the formal voice) |
 | `GET /latest` | | the last `/reply` for the keyboard: `{audience, situation, replies, at}` or `{}` |
 | `GET /warmup` | | `{ready, gpu}`; wakes the GPU when `SAYSO_GPU` is on |
+| `GET /blind/{test_id}` | **no token** (the id is 24 random characters) | the blind-test page (`text/html`, `no-store`, `noindex`) or 404 |
+| `POST /blind/{test_id}/answers` | **no token**; body (any content type) `{sid, name?, answers: ["H" \| "A" × questions]}`, ≤ 8 KB | `{ok}`; 422 junk, 413 too large, 429 rate limit (8 per 10 min per address, 120 per hour per test), 507 full (400 responses); stored without IP or headers |
+| `GET /blind/{test_id}/responses` | | `{responses: [{sid, name, answers, at}]}` |
 
 - **`previous`** (`/rewrite`, `/compose`, `/reply`, `/chat`, including email and essay): up to 3 `{request, answer}`,
   oldest first, the earlier turns of this chat thread. A request that refines the last answer ("на русском", "in
@@ -511,20 +522,32 @@ python3 -m unittest discover -s tests
 (the first writes `eval/results/style_gain.json` with Muse Spark 1.3, the second `style_gain_open.json` with Muse Spark
 Open.)
 
-**Blind test** (needs `SAYSO_API_URL`, `SAYSO_API_TOKEN`, `META_API_KEY` and the private pairs; the page and the answer
-key go to the gitignored `data/blind/`):
+**Blind test** (needs `SAYSO_API_URL`, `SAYSO_API_TOKEN`, `META_API_KEY` and the private pairs; the page, the public
+questions and the answer key go to the gitignored `data/blind/<test_id>/`):
 
 ```bash
-python3 eval/blind_test.py build --n 15
+python3 eval/blind_test.py build --n 20 --author <name>
 ```
 
-Send `data/blind/test.html` to friends; each one sends back a code (`SS2-…`). Then:
+Deploy the API (it serves the page), then upload the page to the `sayso-data` volume; `publish` prints the link to
+send:
 
 ```bash
-python3 eval/blind_test.py score SS2-... SS2-...
+SAYSO_GPU=off .venv/bin/modal deploy serving/modal_app.py
 ```
 
-(or `--codes-file codes.txt`, one code per line; `build --no-warmup` skips waking the GPU.) `score` writes
+```bash
+.venv/bin/python eval/blind_test.py publish
+```
+
+When friends have answered (codes they sent back, `SS3-…`, can be added after `--server`):
+
+```bash
+python3 eval/blind_test.py score --server
+```
+
+(`build --generic 2` adds plain-AI controls, `--no-warmup` skips waking the GPU; `score --codes-file codes.txt` reads
+one code per line; a v2 test: `score --answers data/blind/answers.json SS2-...`.) `score` writes
 `eval/results/blind_test.json`, aggregate numbers only.
 
 **iOS** (Xcode, iOS 26): generate the API URL and token for the app from `.env`, then open the project, set your

@@ -91,6 +91,7 @@ api_image = (
     .add_local_file(REPO / "serving" / "memory.py", "/root/sayso/serving/memory.py")
     .add_local_file(REPO / "serving" / "postprocess.py", "/root/sayso/serving/postprocess.py")
     .add_local_file(REPO / "serving" / "series.py", "/root/sayso/serving/series.py")
+    .add_local_file(REPO / "serving" / "blind.py", "/root/sayso/serving/blind.py")
 )
 
 
@@ -161,6 +162,8 @@ def api():
                   message?: {avoid?}} → the style: the user's own greetings, sign-offs and phrases they never use
     GET  /latest  the last /reply options (for the keyboard panel)
     GET  /warmup  wakes the GPU and waits (a cold start takes minutes); the app calls it from a button
+    GET  /blind/{test_id} and POST /blind/{test_id}/answers: blind test v3 for friends, the only routes without the
+                  token (serving/blind.py); GET /blind/{test_id}/responses needs it
     While the GPU is cold, generation routes answer at once with Muse Spark in the style and start waking it.
     Screenshots and other people's messages are read in memory and never stored."""
     import asyncio
@@ -177,6 +180,7 @@ def api():
     from transformers import AutoTokenizer
 
     sys.path.insert(0, "/root/sayso/serving")
+    import blind
     import memory
     import postprocess
     import series
@@ -197,6 +201,8 @@ def api():
             self.app = app
 
         async def __call__(self, scope, receive, send):
+            if scope["type"] == "http" and blind.public(scope.get("method"), scope.get("path")):
+                return await self.app(scope, receive, send)  # the blind-test page and its answers (serving/blind.py)
             if scope["type"] == "http":
                 headers = dict(scope.get("headers") or [])
                 expected = f"Bearer {os.environ['SAYSO_API_TOKEN']}".encode()
@@ -208,6 +214,9 @@ def api():
 
     web = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, dependencies=[Depends(check)])
     web.add_middleware(TokenGate)
+    # Mounted, so the app-wide token dependency doesn't apply; TokenGate still guards all but the two public routes.
+    web.mount("/blind", blind.app(styles.DATA / "blind", token=lambda: os.environ["SAYSO_API_TOKEN"],
+                                  commit=data.commit, reload=data.reload))
     client = httpx.AsyncClient(follow_redirects=True)  # Modal answers 303 to requests longer than 150 s
     GPU = os.environ.get("SAYSO_GPU", "off")
     styles.on_write = data.commit
