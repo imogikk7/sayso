@@ -1,112 +1,94 @@
 import SwiftUI
 
-/// The SaySo look inside the keyboard. The extension can't see the app's asset catalog or fonts, and has a small memory
-/// budget, so everything here is plain colors, gradients, shapes and system fonts.
+/// The SaySo keyboard looks like the stock iOS keyboard: the system's own keyboard backdrop shows through (the
+/// extension draws no background of its own), keys use the stock key colors, and the user's accent appears only on ✨
+/// and on the strip's chips. The extension can't see the app's asset catalog or fonts, so everything is plain colors
+/// and system fonts.
 enum KeyTheme {
-    static let brandBlue = Color(red: 0.231, green: 0.533, blue: 0.957)  // #3B88F4
-    static let navy = Color(red: 0.043, green: 0.165, blue: 0.357)  // #0B2A5B
-    static let glow = Color(red: 0.49, green: 0.71, blue: 0.98)
-
-    static let key: CGFloat = 5
+    static let key: CGFloat = 5  // key corner radius, as on the stock keyboard
     static let chip: CGFloat = 8
-    static let card: CGFloat = 12
-    static let bubble: CGFloat = 16
+    static let card: CGFloat = 10
 
     /// The accent the user picked; "blue" is the SaySo blue rather than the system one.
     static func accent(_ accent: KeyboardAccent) -> Color {
-        accent == .blue ? brandBlue : accent.color
+        accent == .blue ? Color(red: 0.231, green: 0.533, blue: 0.957) : accent.color  // #3B88F4
     }
 
-    /// A light sheen over a solid accent fill, so buttons and bubbles look lit from above (works for every accent).
-    static let gloss = LinearGradient(colors: [Color.white.opacity(0.28), Color.white.opacity(0)],
+    /// A light sheen over the ✨ button's accent fill.
+    static let gloss = LinearGradient(colors: [Color.white.opacity(0.25), Color.white.opacity(0)],
                                       startPoint: .top, endPoint: .bottom)
 
-    // MARK: Keys
+    // MARK: Keys (stock iOS colors)
 
     static func keyText(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white : Color(red: 0.05, green: 0.09, blue: 0.18)
+        scheme == .dark ? Color.white : Color.black
     }
 
-    static func letterFill(_ scheme: ColorScheme, pressed: Bool) -> LinearGradient {
-        let colors: [Color]
-        if scheme == .dark {
-            colors = pressed
-                ? [Color(red: 0.30, green: 0.40, blue: 0.58), Color(red: 0.26, green: 0.35, blue: 0.52)]
-                : [Color(red: 0.22, green: 0.27, blue: 0.37), Color(red: 0.18, green: 0.22, blue: 0.31)]
-        } else {
-            colors = pressed
-                ? [Color(red: 0.82, green: 0.89, blue: 0.99), Color(red: 0.77, green: 0.86, blue: 0.98)]
-                : [Color.white, Color(red: 0.965, green: 0.977, blue: 1.0)]
-        }
-        return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
+    /// Letter keys: white (light), #6B6B6B at 90% (dark). Pressed, they take the function-key color.
+    static func letterFill(_ scheme: ColorScheme, pressed: Bool) -> Color {
+        pressed ? functionColor(scheme) : letterColor(scheme)
     }
 
-    static func specialFill(_ scheme: ColorScheme, pressed: Bool) -> LinearGradient {
-        let colors: [Color]
-        if scheme == .dark {
-            colors = pressed
-                ? [Color(red: 0.22, green: 0.27, blue: 0.37), Color(red: 0.18, green: 0.22, blue: 0.31)]
-                : [Color(red: 0.12, green: 0.16, blue: 0.25), Color(red: 0.10, green: 0.13, blue: 0.21)]
-        } else {
-            colors = pressed
-                ? [Color.white, Color(red: 0.965, green: 0.977, blue: 1.0)]
-                : [Color(red: 0.81, green: 0.87, blue: 0.95), Color(red: 0.76, green: 0.83, blue: 0.93)]
-        }
-        return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
+    /// Function keys (shift, delete, 123, language, return): #ACB1B9 (light), #464646 at 90% (dark).
+    /// Pressed, they light up to the letter-key color, as iOS does.
+    static func specialFill(_ scheme: ColorScheme, pressed: Bool) -> Color {
+        pressed ? letterColor(scheme) : functionColor(scheme)
     }
 
-    static func keyEdge(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.08) : navy.opacity(0.06)
+    static func letterColor(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(white: 0.42, opacity: 0.9) : Color.white
     }
 
+    static func functionColor(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(white: 0.275, opacity: 0.9) : Color(red: 0.675, green: 0.694, blue: 0.725)
+    }
+
+    /// The 1 pt shadow under every key: #898A8D (light), black at 35% (dark).
     static func keyShadow(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.black.opacity(0.55) : navy.opacity(0.22)
+        scheme == .dark ? Color.black.opacity(0.35) : Color(red: 0.537, green: 0.541, blue: 0.553)
     }
 
-    // MARK: Strip, chips and cards
+    // MARK: Strip, chips and cards (neutral)
 
     static func chipFill(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.10) : Color.white.opacity(0.92)
+        scheme == .dark ? Color.white.opacity(0.14) : Color.white.opacity(0.6)
     }
 
-    static func chipEdge(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.12) : navy.opacity(0.08)
-    }
-
-    static func softShadow(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.black.opacity(0.35) : navy.opacity(0.10)
+    /// Result cards and the panel's draft box: the letter-key color, so they sit on the backdrop like keys.
+    static func cardFill(_ scheme: ColorScheme) -> Color {
+        letterColor(scheme)
     }
 }
 
-/// The keyboard's background: white into sky blue with a glow in the corner (light), deep navy (dark).
-struct KeyBackdrop: View {
-    let accent: Color
-    @Environment(\.colorScheme) private var scheme
+/// Sizes of the stock iPhone keyboard. Portrait: a 44 pt strip over 216 pt of keys (key 43, rows 11 apart, 8 above
+/// the first row, 3 under the last; 3 pt at the sides, 6 pt between keys, 5 on 11-key rows). Landscape: 38 + 160.
+struct KeyMetrics {
+    let strip: CGFloat
+    let keys: CGFloat
+    let keyHeight: CGFloat
+    let rowGap: CGFloat
+    let top: CGFloat
+    let side: CGFloat = 3
 
-    var body: some View {
-        ZStack {
-            if scheme == .dark {
-                LinearGradient(colors: [Color(red: 0.06, green: 0.10, blue: 0.19), Color(red: 0.02, green: 0.05, blue: 0.11)],
-                               startPoint: .top, endPoint: .bottom)
-                RadialGradient(colors: [accent.opacity(0.22), accent.opacity(0)],
-                               center: .topTrailing, startRadius: 0, endRadius: 260)
-            } else {
-                LinearGradient(colors: [Color(red: 0.96, green: 0.975, blue: 1.0), Color(red: 0.86, green: 0.915, blue: 0.985)],
-                               startPoint: .top, endPoint: .bottom)
-                RadialGradient(colors: [KeyTheme.glow.opacity(0.45), KeyTheme.glow.opacity(0)],
-                               center: .topTrailing, startRadius: 0, endRadius: 260)
-                RadialGradient(colors: [Color.white.opacity(0.7), Color.white.opacity(0)],
-                               center: .bottomLeading, startRadius: 0, endRadius: 220)
-            }
-        }
-        .ignoresSafeArea()
+    var total: CGFloat { strip + keys }
+
+    static let portrait = KeyMetrics(strip: 44, keys: 216, keyHeight: 43, rowGap: 11, top: 8)
+    static let landscape = KeyMetrics(strip: 38, keys: 160, keyHeight: 33, rowGap: 7, top: 4)
+
+    static func current(compactHeight: Bool) -> KeyMetrics {
+        compactHeight ? .landscape : .portrait
+    }
+
+    /// The gap between keys in a row: 6 pt, or 5 pt on rows of 11 keys (Russian), as iOS does.
+    static func keyGap(columns: Int) -> CGFloat {
+        columns >= 11 ? 5 : 6
     }
 }
 
-/// What a key looks like: a light letter cap, a darker special cap, or an accent cap (send, go, search).
+/// What a key looks like: a light letter cap, a darker function cap, or a blue cap (send, go, search), as on iOS.
 enum KeyKind { case letter, special, accent }
 
-/// A rounded key cap with a hairline edge and a crisp shadow under it.
+/// A rounded key cap with the stock 1 pt shadow under it.
 struct KeyCap<Content: View>: View {
     let kind: KeyKind
     let pressed: Bool
@@ -123,20 +105,18 @@ struct KeyCap<Content: View>: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: KeyTheme.key, style: .continuous)
         content
-            .foregroundStyle(kind == .accent ? Color.white : KeyTheme.keyText(scheme))
+            .foregroundStyle(kind == .accent && !pressed ? Color.white : KeyTheme.keyText(scheme))
             .background {
-                ZStack {
+                Group {
                     switch kind {
                     case .letter:
                         shape.fill(KeyTheme.letterFill(scheme, pressed: pressed))
                     case .special:
                         shape.fill(KeyTheme.specialFill(scheme, pressed: pressed))
                     case .accent:
-                        shape.fill(.tint)
-                        shape.fill(KeyTheme.gloss)
-                        if pressed { shape.fill(Color.black.opacity(0.15)) }
+                        // The system blue of iOS's send / go / search key, not the SaySo accent.
+                        shape.fill(pressed ? KeyTheme.letterFill(scheme, pressed: false) : Color(uiColor: .systemBlue))
                     }
-                    shape.strokeBorder(KeyTheme.keyEdge(scheme), lineWidth: 0.5)
                 }
                 .shadow(color: KeyTheme.keyShadow(scheme), radius: 0, x: 0, y: 1)
             }
@@ -144,24 +124,20 @@ struct KeyCap<Content: View>: View {
     }
 }
 
-/// The main action in the panel: a full-width accent capsule with a soft glow.
-struct GlowButtonStyle: ButtonStyle {
-    let accent: Color
+/// A full-width action in the panel ("Rewrite in my style"): a neutral key-like bar; only its ✨ icon is in the accent.
+struct PanelActionStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var scheme
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Color.white)
+            .foregroundStyle(KeyTheme.keyText(scheme))
             .padding(.horizontal, 14)
-            .frame(maxWidth: .infinity, minHeight: 38)
+            .frame(maxWidth: .infinity, minHeight: 40)
             .background {
-                ZStack {
-                    Capsule().fill(accent)
-                    Capsule().fill(KeyTheme.gloss)
-                }
+                RoundedRectangle(cornerRadius: KeyTheme.chip, style: .continuous)
+                    .fill(KeyTheme.letterFill(scheme, pressed: configuration.isPressed))
+                    .shadow(color: KeyTheme.keyShadow(scheme), radius: 0, x: 0, y: 1)
             }
-            .shadow(color: accent.opacity(configuration.isPressed ? 0.2 : 0.4), radius: 8, x: 0, y: 3)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }

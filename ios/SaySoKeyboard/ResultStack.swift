@@ -1,50 +1,63 @@
 import SwiftUI
 
-/// ✨ results in place of the keys: each variant a card; a series is a stack of messages like grouped notifications.
+/// Results in place of the keys (✨, the panel, the Back Tap shortcut's replies): each variant a neutral card on the
+/// keyboard backdrop; a series is a stack of messages like grouped notifications. ✕ goes back to the keys.
 struct ResultsView: View {
     @ObservedObject var model: PanelModel
 
-    private var accent: Color { KeyTheme.accent(model.settings.accent) }
+    private var title: String {
+        if !model.series.isEmpty { return "Series · \(model.seriesIndex + 1) of \(model.series.count) sent" }
+        return model.fromShortcut ? "From your screenshot · tap one to put it in" : "In your style · tap one to put it in"
+    }
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             HStack(spacing: 6) {
-                Image(systemName: model.series.isEmpty ? "sparkles" : "square.stack.fill")
+                Image(systemName: model.series.isEmpty ? (model.fromShortcut ? "camera.viewfinder" : "sparkles")
+                                                       : "square.stack.fill")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(accent)
-                Text(model.series.isEmpty ? "In your style" : "Series · \(model.seriesIndex + 1) of \(model.series.count) sent")
-                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 if !model.series.isEmpty {
-                    SeriesProgress(count: model.series.count, sent: model.seriesIndex + 1, accent: accent)
+                    SeriesProgress(count: model.series.count, sent: model.seriesIndex + 1)
                 }
-                Spacer()
+                Spacer(minLength: 0)
                 Button { model.closeResults() } label: {
-                    Image(systemName: "xmark.circle.fill").font(.title3).symbolRenderingMode(.hierarchical)
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 36, height: 30)
+                        .contentShape(.rect)
                 }
-                .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back to the keys")
             }
-            .padding(.horizontal, 4)
+            .foregroundStyle(.secondary)
+            .padding(.leading, 6)
             ScrollView {
                 VStack(spacing: 8) {
                     if !model.series.isEmpty {
-                        NextPartCard(model: model, accent: accent)
+                        NextPartCard(model: model)
                     } else {
                         ForEach(model.options) { option in
                             if option.parts.count > 1 {
-                                SeriesStack(parts: option.parts, label: option.label, accent: accent) { model.insert(option) }
+                                SeriesStack(parts: option.parts, label: option.label) { model.insert(option) }
                             } else {
-                                OptionCard(option: option, accent: accent) { model.insert(option) }
+                                OptionCard(option: option) { model.insert(option) }
                             }
                         }
                     }
                 }
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 3)
                 .padding(.top, 2)
-                .padding(.bottom, 10)  // room for the bubbles' glow
+                .padding(.bottom, 8)
             }
             .scrollIndicators(.hidden)
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 3)
+        .padding(.top, 4)
     }
 }
 
@@ -52,70 +65,61 @@ struct ResultsView: View {
 struct SeriesProgress: View {
     let count: Int
     let sent: Int
-    let accent: Color
 
     var body: some View {
         HStack(spacing: 3) {
             ForEach(0..<max(count, 0), id: \.self) { index in
                 Capsule()
-                    .fill(index < sent ? accent : Color.secondary.opacity(0.3))
+                    .fill(index < sent ? Color.primary.opacity(0.7) : Color.secondary.opacity(0.3))
                     .frame(width: index < sent ? 12 : 6, height: 4)
             }
         }
     }
 }
 
-/// An outgoing chat bubble in the accent: rounded, with the tail corner at the bottom right, lit from above.
-struct AccentBubble: View {
-    let accent: Color
-    var tail = true
+/// A result card: the letter-key color with the stock 1 pt key shadow, so it sits on the backdrop like a key.
+struct ResultCard: View {
+    var depth = 0  // cards further back in a stack are fainter
+
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        let shape = UnevenRoundedRectangle(topLeadingRadius: KeyTheme.bubble, bottomLeadingRadius: KeyTheme.bubble,
-                                           bottomTrailingRadius: tail ? 4 : KeyTheme.bubble,
-                                           topTrailingRadius: KeyTheme.bubble, style: .continuous)
-        ZStack {
-            shape.fill(accent)
-            shape.fill(KeyTheme.gloss)
-            shape.stroke(Color.white.opacity(0.18), lineWidth: 0.5)
-        }
+        RoundedRectangle(cornerRadius: KeyTheme.card, style: .continuous)
+            .fill(KeyTheme.cardFill(scheme))
+            .shadow(color: KeyTheme.keyShadow(scheme), radius: 0, x: 0, y: 1)
+            .opacity(depth == 0 ? 1 : (depth == 1 ? 0.7 : 0.45))
     }
 }
 
-/// One variant as a sent-message bubble on the right, like in iMessage; tap puts it in the field.
+/// One variant as a tappable card; tap puts it in the field.
 struct OptionCard: View {
     let option: PanelOption
-    var accent: Color = KeyTheme.brandBlue
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .bottom, spacing: 6) {
-                Spacer(minLength: 24)
-                VStack(alignment: .trailing, spacing: 3) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 3) {
                     if let label = option.label {
                         Text(label.replacingOccurrences(of: "_", with: " ").uppercased())
                             .font(.system(size: 9, weight: .bold))
                             .tracking(0.6)
-                            .foregroundStyle(accent)
-                            .padding(.trailing, 6)
+                            .foregroundStyle(.secondary)
                     }
-                    HStack(alignment: .top, spacing: 8) {
-                        Text(option.text)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Image(systemName: "arrow.down.left")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(Color.white.opacity(0.75))
-                            .padding(.top, 3)
-                    }
-                    .foregroundStyle(Color.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background { AccentBubble(accent: accent) }
-                    .shadow(color: accent.opacity(0.35), radius: 6, x: 0, y: 3)
+                    Text(option.text)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "arrow.down.left")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 3)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background { ResultCard() }
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -126,10 +130,10 @@ struct OptionCard: View {
 struct SeriesStack: View {
     let parts: [String]
     let label: String?
-    var accent: Color = KeyTheme.brandBlue
     let action: () -> Void
 
     @State private var expanded = false
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -144,28 +148,26 @@ struct SeriesStack: View {
             .buttonStyle(.plain)
             Button(action: action) {
                 if expanded {
-                    VStack(alignment: .trailing, spacing: 3) {
-                        ForEach(Array(parts.enumerated()), id: \.offset) { index, part in
-                            bubble(part, depth: 0, tail: index == parts.count - 1)
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
+                            bubble(part, depth: 0)
                         }
                     }
-                    .padding(.leading, 24)
                 } else {
                     ZStack(alignment: .top) {
                         ForEach(Array(parts.prefix(3).enumerated().reversed()), id: \.offset) { index, part in
-                            bubble(index == 0 ? part : " ", depth: index, tail: index == 0)
-                                .scaleEffect(x: 1 - CGFloat(index) * 0.06, anchor: .top)
-                                .offset(y: CGFloat(index) * 7)
+                            bubble(index == 0 ? part : " ", depth: index)
+                                .scaleEffect(x: 1 - CGFloat(index) * 0.05, anchor: .top)
+                                .offset(y: CGFloat(index) * 6)
                         }
                     }
-                    .padding(.bottom, CGFloat(min(parts.count, 3) - 1) * 7)
+                    .padding(.bottom, CGFloat(min(parts.count, 3) - 1) * 6)
                     .overlay(alignment: .bottomTrailing) {
                         Text("+\(parts.count - 1)")
                             .font(.caption2.weight(.heavy))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(.secondary)
                             .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Color.white, in: .capsule)
-                            .shadow(color: KeyTheme.navy.opacity(0.18), radius: 3, x: 0, y: 1)
+                            .background(KeyTheme.chipFill(scheme), in: .capsule)
                             .offset(x: -6, y: -2)
                     }
                 }
@@ -174,26 +176,21 @@ struct SeriesStack: View {
         }
     }
 
-    /// A message bubble; the ones further back are paler, so the stack has depth.
-    private func bubble(_ text: String, depth: Int, tail: Bool) -> some View {
+    /// A message card; the ones further back are fainter, so the stack has depth.
+    private func bubble(_ text: String, depth: Int) -> some View {
         Text(text)
-            .foregroundStyle(Color.white)
+            .foregroundStyle(.primary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .lineLimit(2)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background {
-                AccentBubble(accent: accent, tail: tail)
-                    .opacity(depth == 0 ? 1 : (depth == 1 ? 0.55 : 0.32))
-            }
-            .shadow(color: accent.opacity(depth == 0 ? 0.35 : 0.12), radius: depth == 0 ? 6 : 3, x: 0, y: 3)
+            .background { ResultCard(depth: depth) }
     }
 }
 
 /// While a series is being sent: send the part in the field, then tap here for the next one.
 struct NextPartCard: View {
     @ObservedObject var model: PanelModel
-    var accent: Color = KeyTheme.brandBlue
 
     var body: some View {
         let next = model.seriesIndex + 1 < model.series.count ? model.series[model.seriesIndex + 1] : nil
@@ -207,19 +204,19 @@ struct NextPartCard: View {
                             Text("NEXT")
                                 .font(.system(size: 9, weight: .bold))
                                 .tracking(0.6)
-                                .foregroundStyle(Color.white.opacity(0.8))
-                            Text(next).foregroundStyle(Color.white)
+                                .foregroundStyle(.secondary)
+                            Text(next).foregroundStyle(.primary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         Image(systemName: "arrow.down.left")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(Color.white.opacity(0.85))
+                            .foregroundStyle(.secondary)
                             .padding(.top, 2)
                     }
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background { AccentBubble(accent: accent) }
-                    .shadow(color: accent.opacity(0.35), radius: 6, x: 0, y: 3)
+                    .padding(.vertical, 9)
+                    .background { ResultCard() }
+                    .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
             }

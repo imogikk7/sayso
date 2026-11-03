@@ -36,6 +36,7 @@ final class PanelModel: ObservableObject {
     @Published var options: [PanelOption] = []
     @Published var series: [String] = []  // the series being sent, part by part
     @Published var seriesIndex = 0
+    @Published var fromShortcut = false  // the results are replies to a screenshot (Back Tap or "Last screenshot")
     @Published var busy = false
     @Published var message: String?
     @Published var warming = false
@@ -91,16 +92,30 @@ final class PanelModel: ObservableObject {
         autoShift()
     }
 
-    /// Replies the Back Tap shortcut just made come up here, once: a tap puts one in the chat (the shortcut can't
-    /// paste, and iOS drops its clipboard writes while SaySo runs in the background). Checked on open and every
-    /// couple of seconds while the keyboard is up, since the shortcut runs over it.
+    /// Replies the Back Tap shortcut just made come up here, once, as cards in place of the keys (in either mode): a
+    /// tap puts one in the chat (the shortcut can't paste, and iOS drops its clipboard writes while SaySo runs in the
+    /// background). Checked on open and every couple of seconds while the keyboard is up, since the shortcut runs
+    /// over it. They replace older ✨ results, but never a series that is being sent. Their header says where they
+    /// came from; they stay until one is picked or ✕ is tapped.
     func checkShortcutReplies() {
-        guard hasFullAccess, !busy, options.isEmpty, let latest = ReplyStore.takeFresh() else { return }
+        guard hasFullAccess, !busy, series.isEmpty, let latest = ReplyStore.takeFresh() else { return }
+        let replies = latest.replies.map { PanelOption(label: $0.intent, text: $0.text, parts: $0.parts ?? []) }
+        guard !replies.isEmpty else { return }
         tab = .replies
         if let audience = Audience(rawValue: latest.context.audience) { self.audience = audience }
-        options = latest.replies.map { PanelOption(label: $0.intent, text: $0.text, parts: $0.parts ?? []) }
-        message = L("Replies from your screenshot. Tap one to put it in the chat.")
+        message = nil
+        warming = false
+        fromShortcut = true
+        options = replies
         haptic.impactOccurred()
+    }
+
+    /// The panel's Rewrite / Write / Replies picker: switching by hand drops the previous tab's results.
+    /// (Not an onChange of `tab`: the shortcut sets the tab too, and must not wipe its own replies.)
+    func selectTab(_ newTab: PanelTab) {
+        guard newTab != tab else { return }
+        tab = newTab
+        closeResults()
     }
 
     /// The text in the field before the cursor is the user's draft (or instruction).
@@ -230,7 +245,9 @@ final class PanelModel: ObservableObject {
         lastText = proxy?.documentContextBeforeInput ?? ""
         readDraft()
         autoShift()
-        if !options.isEmpty && series.isEmpty { options = [] }
+        if message != nil { message = nil; warming = false }  // typing again dismisses a status in the strip
+        // Typing drops stale ✨ results, but not a series being sent or the screenshot's replies (only ✕ or a pick).
+        if !options.isEmpty && series.isEmpty && !fromShortcut { options = [] }
     }
 
     /// Capital letter at the start of the field and of a sentence (if turned on in the app's Keyboard settings).
@@ -315,6 +332,7 @@ final class PanelModel: ObservableObject {
                 throw SaySoError.invalid("No screenshot replies yet. Double-tap the back of your iPhone in a chat.")
             }
             if let raw = latest.audience, let audience = Audience(rawValue: raw) { self.audience = audience }
+            self.fromShortcut = true
             return replies.map { PanelOption(label: $0.intent, text: $0.text, parts: $0.parts ?? []) }
         }
     }
@@ -339,7 +357,9 @@ final class PanelModel: ObservableObject {
     func insert(_ option: PanelOption) {
         guard let proxy else { return }
         lastText = ""  // replacing the draft is not sending it
-        if mode == .letters || tab != .replies {
+        message = nil
+        // ✨ / Rewrite / Write replace the draft; replies (to a screenshot or copied messages) go in at the cursor.
+        if !fromShortcut && (mode == .letters || tab != .replies) {
             for _ in 0..<(proxy.documentContextBeforeInput ?? "").count { proxy.deleteBackward() }
         }
         if option.parts.count > 1 {
@@ -352,6 +372,7 @@ final class PanelModel: ObservableObject {
             proxy.insertText(option.text)
             suggestion = option.text
             options = []
+            fromShortcut = false
         }
         userDeleted = false
         lastText = suggestion ?? ""
@@ -368,6 +389,7 @@ final class PanelModel: ObservableObject {
         if seriesIndex + 1 == series.count {
             options = []
             series = []
+            fromShortcut = false
         }
         readDraft()
     }
@@ -376,6 +398,7 @@ final class PanelModel: ObservableObject {
         options = []
         series = []
         message = nil
+        fromShortcut = false
     }
 
     private func suggest(_ raw: [String]?) {
@@ -396,6 +419,7 @@ final class PanelModel: ObservableObject {
         message = nil
         warming = false
         series = []
+        fromShortcut = false
         Task {
             do {
                 options = try await work()
