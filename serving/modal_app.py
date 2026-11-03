@@ -86,6 +86,11 @@ api_image = (
     .add_local_file(REPO / "serving" / "styles.py", "/root/sayso/serving/styles.py")
     .add_local_file(REPO / "serving" / "build_style.py", "/root/sayso/serving/build_style.py")
     .add_local_file(REPO / "serving" / "documents.py", "/root/sayso/serving/documents.py")
+    .add_local_file(REPO / "serving" / "guards.py", "/root/sayso/serving/guards.py")
+    .add_local_file(REPO / "serving" / "length.py", "/root/sayso/serving/length.py")
+    .add_local_file(REPO / "serving" / "memory.py", "/root/sayso/serving/memory.py")
+    .add_local_file(REPO / "serving" / "postprocess.py", "/root/sayso/serving/postprocess.py")
+    .add_local_file(REPO / "serving" / "series.py", "/root/sayso/serving/series.py")
 )
 
 
@@ -140,8 +145,13 @@ def api():
                   instruction?} → {context: {audience, audiences, situation, summary}, replies: [{intent, tone,
                   thought, text, parts} × 3], options: [{act, draft}], ms}. Sending back summary + options with another
                   audience restyles the same replies without reading the chat again.
-    POST /chat    {mode: write | rewrite | reply, text, audience, history: [{answer, feedback}]} → {text, parts,
-                  alternatives, audience, audiences, learned}; feedback on the last answer revises it
+    POST /chat    {mode: write | rewrite | reply | email | essay, text, audience, history: [{answer, feedback}]} →
+                  {text, parts, alternatives, alternative_parts, audience, audiences, learned}; feedback on the last
+                  answer revises it
+    /rewrite, /compose, /reply and /chat also take previous: [{request, answer}] (≤ 3, oldest first, this chat
+    thread): a request that refines the last answer ("на русском", "shorter") revises it (serving/memory.py).
+    A long "message" may come as a series (parts > 1) when the user writes like that (serving/series.py); every
+    answer is guarded against placeholders and unasked self-introductions (serving/guards.py).
     POST /feedback {audience, answer, edited?, liked?} → {learned}: the user's approved or own text becomes an example
     POST /transcribe multipart audio (WAV) + optional language (en | ru), mode, audience, context, heard → {text}:
                   the user's voice note, by Muse Voice Transcribe, then Muse Spark fixes what it misheard
@@ -167,6 +177,9 @@ def api():
     from transformers import AutoTokenizer
 
     sys.path.insert(0, "/root/sayso/serving")
+    import memory
+    import postprocess
+    import series
     import styles
     from writer import AUDIENCES, FORMATS, Unavailable, Writer
     from situations import ACTS, SITUATIONS
@@ -217,7 +230,12 @@ def api():
         return value if value in SITUATIONS else "other"
 
     def format_of(value):
-        return value if value in FORMATS else "message"
+        return value if value in FORMATS and value != series.AUTO else "message"  # "auto" is chosen here, not asked
+
+    class Previous(BaseModel):
+        """An earlier turn of this chat thread: what the user asked and what SaySo answered."""
+        request: str = Field("", max_length=6000)
+        answer: str = Field("", max_length=6000)
 
     class Styled(BaseModel):
         text: str = Field("", max_length=2000)
@@ -226,6 +244,7 @@ def api():
         situation: str = "other"
         style: str = styles.MAIN
         format: str = "message"
+        previous: list[Previous] = Field([], max_length=3)
 
     class Option(BaseModel):
         act: str
@@ -246,6 +265,7 @@ def api():
         question: str = Field("", max_length=1000)  # essay: the question or topic
         words: int = Field(250, ge=50, le=900)  # essay: about how many words
         reply_to: str = Field("", max_length=6000)  # email: the email being answered
+        previous: list[Previous] = Field([], max_length=3)  # earlier turns of this chat thread, oldest first
 
     class FeedbackBody(BaseModel):
         audience: str = "friends"
@@ -300,25 +320,38 @@ def api():
         options: list[Option] | None = Field(None, max_length=3)  # from an earlier reply: restyle without rereading
         style: str = styles.MAIN
         format: str = "message"
+        previous: list[Previous] = Field([], max_length=3)
+
+    def previous_of(items):
+        return [p.model_dump() for p in items or []]
 
     @web.post("/rewrite")
     async def rewrite(body: Styled):
         if not body.text.strip():
             raise HTTPException(422, "text is empty")
-        return await writer.rewrite(writer.context(body.style), body.text, audience_of(body.audience),
-                                    situation_of(body.situation), format_of(body.format))
+        ctx, audience, previous = writer.context(body.style), audience_of(body.audience), previous_of(body.previous)
+        format = series.choose(ctx, audience, body.text, format_of(body.format))
+        result, format = await memory.respond(
+            writer, ctx, "rewrite", body.text, previous, audience, format, shape="styled",
+            run=lambda: writer.rewrite(ctx, body.text, audience, situation_of(body.situation), format))
+        return postprocess.finish(result, body.text, format, previous)
 
     @web.post("/compose")
     async def compose(body: Styled):
         if not body.instruction.strip():
             raise HTTPException(422, "instruction is empty")
-        return await writer.compose(writer.context(body.style), body.instruction, audience_of(body.audience),
-                                    situation_of(body.situation), format_of(body.format))
+        ctx, audience, previous = writer.context(body.style), audience_of(body.audience), previous_of(body.previous)
+        format = series.choose(ctx, audience, body.instruction, format_of(body.format))
+        result, format = await memory.respond(
+            writer, ctx, "write", body.instruction, previous, audience, format, shape="styled",
+            run=lambda: writer.compose(ctx, body.instruction, audience, situation_of(body.situation), format))
+        return postprocess.finish(result, body.instruction, format, previous)
 
     @web.post("/reply")
     async def reply(request: Request, audience: str | None = None, style: str = styles.MAIN, format: str = "message"):
         started = time.monotonic()
         content_type = request.headers.get("content-type", "")
+        previous, instruction = [], ""
         if content_type.startswith("image/"):
             if int(request.headers.get("content-length") or 0) > max_image:
                 raise HTTPException(413, "screenshot is larger than 4 MB")
@@ -335,41 +368,71 @@ def api():
                 raise HTTPException(422, error.errors(include_url=False, include_input=False))
             audience = body.audience or audience
             ctx, format = writer.context(body.style), format_of(body.format)
+            previous, instruction = previous_of(body.previous), body.instruction
+            if not (body.image or body.summary.strip() or body.messages.strip()) and \
+                    memory.is_refinement(body.instruction, previous, "reply"):
+                # no new chat, only "shorter" / "на русском" about the last reply of this thread: that reply, revised
+                result, format = await memory.respond(writer, ctx, "reply", body.instruction, previous,
+                                                      audience_of(audience), format, run=None, shape="replies")
+                replies = postprocess.finish(result, body.instruction, format, previous)["replies"]
+                return {"context": {"audience": audience_of(audience), "audiences": [audience_of(audience)],
+                                    "situation": situation_of(body.situation), "summary": ""},
+                        "replies": replies, "options": [],
+                        "ms": {"read": 0, "total": round((time.monotonic() - started) * 1000)}}
             options = None
-            if body.image:
-                try:
-                    image = base64.b64decode(body.image, validate=True)
-                except binascii.Error:
-                    raise HTTPException(422, "image is not base64")
-                if len(image) > max_image:
-                    raise HTTPException(413, "screenshot is larger than 4 MB")
-                context, options = await writer.read(ctx, image=image, image_type=body.image_type, audience=audience,
-                                                     instruction=body.instruction, format=format)
-            elif body.summary.strip():
-                context = {"audience": audience, "audiences": [audience_of(audience)],
-                           "situation": situation_of(body.situation), "summary": body.summary}
-                options = [o.model_dump() for o in body.options or [] if o.act in ACTS] or None
-            elif body.messages.strip():
-                context, options = await writer.read(ctx, messages=body.messages, audience=audience,
-                                                     instruction=body.instruction, format=format)
-            else:
-                raise HTTPException(422, "send a screenshot, messages or a summary")
+            token = memory.NOTE.set(memory.note_for(previous))  # earlier turns: context for consistency only
+            try:
+                if body.image:
+                    try:
+                        image = base64.b64decode(body.image, validate=True)
+                    except binascii.Error:
+                        raise HTTPException(422, "image is not base64")
+                    if len(image) > max_image:
+                        raise HTTPException(413, "screenshot is larger than 4 MB")
+                    context, options = await writer.read(ctx, image=image, image_type=body.image_type,
+                                                         audience=audience, instruction=body.instruction, format=format)
+                elif body.summary.strip():
+                    context = {"audience": audience, "audiences": [audience_of(audience)],
+                               "situation": situation_of(body.situation), "summary": body.summary}
+                    options = [o.model_dump() for o in body.options or [] if o.act in ACTS] or None
+                elif body.messages.strip():
+                    context, options = await writer.read(ctx, messages=body.messages, audience=audience,
+                                                         instruction=body.instruction, format=format)
+                else:
+                    raise HTTPException(422, "send a screenshot, messages or a summary")
+            finally:
+                memory.NOTE.reset(token)
         read_ms = round((time.monotonic() - started) * 1000)
         context["audience"] = audience_of(context["audience"])
         replies = await writer.reply(ctx, context["summary"], context["audience"], context["situation"], options,
                                      format)
+        asked = " ".join([instruction, context.get("summary") or ""])  # whether the chat asked who the user is
+        guarded = postprocess.finish({"replies": replies, "options": options or []}, asked, format, previous)
+        replies, options = guarded["replies"], guarded["options"]
         await latest.put.aio("reply", {"audience": context["audience"], "situation": context["situation"],
                                        "replies": replies, "at": time.time()})
-        return {"context": context, "replies": replies, "options": options or [],
+        return {"context": context, "replies": replies, "options": options,
                 "ms": {"read": read_ms, "total": round((time.monotonic() - started) * 1000)}}
 
     @web.post("/chat")
     async def chat(body: ChatBody):
         if body.mode not in {"write", "rewrite", "reply", "email", "essay"} or not body.text.strip():
             raise HTTPException(422, "mode must be write, rewrite, reply, email or essay, and text can't be empty")
-        return await writer.chat(writer.context(body.style), body.mode, body.text, audience_of(body.audience),
-                                 format_of(body.format), [t.model_dump() for t in body.history], body.instruction,
-                                 body.question, body.words, body.reply_to)
+        ctx, audience, previous = writer.context(body.style), audience_of(body.audience), previous_of(body.previous)
+        format = format_of(body.format)
+        if body.mode in {"write", "rewrite"}:
+            format = series.choose(ctx, audience, body.text, format)
+        history = [t.model_dump() for t in body.history]
+
+        def run():
+            return writer.chat(ctx, body.mode, body.text, audience, format, history, body.instruction, body.question,
+                               body.words, body.reply_to)
+        if history and history[-1].get("feedback"):  # 👎 on the last answer: the existing revision with feedback
+            result = await run()
+        else:
+            result, format = await memory.respond(writer, ctx, body.mode, body.text, previous, audience, format, run)
+        asked = " ".join([body.text, body.question, body.reply_to])  # what the user asked (and the email they answer)
+        return postprocess.finish(result, asked, body.mode if body.mode in {"email", "essay"} else format, previous)
 
     @web.post("/styles/{style_id}/documents")
     async def add_documents(style_id: str, files: list[UploadFile] = File(default=[]), text: str = Form(""),

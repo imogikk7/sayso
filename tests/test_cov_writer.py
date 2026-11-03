@@ -150,18 +150,18 @@ class Essay(Base):
         return {"outline": ["начало", "проект", "итог"], "text": text, "questions": ["Какой был результат?"], **more}
 
     def test_prompt_has_the_task_rules_and_first_person(self):
-        spark = self.use(self.answer(essay_text(100)))
+        spark = self.use(self.answer(essay_text(250)))
         out = run(self.writer.essay(self.ctx(), "Расскажите о своём проекте", "я сделал бота для заметок", 250))
         call = spark.calls[0]
         self.assertEqual(len(spark.calls), 1)  # within the limit, no cliché: no fix
         self.assertEqual((call["key"], call["max_tokens"], call["timeout"]), ("text", 6000, 90))
-        for needed in ("Расскажите о своём проекте", "up to about 250 words", "я сделал бота для заметок",
+        for needed in ("Расскажите о своём проекте", "about 250 words (allowed: 225 to 275 words", "я сделал бота для заметок",
                        'written in the first person ("I built…")', 'speaks as "I" in the active voice',
                        "never invent experiences", '"questions"'):
             self.assertIn(needed, call["user"])
         self.assertEqual(out["outline"], ["начало", "проект", "итог"])
         self.assertEqual(out["questions"], ["Какой был результат?"])
-        self.assertEqual(out["words"], 100)
+        self.assertEqual(out["words"], 250)
         self.assertEqual(out["cliches"], [])
         self.assertEqual(len(out["parts"]), 1)
         self.assertIn("\n\n", out["text"])
@@ -177,23 +177,34 @@ class Essay(Base):
         spark = self.use(self.answer(essay_text(200)), {"text": essay_text(100)})
         out = run(self.writer.essay(self.ctx(), "q", "notes", 100))
         self.assertEqual(len(spark.calls), 2)
-        self.assertIn("it has 200 words, cut it to about 100 without losing facts", spark.calls[1]["user"])
+        self.assertIn("This essay has 200 words; it must have about 100 words (between 90 and 110)", spark.calls[1]["user"])
+        self.assertIn("Cut it to about 100 words", spark.calls[1]["user"])
         self.assertEqual(out["words"], 100)
         self.assertEqual(out["outline"], ["начало", "проект", "итог"])  # the plan of the first answer is kept
 
     def test_slightly_long_or_short_is_left_alone(self):
-        for n in (114, 40):  # up to 15 % over is fine; shorter is allowed (thin notes)
+        for n in (114, 90):  # up to 15 % over and down to 90 % of the target are fine
             spark = self.use(self.answer(essay_text(n)))
             run(self.writer.essay(self.ctx(), "q", "notes", 100))
             self.assertEqual(len(spark.calls), 1, n)
+
+    def test_too_short_is_expanded_with_the_notes(self):
+        spark = self.use(self.answer(essay_text(40)), {"text": essay_text(70)}, {"text": essay_text(98)})
+        out = run(self.writer.essay(self.ctx(), "q", "я сделал бота", 100))
+        self.assertEqual(len(spark.calls), 3)  # two expand passes, then it is within ±10 %
+        self.assertIn("This essay has 40 words; it must have about 100 words (between 90 and 110)", spark.calls[1]["user"])
+        self.assertIn("Expand it to about 100 words", spark.calls[1]["user"])
+        self.assertIn("The user's notes: я сделал бота", spark.calls[1]["user"])
+        self.assertIn("This essay has 70 words", spark.calls[2]["user"])
+        self.assertEqual(out["words"], 98)
 
     def test_cliche_and_length_in_one_fix(self):
         spark = self.use(self.answer(essay_text(200, "В современном мире интернет играет важную роль. ")),
                          {"text": essay_text(90)})
         out = run(self.writer.essay(self.ctx(), "q", "notes", 100))
         fix = spark.calls[1]["user"]
-        self.assertIn("cut it to about 100", fix)
-        self.assertIn("; remove phrases that sound AI-written: В современном мире, играет важную роль", fix)
+        self.assertIn("Cut it to about 100 words", fix)
+        self.assertIn("Also remove phrases that sound AI-written: В современном мире, играет важную роль", fix)
         self.assertEqual(out["cliches"], [])
 
     def test_cliches_left_after_the_fix_are_reported(self):
@@ -206,7 +217,7 @@ class Essay(Base):
         for asked, used in ((10, 80), (5000, 900), ("300", 300)):
             spark = self.use(self.answer(essay_text(40)))
             run(self.writer.essay(self.ctx(), "q", "notes", asked))
-            self.assertIn(f"up to about {used} words", spark.calls[0]["user"], asked)
+            self.assertIn(f"Length: about {used} words (allowed:", spark.calls[0]["user"], asked)
 
     def test_notes_are_capped_and_cleaned(self):
         spark = self.use(self.answer(essay_text(40)))
@@ -253,7 +264,7 @@ class ChatFormal(Base):
     def test_essay_mode_defaults_to_250_words(self):
         spark = self.use({"text": essay_text(40), "outline": [], "questions": []})
         out = run(self.writer.chat(self.ctx(), "essay", "мои заметки", "friends", question="Почему я?"))
-        self.assertIn("up to about 250 words", spark.calls[0]["user"])
+        self.assertIn("Length: about 250 words (allowed: 225 to 275 words", spark.calls[0]["user"])
         self.assertIn("Почему я?", spark.calls[0]["user"])
         self.assertEqual(out["questions"], [])
 
@@ -326,7 +337,8 @@ class FormalBlock(Base):
     def test_profile_lines_are_included(self):
         self.add_docs()
         block = self.ctx().formal_block("x", kind="email")
-        self.assertIn("opens emails with: Здравствуйте, [Name]", block)
+        self.assertIn("opens emails with: Здравствуйте,", block)
+        self.assertNotIn("[Name]", block.split("Never write template placeholders")[0])  # guards.for_prompt
         self.assertIn("signs off with: С уважением", block)
 
     def test_formal_formats_get_no_chat_examples(self):
