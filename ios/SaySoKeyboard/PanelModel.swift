@@ -22,7 +22,9 @@ struct PanelOption: Identifiable, Hashable {
 
 @MainActor
 final class PanelModel: ObservableObject {
-    @Published var mode: KeyboardMode = .letters
+    @Published var mode: KeyboardMode = .letters {
+        didSet { showDraft() }
+    }
     @Published var tab: PanelTab = .rewrite
     @Published var audience: Audience {
         didSet { UserDefaults.standard.set(audience.rawValue, forKey: "audience") }
@@ -32,7 +34,10 @@ final class PanelModel: ObservableObject {
     }
     @Published var suggested: [Audience] = []  // the AI's top 3 for the last text, most likely first
     @Published var settings = KeyboardSettings()
-    @Published var draft = ""
+    /// The text before the cursor (the draft or instruction). Not published: it changes on every keystroke, and a
+    /// keystroke must not redraw the keyboard. The panel shows `shownDraft`, which only follows it in panel mode.
+    private(set) var draft = ""
+    @Published private(set) var shownDraft = ""
     @Published var options: [PanelOption] = []
     @Published var series: [String] = []  // the series being sent, part by part
     @Published var seriesIndex = 0
@@ -85,6 +90,7 @@ final class PanelModel: ObservableObject {
         if !settings.audiences.contains(audience), let first = settings.audiences.first { audience = first }
         if !settings.formats.contains(format), let first = settings.formats.first { format = first }
         mode = settings.startsWithLetters ? .letters : .panel
+        haptic.prepare()
         checkShortcutReplies()
         returnLabel = Self.label(for: proxy?.returnKeyType)
         lastText = proxy?.documentContextBeforeInput ?? ""
@@ -122,6 +128,12 @@ final class PanelModel: ObservableObject {
     /// iOS may only expose part of a long field; for a chat message that is the whole draft.
     func readDraft() {
         draft = proxy?.documentContextBeforeInput ?? ""
+        showDraft()
+    }
+
+    /// The panel's draft box follows the field only while the panel is up (with the letter keys nothing shows it).
+    private func showDraft() {
+        if mode == .panel, shownDraft != draft { shownDraft = draft }
     }
 
     /// Called on every change of the field. A field that had text and is suddenly empty (and not because the user
@@ -187,23 +199,20 @@ final class PanelModel: ObservableObject {
     // MARK: - Letter keys
 
     func type(_ key: String) {
-        tap()
         userDeleted = false
         proxy?.insertText(shift == .off ? key : key.uppercased())
-        if shift == .on { shift = .off }
+        if shift == .on { setShift(.off) }
         afterTyping()
     }
 
     func typeAlternate(_ key: String) {
         guard let alternate = alternates[key] else { return }
-        tap()
         proxy?.insertText(shift == .off ? alternate : alternate.uppercased())
-        if shift == .on { shift = .off }
+        if shift == .on { setShift(.off) }
         afterTyping()
     }
 
     func space() {
-        tap()
         // Double space ends a sentence, as on the system keyboard.
         if let before = proxy?.documentContextBeforeInput, before.hasSuffix(" "), !before.hasSuffix("  "),
            let last = before.dropLast().last, last.isLetter || last.isNumber {
@@ -217,27 +226,23 @@ final class PanelModel: ObservableObject {
     }
 
     func newline() {
-        tap()
         proxy?.insertText("\n")
         afterTyping()
     }
 
     func deleteBackward() {
-        tap()
         userDeleted = true
         proxy?.deleteBackward()
         afterTyping()
     }
 
     func toggleShift() {
-        tap()
         let now = Date()
-        shift = now.timeIntervalSince(lastShiftTap) < 0.3 ? .caps : (shift == .off ? .on : .off)
+        setShift(now.timeIntervalSince(lastShiftTap) < 0.3 ? .caps : (shift == .off ? .on : .off))
         lastShiftTap = now
     }
 
     func switchLanguage() {
-        tap()
         language = language.other
     }
 
@@ -254,16 +259,27 @@ final class PanelModel: ObservableObject {
     func autoShift() {
         guard shift != .caps else { return }
         guard settings.autoCapitalize else {
-            shift = .off
+            setShift(.off)
             return
         }
         let before = proxy?.documentContextBeforeInput ?? ""
         let ended = before.trimmingCharacters(in: .whitespaces).last.map { ".!?".contains($0) } ?? false
-        shift = before.isEmpty || before.hasSuffix("\n") || (before.hasSuffix(" ") && ended) ? .on : .off
+        setShift(before.isEmpty || before.hasSuffix("\n") || (before.hasSuffix(" ") && ended) ? .on : .off)
     }
 
-    private func tap() {
-        if settings.haptics && hasFullAccess { haptic.impactOccurred(intensity: 0.6) }
+    /// Published only on a real change: setting the same value would still redraw every key.
+    private func setShift(_ new: ShiftState) {
+        if shift != new { shift = new }
+    }
+
+    /// The key click, on touch down. Queued after the touch is handled, on a generator kept prepared, so it never holds
+    /// up the highlight or the letter.
+    func feedback() {
+        guard settings.haptics && hasFullAccess else { return }
+        DispatchQueue.main.async { [haptic] in
+            haptic.impactOccurred(intensity: 0.6)
+            haptic.prepare()
+        }
     }
 
     private static func label(for type: UIReturnKeyType?) -> String {
