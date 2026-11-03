@@ -474,7 +474,7 @@ struct ChatView: View {
         do {
             let language = OnDeviceSpeech.language
             let heard = await OnDeviceSpeech.hear(wav, language: language, limit: min(8, max(3, Double(seconds) / 4)))
-            let parts: [String?] = [answering, fixing ? history.last?.answer : nil, replyTo]
+            let parts: [String?] = [answering, fixing ? history.last?.answer : nil]
             let about = parts.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
             let said = try await SaySoAPI.transcribe(wav: wav, language: language,
                                                      mode: fixing ? "fix" : apiMode.rawValue, audience: audience,
