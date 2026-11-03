@@ -226,7 +226,7 @@ class Spark:
         """Whether this message, with its situation, may be shown to many people (see VET_SYSTEM). Anything unclear
         (no JSON, an error) is a no: the item is dropped and another one drawn."""
         try:
-            answer = self.ask(VET_SYSTEM, f"Situation: {summary}\nMessage: {text}", max_tokens=600)
+            answer = self.ask(VET_SYSTEM, f"Situation: {summary}\nMessage: {text}", max_tokens=2000)
             label = json.loads(re.search(r"\{.*\}", answer, re.S).group(0))
         except (RuntimeError, AttributeError, ValueError):
             return False
