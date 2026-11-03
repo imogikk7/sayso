@@ -72,6 +72,10 @@ with different rules in the prompt (`Context.formal_block`): **essays teach voic
 - `/feedback` (Chat): 👍 keeps the answer as an example; ✏️ keeps the user's version and may teach a rule.
 - 👎 in Chat goes through `/chat` with `history[].feedback`: the answer is revised and a lasting preference becomes a
   rule (`preferences.json`, max 12).
+- Chat thread: requests carry `previous` (≤ 3 `{request, answer}`); a refinement ("на русском", "shorter") revises the
+  last answer (`serving/memory.py`). Every answer passes `serving/guards.py`; a long `message` may come as a series
+  when the user writes like that (`serving/series.py`); essays are fitted to the asked length ±10 %
+  (`serving/length.py`). Responses with `alternatives` also return `alternative_parts`.
 
 ## Architecture
 
@@ -152,14 +156,17 @@ The user writes in Russian (with Kazakh/English mixed in); judges are likely Eng
 
 ```
 serving/    modal_app.py (Modal: vLLM + FastAPI + build function), writer.py, styles.py, build_style.py,
-            documents.py, baseten/ (Truss for SAYSO_GPU=baseten), fireworks.py (unused: uploads disabled)
+            documents.py, memory.py (chat thread: `previous`), guards.py (no placeholders / unasked
+            self-introductions), series.py (auto-series), length.py (essay length), postprocess.py,
+            baseten/ (Truss for SAYSO_GPU=baseten), fireworks.py (unused: uploads disabled)
 pipeline/   parse_telegram.py, parse_whatsapp.py, parse_instagram.py, sources.py, situations.py, add_thoughts.py,
             build_pairs.py, style_profile.py, style_stats.py (reranker), lexicon.py
 training/   modal_train.py (Unsloth QLoRA), build_prefs.py + modal_prefs.py (SimPO, v3), fireworks_sft.py
 eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, blind_test.py + blind_template.html,
             results/ (aggregated metrics only)
 tests/      test_api_auth.py, test_blind_test.py, test_parsers.py, test_privacy.py, test_styles.py,
-            test_writer_fakes.py, fixtures/ (made-up data only)
+            test_writer_fakes.py, test_memory.py, test_guards.py, test_series.py, test_length.py,
+            test_thread_api.py, fixtures/ (made-up data only)
 ios/        SaySoApp/, SaySoKeyboard/, Shared/ (API.swift, Settings.swift, Generated/), scripts/gen_secrets.sh
 docs/       SUBMISSION.md, VIDEO_SCRIPT.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
 ```

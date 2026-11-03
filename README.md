@@ -395,10 +395,10 @@ warming up (only when `SAYSO_GPU` is on).
 
 | Route | Request | Response |
 |---|---|---|
-| `POST /rewrite` | JSON `{text` (≤ 2000), `audience, situation?, style?, format?}` | `{text, parts, candidates, styled, audiences}`: `parts` = the messages of a series, `candidates` = alternatives, `styled` = written by the LoRA |
-| `POST /compose` | JSON `{instruction` (≤ 1000), `audience, situation?, style?, format?}` | same as `/rewrite` |
-| `POST /reply` | a screenshot as the raw body (`image/*`, ≤ 4 MB; `?audience=&style=&format=` in the query), or JSON `{image` (base64) `, image_type` \| `messages` (≤ 4000) \| `summary` (≤ 400) `+ situation, options, audience?, instruction?` (≤ 300) `, style?, format?}`. Sending back `summary` + `options` with another audience restyles without reading again | `{context: {audience, audiences, situation, summary}, replies: [{intent, tone, thought, styled, text, parts}] × 3, options: [{act, draft}], ms: {read, total}}` |
-| `POST /chat` | JSON `{mode: write \| rewrite \| reply \| email \| essay, text` (≤ 4000) `, audience, style?, format?, instruction?, history: [{answer, feedback}]` (≤ 12) `, question?` (essay, ≤ 1000) `, words?` (essay, 50–900, default 250) `, reply_to?` (email being answered, ≤ 6000)`}`. Feedback on the last history item revises that answer | `{text, parts, alternatives, audience, audiences, learned}` (`learned` = a new rule or null); email adds `subject`; essay adds `outline, questions, words, cliches` |
+| `POST /rewrite` | JSON `{text` (≤ 2000), `audience, situation?, style?, format?, previous?}` | `{text, parts, candidates, styled, audiences}`: `parts` = the messages of a series (also of a long `message`, see auto-series below), `candidates` = alternatives, `styled` = written by the LoRA |
+| `POST /compose` | JSON `{instruction` (≤ 1000), `audience, situation?, style?, format?, previous?}` | same as `/rewrite` |
+| `POST /reply` | a screenshot as the raw body (`image/*`, ≤ 4 MB; `?audience=&style=&format=` in the query), or JSON `{image` (base64) `, image_type` \| `messages` (≤ 4000) \| `summary` (≤ 400) `+ situation, options, audience?, instruction?` (≤ 300) `, style?, format?, previous?}`. Sending back `summary` + `options` with another audience restyles without reading again | `{context: {audience, audiences, situation, summary}, replies: [{intent, tone, thought, styled, text, parts}] × 3, options: [{act, draft}], ms: {read, total}}` |
+| `POST /chat` | JSON `{mode: write \| rewrite \| reply \| email \| essay, text` (≤ 4000) `, audience, style?, format?, instruction?, history: [{answer, feedback}]` (≤ 12) `, question?` (essay, ≤ 1000) `, words?` (essay, 50–900, default 250) `, reply_to?` (email being answered, ≤ 6000) `, previous?}`. Feedback on the last history item revises that answer | `{text, parts, alternatives, alternative_parts, audience, audiences, learned}` (`learned` = a new rule or null); email adds `subject`; essay adds `outline, questions, words, cliches` |
 | `POST /transcribe` | multipart `audio`: mono 16-bit WAV, ≤ 10 MB | `{text}` (Muse Voice Transcribe; audio not stored) |
 | `POST /learn` | JSON `{style?, items: [{text` (≤ 2000) `, audience, suggested?}]` (≤ 50)`}` from the keyboard | `{learned, rules}` |
 | `POST /feedback` | JSON `{audience, style?, format?, answer, edited?, liked}` | `{learned}` (a rule or null) |
@@ -410,6 +410,22 @@ warming up (only when `SAYSO_GPU` is on).
 | `POST /styles/{id}/documents` | multipart `kind` (`email` \| `essay`), `files` (≤ 40, ≤ 25 MB in all: .txt .md .docx .pdf .mbox, photos/screenshots .jpg .png .heic .webp) and/or `text` | `{documents, counts, paragraphs, profile}` (the formal voice) |
 | `GET /latest` | | the last `/reply` for the keyboard: `{audience, situation, replies, at}` or `{}` |
 | `GET /warmup` | | `{ready, gpu}`; wakes the GPU when `SAYSO_GPU` is on |
+
+- **`previous`** (`/rewrite`, `/compose`, `/reply`, `/chat`, including email and essay): up to 3 `{request, answer}`,
+  oldest first, the earlier turns of this chat thread. A request that refines the last answer ("на русском", "in
+  English", "shorter", "more formal", "add that I'm sick") revises that answer and keeps its content; a new topic is
+  written as usual, with the earlier turns only as context for consistency (`serving/memory.py`, a heuristic, no
+  extra model call). In `/reply`, a refinement with no new chat returns the last reply revised (`intent: "other"`).
+- **`alternative_parts`**: every response with `alternatives` also has it, parallel to `alternatives`: each item is
+  the parts of that alternative (its messages if it is a series, else `[alternative]`).
+- **Auto-series**: with format `message` (Write, Rewrite), when the user usually sends several short messages to that
+  audience (from their own turns) and the content is long, the model may write 2–5 messages: `parts` then has more
+  than one item (`serving/series.py`). `series` always splits; `official` and `email` never do.
+- **Guards** on every answer (`serving/guards.py`): no template placeholders (`[Name]`, `<company>`), no
+  self-introduction (name, role, organization) unless asked, no remarks about the request; the main answer is fixed,
+  alternatives that break a rule are dropped. The formal profile shapes tone only, never facts about the user.
+- **Essay length**: the prompt states the target and a ±10 % range; under 90 % an "expand to N words" pass runs (up
+  to 2), over 115 % a trim pass; `words` is the final count (`serving/length.py`).
 
 ## How to run
 
