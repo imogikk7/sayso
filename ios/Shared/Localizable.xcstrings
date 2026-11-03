@@ -488,17 +488,6 @@
         }
       }
     },
-    "Add the ready-made shortcut" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить готовую команду"
-          }
-        }
-      }
-    },
     "Add the SaySo keyboard" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -506,6 +495,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавь клавиатуру SaySo"
+          }
+        }
+      }
+    },
+    "Add the SaySo shortcut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the SaySo shortcut"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить команду SaySo"
           }
         }
       }
@@ -708,6 +714,23 @@
         }
       }
     },
+    "Assign it to Back Tap the same way, as in step 2 above." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assign it to Back Tap the same way, as in step 2 above."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назначь её на «Касание задней панели», как в шаге 2 выше."
+          }
+        }
+      }
+    },
     "Audience" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -759,6 +782,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Синий"
+          }
+        }
+      }
+    },
+    "Build it yourself" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build it yourself"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Собрать самому"
           }
         }
       }
@@ -2754,17 +2794,6 @@
         }
       }
     },
-    "Or build it yourself:" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Или собери сам:"
-          }
-        }
-      }
-    },
     "Or say it like this" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4039,6 +4068,23 @@
         }
       }
     },
+    "Tap the button above, then Add Shortcut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the button above, then Add Shortcut."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми кнопку выше, затем «Добавить команду»."
+          }
+        }
+      }
+    },
     "Tap the contact's name at the top." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4446,13 +4492,19 @@
         }
       }
     },
-    "Turn on Back Tap below and pick this shortcut." : {
+    "Turn on Back Tap: Double Tap, then choose the shortcut." : {
       "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Back Tap: Double Tap, then choose the shortcut."
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ниже включи «Касание задней панели» и выбери эту команду."
+            "value" : "Включи «Касание задней панели»: «Двойное касание», затем выбери команду."
           }
         }
       }

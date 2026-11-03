@@ -4,11 +4,12 @@ import UIKit
 /// The Settings tab: the app's language first, then the setup checklist (add the keyboard, allow Full Access, set up
 /// the Back Tap shortcut, test the server) and the last screenshot's replies.
 struct SetupView: View {
-    /// An iCloud link to a ready-made Back Tap shortcut (Shortcuts → the shortcut → Share → Copy iCloud Link). When set,
-    /// the shortcut step offers it as one tap; until then the step shows how to build it.
-    static let shortcutLink: URL? = nil
+    /// The iCloud link to the ready-made Back Tap shortcut (Shortcuts → the shortcut → Share → Copy iCloud Link).
+    /// Opening it shows the shortcut in Shortcuts with an Add Shortcut button. The only place this link lives.
+    static let shortcutURL = URL(string: "https://www.icloud.com/shortcuts/1420189edef04aa9bb90530d63176a1b")!
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @State private var keyboardOpened = SharedStore.keyboardOpenedWithFullAccess
     @State private var shortcutDone = SharedStore.shortcutDone
     @State private var serverStatus: String?
@@ -159,25 +160,38 @@ struct SetupView: View {
         StepCard(number: 3, title: "Set up the Back Tap shortcut", done: shortcutDone,
                  detail: "Double-tap the back of your iPhone on any chat: SaySo writes three replies from a screenshot, you tap one and it's copied.") {
             ShortcutFlow()
-            if let link = Self.shortcutLink {
-                Button {
-                    UIApplication.shared.open(link)
-                } label: {
-                    Label("Add the ready-made shortcut", systemImage: "plus.square.on.square")
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                Text("Or build it yourself:").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            // The main path: one tap imports the ready shortcut, then Back Tap is assigned in Settings.
+            Button {
+                openURL(Self.shortcutURL)
+            } label: {
+                Label("Add the SaySo shortcut", systemImage: "plus.square.on.square")
+                    .multilineTextAlignment(.center)
             }
+            .buttonStyle(PrimaryButtonStyle())
             NumberedSteps(steps: [
-                "Open Shortcuts and tap + to make a new shortcut.",
-                "Add the action Take Screenshot.",
-                "Add Reply with SaySo (search for SaySo). Leave Audience empty, so it asks every time.",
-                "Add Choose from List. It picks up the replies by itself.",
-                "Add Copy to Clipboard. It copies the reply you choose.",
-                "Name it, for example SaySo reply, and tap Done.",
-                "Turn on Back Tap below and pick this shortcut.",
+                "Tap the button above, then Add Shortcut.",
+                "Turn on Back Tap: Double Tap, then choose the shortcut.",
             ])
             PathLine(steps: ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", "this shortcut"])
+            // For people who'd rather build it: the same shortcut by hand, closed until asked for.
+            DisclosureGroup {
+                NumberedSteps(steps: [
+                    "Open Shortcuts and tap + to make a new shortcut.",
+                    "Add the action Take Screenshot.",
+                    "Add Reply with SaySo (search for SaySo). Leave Audience empty, so it asks every time.",
+                    "Add Choose from List. It picks up the replies by itself.",
+                    "Add Copy to Clipboard. It copies the reply you choose.",
+                    "Name it, for example SaySo reply, and tap Done.",
+                    "Assign it to Back Tap the same way, as in step 2 above.",
+                ])
+                .padding(.top, 8)
+            } label: {
+                Label("Build it yourself", systemImage: "hammer")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .tint(Color.accentColor)
             NoteBox(icon: "keyboard", text: "The replies also wait in the SaySo keyboard: switch to it in the chat and tap one to put it in, no copying needed.")
             // The switch's label is a separate Text so it can wrap: a Toggle with .fixedSize() never got narrower than
             // its one-line label plus the switch, however little room the button left it.
