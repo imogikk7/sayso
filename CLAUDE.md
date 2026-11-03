@@ -106,7 +106,8 @@ External: Muse Spark Open (Baseten) · Muse Spark 1.3 + Muse Voice Transcribe (M
 ```
 
 Routes: `/rewrite`, `/compose`, `/reply`, `/chat`, `/transcribe`, `/learn`, `/feedback`, `/styles` (GET/POST),
-`/styles/{id}` (GET/PATCH/DELETE), `/styles/{id}/custom` (PATCH), `/styles/{id}/documents`, `/latest`, `/warmup`. Request/response fields: README
+`/styles/{id}` (GET/PATCH/DELETE), `/styles/{id}/custom` (PATCH), `/styles/{id}/documents`, `/latest`, `/warmup`, `/blind/{id}` (GET page and POST `/answers`: the only routes
+without the token; GET `/responses` needs it). Request/response fields: README
 "API reference". Env flags at deploy: `SAYSO_GPU` (off | modal | baseten), `SAYSO_WRITER` (open | meta),
 `SAYSO_TRAIN` (off | on: new styles train their own LoRA, ≥150 turns).
 
@@ -142,10 +143,14 @@ the user's moves (agree, refuse, joke, ask_back, …). Style is conditioned on *
 - `bench_v4.json`: v2 vs v4 (+ rerank / profile-drawn act and tone), including act/tone match.
 - `style_gain.json` / `style_gain_open.json` (`eval/style_gain.py`): 40 held-out rewrites, Muse Spark 1.3 with more of
   the style each step, and Muse Spark Open with the production prompt (form 0.93 / chrF 50.4).
-- **Blind test v2** (`eval/blind_test.py`): per question a situation (neutral summary, retold in Russian, plus who it
-  is) and three replies — the real one, SaySo's (`/chat` reply), a generic Muse Spark 1.3 answer; pairs where the real
-  reply doesn't fit or contains names are skipped. `score` → `eval/results/blind_test.json`. **Not run yet (TODO);
-  never invent its numbers.**
+- **Blind test v3** (`eval/blind_test.py`, page `eval/blind_template.html`, routes `serving/blind.py`): 20 messages,
+  each with its situation in Russian (from the neutral summary); friends tap «Человек» or «ИИ». ~10 real replies
+  (friends/family) and ~10 SaySo (`/chat` reply to other situations), `--generic N` plain-AI controls; Muse Spark 1.3
+  screens every shown text (safe for many people, not trivial, some personal manner), SaySo length-matched to real.
+  `build` → `data/blind/<id>/`, `publish` → the `sayso-data` volume, served at `GET /blind/{id}` (no token; answers
+  `POST /blind/{id}/answers`, rate-limited), `score --server` → `eval/results/blind_test.json` (v3: human-rate real vs
+  SaySo, Fisher p, Newcombe CI, accuracy). SS1/SS2 codes and v2 keys still score. **Not run yet (TODO); never invent
+  its numbers.**
 - Any number in README, deck or video must match those files exactly.
 
 ## Demo language
@@ -172,13 +177,13 @@ The user writes in Russian (with Kazakh/English mixed in); judges are likely Eng
 serving/    modal_app.py (Modal: vLLM + FastAPI + build function), writer.py, styles.py, build_style.py,
             documents.py, memory.py (chat thread: `previous`), guards.py (no placeholders / unasked
             self-introductions), series.py (auto-series), length.py (essay length), postprocess.py,
-            baseten/ (Truss for SAYSO_GPU=baseten), fireworks.py (unused: uploads disabled)
+            blind.py (blind test v3 routes), baseten/ (Truss for SAYSO_GPU=baseten), fireworks.py (unused)
 pipeline/   parse_telegram.py, parse_whatsapp.py, parse_instagram.py, sources.py, situations.py, add_thoughts.py,
             build_pairs.py, style_profile.py, style_stats.py (reranker), lexicon.py
 training/   modal_train.py (Unsloth QLoRA), build_prefs.py + modal_prefs.py (SimPO, v3), fireworks_sft.py
 eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, blind_test.py + blind_template.html,
             results/ (aggregated metrics only)
-tests/      test_api_auth.py, test_blind_test.py, test_parsers.py, test_privacy.py, test_styles.py,
+tests/      test_api_auth.py, test_blind_test.py, test_blind_api.py, test_parsers.py, test_privacy.py, test_styles.py,
             test_writer_fakes.py, test_memory.py, test_guards.py, test_series.py, test_length.py,
             test_thread_api.py, fixtures/ (made-up data only)
 ios/        SaySoApp/, SaySoKeyboard/, Shared/ (API.swift, Settings.swift, Generated/), scripts/gen_secrets.sh
@@ -190,7 +195,8 @@ docs/       SUBMISSION.md, VIDEO_SCRIPT.md, DESIGN_BRIEF.md, deck/, video/, revi
 - Deploy: `SAYSO_GPU=off .venv/bin/modal deploy serving/modal_app.py`
 - Smoke: `.venv/bin/python eval/smoke_api.py --spark --show` (made-up inputs only)
 - Tests: `python3 -m unittest discover -s tests` (no network; tests needing private exports skip)
-- Blind test: `python3 eval/blind_test.py build --n 15`, then `python3 eval/blind_test.py score <codes…>`
+- Blind test: `python3 eval/blind_test.py build --n 20 --author <name>` → deploy → `.venv/bin/python eval/blind_test.py
+  publish` (prints the link) → `python3 eval/blind_test.py score --server [SS3-…]`
 - Style gain: `.venv/bin/python eval/style_gain.py --limit 40 [--writer open]`
 
 ## Conventions
