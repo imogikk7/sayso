@@ -243,7 +243,10 @@ struct ProgressRing: View {
                 Text("of \(total) done")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
+            .padding(.horizontal, 11)
         }
         .frame(width: size, height: size)
         .shadow(color: Theme.glow.opacity(0.25), radius: 12, y: 4)
@@ -389,19 +392,23 @@ struct FlowNode: View {
                 }
                 .overlay(RoundedRectangle(cornerRadius: Theme.card).stroke(Color.primary.opacity(highlighted ? 0 : 0.08)))
                 .shadow(color: Color.accentColor.opacity(highlighted ? 0.4 : 0.1), radius: 6, y: 3)
+            // The Russian titles ("Скопировать в буфер обмена") have words wider than a quarter of the card: they may
+            // take three lines and shrink further, and the node never reports more than its share of the row.
             Text(L(title))
                 .font(.caption.weight(.semibold))
                 .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
+                .lineLimit(3)
+                .minimumScaleFactor(0.7)
+                .allowsTightening(true)
                 .fixedSize(horizontal: false, vertical: true)
             Text(L(caption))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity)
+        .frame(minWidth: 0, maxWidth: .infinity)
     }
 }
 

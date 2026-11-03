@@ -124,6 +124,13 @@ struct GlassCard: ViewModifier {
 }
 
 extension View {
+    /// The content of a tab's vertical ScrollView, pinned to the scroll view's width. A child that asks for more room
+    /// (a long Russian word, a fixed-size control, bigger Dynamic Type) then wraps or shrinks inside the page instead of
+    /// making the page wider than the screen, which let the whole tab pan and bounce sideways.
+    func pageWidth() -> some View {
+        containerRelativeFrame(.horizontal)
+    }
+
     func glassCard(radius: CGFloat = Theme.card + 4, padding: CGFloat = 14) -> some View {
         modifier(GlassCard(radius: radius, padding: padding))
     }

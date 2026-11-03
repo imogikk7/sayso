@@ -30,7 +30,7 @@ struct SetupView: View {
         NavigationStack {
             ZStack {
                 Theme.backdrop
-                ScrollView {
+                ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: 16) {
                         header
                         languageCard
@@ -49,7 +49,9 @@ struct SetupView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
                     .padding(.bottom, 32)
+                    .pageWidth()
                 }
+                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             }
             .toolbar(.hidden, for: .navigationBar)
             .onAppear(perform: refresh)
@@ -177,17 +179,22 @@ struct SetupView: View {
             ])
             PathLine(steps: ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", "this shortcut"])
             NoteBox(icon: "keyboard", text: "The replies also wait in the SaySo keyboard: switch to it in the chat and tap one to put it in, no copying needed.")
+            // The switch's label is a separate Text so it can wrap: a Toggle with .fixedSize() never got narrower than
+            // its one-line label plus the switch, however little room the button left it.
             HStack(spacing: 12) {
                 Button(action: openShortcuts) {
                     Label("Open Shortcuts", systemImage: "square.2.layers.3d")
                 }
                 .buttonStyle(SoftButtonStyle())
                 Spacer(minLength: 8)
-                Toggle(isOn: $shortcutDone) {
-                    Text("I've set it up").font(.subheadline.weight(.semibold))
-                }
-                .tint(Color.accentColor)
-                .fixedSize()
+                Text("I've set it up")
+                    .font(.subheadline.weight(.semibold))
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHidden(true)
+                Toggle("I've set it up", isOn: $shortcutDone)
+                    .labelsHidden()
+                    .tint(Color.accentColor)
             }
         }
     }

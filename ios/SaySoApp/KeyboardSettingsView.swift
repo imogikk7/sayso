@@ -11,7 +11,7 @@ struct KeyboardSettingsView: View {
         NavigationStack {
             ZStack {
                 Theme.backdrop
-                ScrollView {
+                ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: 16) {
                         header
                         KeyboardPreview(settings: settings)
@@ -30,7 +30,9 @@ struct KeyboardSettingsView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
                     .padding(.bottom, 32)
+                    .pageWidth()
                 }
+                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             }
             .toolbar(.hidden, for: .navigationBar)
             .onChange(of: settings) { _, value in SharedStore.keyboard = value }

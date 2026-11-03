@@ -149,7 +149,7 @@ struct ChatView: View {
 
     private var conversation: some View {
         ScrollViewReader { proxy in
-            ScrollView {
+            ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     welcome
                     ForEach(items) { item in row(item).id(item.id) }
@@ -157,7 +157,9 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 16)
+                .pageWidth()
             }
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: items.count) { _, _ in
                 if let last = items.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }

@@ -19,12 +19,14 @@ struct StyleCardView: View {
         ZStack {
             Theme.backdrop
             ScrollViewReader { proxy in
-                ScrollView {
+                ScrollView(.vertical) {
                     content
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .padding(.bottom, 32)
+                        .pageWidth()
                 }
+                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
                 .refreshable { await load() }
                 .onChange(of: style?.id) { _, newID in
                     guard newID != nil, let focus else { return }

@@ -36,12 +36,14 @@ struct StylesView: View {
         NavigationStack(path: $path) {
             ZStack {
                 Theme.backdrop
-                ScrollView {
+                ScrollView(.vertical) {
                     content
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .padding(.bottom, 32)
+                        .pageWidth()
                 }
+                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
                 .refreshable { await load() }
             }
             .toolbar(.hidden, for: .navigationBar)
