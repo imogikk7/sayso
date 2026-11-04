@@ -48,3 +48,7 @@ serving/baseten/data/
 
 # blind test: the key and the page hold the user's real messages (data/ is ignored anyway; explicit on purpose)
 data/blind/
+
+# filmed clips, voiceover and renders: private, never committed
+docs/video/*
+!docs/video/captions.srt
