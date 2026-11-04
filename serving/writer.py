@@ -333,6 +333,20 @@ def swears(text):
     return CLEAN and bool(MAT.search(text or ""))
 
 
+def unswear(value):
+    """Last resort: the words that swear are cut out (strings, lists and dicts of them)."""
+    if isinstance(value, str):
+        if not swears(value):
+            return value
+        words = [x for x in value.split(" ") if not MAT.search(x)]
+        return re.sub(r"\s+([,.!?)])", r"\1", " ".join(words)).strip(" ,") or value
+    if isinstance(value, list):
+        return [unswear(v) for v in value]
+    if isinstance(value, dict):
+        return {k: unswear(v) if k != "audiences" else v for k, v in value.items()}
+    return value
+
+
 def scrub(label):
     """Drop the variants or replies that swear; if the main text swears, a clean variant takes its place."""
     def ok(item):
@@ -910,7 +924,10 @@ class Writer:
         self.warm_until = time.monotonic() + 60
         choices = sorted(response.json()["choices"], key=lambda c: c["index"])
         texts = [c["text"].split("<|")[0].strip() for c in choices]  # cut any other control token
-        return [texts[i * n:(i + 1) * n] for i in range(len(prompts))]
+        groups = [texts[i * n:(i + 1) * n] for i in range(len(prompts))]
+        if CLEAN:  # the LoRA learned the user's swearing: keep the clean ones, else cut the words out
+            groups = [[t for t in g if not swears(t)] or [unswear(t) for t in g] for g in groups]
+        return groups
 
     def best(self, ctx, candidates, audience, situation):
         usable = [c for c in candidates if c.strip() and not KAZAKH.search(c)] or [c for c in candidates if c.strip()]
@@ -954,7 +971,7 @@ class Writer:
                 return label
             await asyncio.sleep(1)
         if dirty is not None:
-            return dirty
+            return unswear(dirty)
         raise Unavailable(502, "Muse Spark did not answer")
 
     def format_line(self, format):
