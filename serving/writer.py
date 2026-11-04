@@ -271,9 +271,11 @@ and connecting the user's facts and saying what they showed or why they mattered
 if that is impossible, write it shorter and ask what is missing. Write in the user's formal voice (below): their
 sentence length (not choppy short sentences), plain wording, their linking words only where they fit naturally. Same language as
 the notes.
-Before you answer, check: (1) if it is about the user (a personal statement, their project, their story), every
-paragraph speaks as "I" in the active voice, never "the project was built"; (2) each linking word really links two
-ideas, or remove it; (3) nothing that is not in the notes.
+Write 3 to 6 real paragraphs of 3 to 6 sentences each (never one-sentence paragraphs), separated by blank lines.
+Before you answer, check: (1) if it is about the user (a personal statement, their project, their story), it speaks in
+the first person and the active voice, never "the project was built", but vary how sentences start: never more than two
+sentences in a row starting with "I"; (2) at most one linking word ("thus", "however", "also"...) per paragraph, and only
+where it really links two ideas; (3) nothing that is not in the notes.
 Return JSON only: {{"outline": ["...", ...], "text": "<the essay>", "questions": ["<up to 3 short questions whose answers
 would make the essay stronger, in the notes' language>", ...]}}."""
 
@@ -502,7 +504,13 @@ def capitalize(line):
 
 def shape(text, format="message"):
     """→ (text, parts): parts are the messages to send one by one (one, except for a series)."""
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if format == "essay":  # paragraphs are split by blank lines; single line breaks inside one are just spaces
+        lines = [" ".join(p.split()) for p in re.split(r"\n\s*\n", text) if p.strip()]
+        if len(lines) == 1:  # no blank lines: each line is a paragraph, unless it's one sentence per line
+            rows = [line.strip() for line in text.splitlines() if line.strip()]
+            lines = rows if len(rows) <= 6 else [" ".join(rows[i:i + 3]) for i in range(0, len(rows), 3)]
+    else:
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
     if format in FORMAL:
         lines = [capitalize(line) for line in lines]
     if format == "series" and len(lines) == 1:

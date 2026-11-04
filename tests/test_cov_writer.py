@@ -156,7 +156,7 @@ class Essay(Base):
         self.assertEqual(len(spark.calls), 1)  # within the limit, no cliché: no fix
         self.assertEqual((call["key"], call["max_tokens"], call["timeout"]), ("text", 6000, 90))
         for needed in ("Расскажите о своём проекте", "about 250 words (allowed: 225 to 275 words", "я сделал бота для заметок",
-                       'written in the first person ("I built…")', 'speaks as "I" in the active voice',
+                       'written in the first person ("I built…")', 'it speaks in\nthe first person and the active voice',
                        "never invent experiences", '"questions"'):
             self.assertIn(needed, call["user"])
         self.assertEqual(out["outline"], ["начало", "проект", "итог"])
