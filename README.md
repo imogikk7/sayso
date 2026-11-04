@@ -1,5 +1,7 @@
 # SaySo: an AI that writes the way you'd say it
 
+**▶ [Demo video (3 min)](https://youtu.be/MT7rrQuGGgg)** · [Post on X](https://x.com/imogikk7/status/2118044097198092367) · [Submission write-up](docs/SUBMISSION.md) · [Deck (PDF)](docs/deck/sayso.pdf)
+
 SaySo writes messages the way **you** write them: your length, your case and punctuation, your slang, the way you
 react to good news or a complaint, and how all of that changes between your partner, friends, family and elders.
 It also writes your **emails and essays** in your own formal voice, learned from emails and essays you wrote yourself.
