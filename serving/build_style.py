@@ -372,7 +372,7 @@ def build(style_id, files, spark, meta_key, wait_for_me, commit=lambda: None, tr
             if guesses[name] not in AUDIENCES:
                 guesses[name] = "friends"
         me = "me" if set(participants) <= {"me", "them"} else None
-        stage("needs_me", 0.15, participants=[p for p, _ in participants.most_common(12) if p not in {"them"}],
+        stage("needs_me", 0.15, confirmed=False, participants=[p for p, _ in participants.most_common(12) if p not in {"them"}],
               chats=guesses, me=me, needs=["me", "chats"] if me is None else ["chats"])
         confirmed = wait_for_me(styles.meta(style_id))
         if confirmed is None:
