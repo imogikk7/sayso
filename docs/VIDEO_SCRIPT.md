@@ -13,7 +13,7 @@ UI unedited.
 **Which model writes what in this video.** Filmed with the GPU on (`SAYSO_GPU=modal`: the user's LoRA on Muse Glimmer
 30B served by vLLM on a temporary H100 on Modal):
 - **Keyboard ✨**: written live by **the user's LoRA on Muse Glimmer 30B** (5 candidates, the reranker picks one).
-- **Action Button → replies**: **Muse Spark 1.3** reads the screenshot and drafts three replies; **the LoRA** restyles
+- **Back Tap → replies**: **Muse Spark 1.3** reads the screenshot and drafts three replies; **the LoRA** restyles
   each draft in the user's voice.
 - **In-app chat** (the story as a series, "in English", 👎 revisions): **Muse Spark Open**.
 - **Essays**: **Muse Spark 1.3**. **Voice notes**: **Muse Voice Transcribe 1.0**.
@@ -43,7 +43,7 @@ Target lengths; the final cut decides the exact times.
 |---|---|---|
 | 0 | Hook: the AI reply your friend spotted | ~7 s |
 | 1 | Keyboard: what I mean → ✨ → my wording → series stack, tap, send, next | ~24 s |
-| 2 | Action Button: screenshot → who's it for, what to say → three replies → paste | ~22 s |
+| 2 | Back Tap: screenshot → who's it for, what to say → three replies → paste | ~22 s |
 | 3 | Chat: a story as real messages, then "in English" | ~17 s |
 | 4 | Where the voice comes from: chats (time-lapse build) and emails | ~20 s |
 | 5 | Essay from a voice note → "Make it stronger" | ~22 s |
@@ -94,23 +94,23 @@ the sends is optional.
 
 ---
 
-## 2 · Action Button: replies from a screenshot
+## 2 · Back Tap: replies from a screenshot
 
 **Screen (exact taps):**
 1. In the staged WhatsApp chat, the friend has just sent
    `Слушай, поможешь мне в субботу с переездом? Часов в 10 утра` (*Hey, can you help me move on Saturday? Around 10 am*).
    The keyboard is closed.
-2. **Press the Action Button.** The SaySo shortcut takes the screenshot.
+2. **Double-tap the back of the phone.** The SaySo shortcut takes the screenshot.
 3. Dialog **Who is it for?** → **Friends**. Dialog **Anything to add?** → type what to say (for example
    `politely decline, I'm busy`) → **Done**.
 4. Wait at real speed. **Choose from List** shows three replies → tap one → *Copy to Clipboard* copies it.
 5. Back in WhatsApp: touch and hold the message field → **Paste** → Send.
 
 **Voiceover:**
-> No keyboard? Press the Action Button. Who's it for, what should I say. Three replies in my voice. Pick one, paste,
+> No keyboard? Double-tap the back of the phone. Who's it for, what should I say. Three replies in my voice. Pick one, paste,
 > done.
 
-**Caption:** `No keyboard? Press the Action Button` · `Who's it for · what to say` · `3 replies in my voice → paste`
+**Caption:** `No keyboard? Double-tap the back of the phone` · `Who's it for · what to say` · `3 replies in my voice → paste`
 
 **Badge (right):** `Muse Spark 1.3 reads the chat · your LoRA rewrites the replies in your voice`
 
