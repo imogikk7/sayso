@@ -148,6 +148,9 @@ the user's moves (agree, refuse, joke, ask_back, …). Style is conditioned on *
 - `bench_v4.json`: v2 vs v4 (+ rerank / profile-drawn act and tone), including act/tone match.
 - `style_gain.json` / `style_gain_open.json` (`eval/style_gain.py`): 40 held-out rewrites, Muse Spark 1.3 with more of
   the style each step, and Muse Spark Open with the production prompt (form 0.93 / chrF 50.4).
+  `--writer lora --gpu-ok` runs the same 40 with the GPU-on server path (Glimmer 30B + LoRA v4, unchanged Writer code;
+  vLLM calls answered by one H100 in the ephemeral app `sayso-eval-lora`, `eval/lora_gpu.py`, 15-min hard stop) next to
+  Spark Open → `style_gain_lora.json` (not run yet); side-by-side samples go to `data/style_gain/` only.
 - **Blind test v3** (`eval/blind_test.py`, page `eval/blind_template.html`, routes `serving/blind.py`): 20 messages,
   each with its situation in Russian (from the neutral summary); friends tap «Человек» or «ИИ». ~10 real replies
   (friends/family) and ~10 SaySo (`/chat` reply to other situations), `--generic N` plain-AI controls; Muse Spark 1.3
@@ -188,11 +191,11 @@ serving/    modal_app.py (Modal: vLLM + FastAPI + build function), writer.py, st
 pipeline/   parse_telegram.py, parse_whatsapp.py, parse_instagram.py, sources.py, situations.py, add_thoughts.py,
             build_pairs.py, style_profile.py, style_stats.py (reranker), lexicon.py
 training/   modal_train.py (Unsloth QLoRA), build_prefs.py + modal_prefs.py (SimPO, v3), fireworks_sft.py
-eval/       bench_generate.py, metrics.py, style_gain.py, smoke_api.py, blind_test.py + blind_template.html,
+eval/       bench_generate.py, metrics.py, style_gain.py + lora_gpu.py, smoke_api.py, blind_test.py + blind_template.html,
             results/ (aggregated metrics only)
 tests/      test_api_auth.py, test_blind_test.py, test_blind_api.py, test_parsers.py, test_privacy.py, test_styles.py,
             test_writer_fakes.py, test_memory.py, test_guards.py, test_series.py, test_length.py,
-            test_thread_api.py, fixtures/ (made-up data only)
+            test_thread_api.py, test_style_gain_lora.py, fixtures/ (made-up data only)
 ios/        SaySoApp/, SaySoKeyboard/, Shared/ (API.swift, Settings.swift, Generated/), scripts/gen_secrets.sh
 docs/       SUBMISSION.md, VIDEO_SCRIPT.md, X_POST.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
 ```
