@@ -319,6 +319,34 @@ CONTRASTS = {
 }
 DEFAULT_CONTRASTS = ["agree", "ask_back", "joke"]
 
+# Demo switch (SAYSO_CLEAN, on by default): nothing SaySo writes swears, whatever the user's own habits are.
+CLEAN = __import__("os").environ.get("SAYSO_CLEAN", "on") == "on"
+CLEAN_RULE = ("\n\nOverrides everything above: never use swear words, profanity or obscene words in any language "
+              "(no Russian мат, not even softened or with asterisks), even where the user's style or examples do. "
+              "Keep the rest of their style.")
+MAT = re.compile(r"(?<![а-яё])(?:за|на|вы|по|у|от|разъ|съ|въ|подъ|до|при|о|рас)?(?:ёб|еб[аулинт])|ху[йеёяию]|пизд"
+                 r"|(?<![а-яё])бля|(?<![а-яё])сук[аиу]|(?<![а-яё])сучк|муда[кч]|мудил|гандон|пид[оа]р|залуп"
+                 r"|\bfuck|\bshit|\bbitch", re.I)
+
+
+def swears(text):
+    return CLEAN and bool(MAT.search(text or ""))
+
+
+def scrub(label):
+    """Drop the variants or replies that swear; if the main text swears, a clean variant takes its place."""
+    def ok(item):
+        return not swears(item.get("text", "") if isinstance(item, dict) else json.dumps(item, ensure_ascii=False))
+    for key, value in list(label.items()):
+        if isinstance(value, list) and value and key != "audiences":
+            label[key] = [v for v in value if ok(v)] or value
+    if isinstance(label.get("text"), str) and swears(label["text"]):
+        spare = [v for v in label.get("variants") or [] if isinstance(v, str) and not swears(v)]
+        if spare:
+            label["text"], label["variants"] = spare[0], spare[1:]
+    return label
+
+
 META_URL = "https://api.meta.ai/v1/chat/completions"
 TRANSCRIBE_URL = "https://api.meta.ai/v1/asr/transcribe"  # Muse Voice Transcribe: WAV in, text out
 # Its request takes the same hints as its realtime handshake: "keywords" (words to expect: names) and "languageBias"
@@ -886,6 +914,7 @@ class Writer:
 
     def best(self, ctx, candidates, audience, situation):
         usable = [c for c in candidates if c.strip() and not KAZAKH.search(c)] or [c for c in candidates if c.strip()]
+        usable = [c for c in usable if not swears(c)] or usable
         if not usable:
             return ""
         if ctx.stats is None:
@@ -901,6 +930,10 @@ class Writer:
                  if self.fallback_key else [])
         tries = open_ + meta if writes and self.writer == "open" else meta + open_
         user = memory.with_note(user)  # the chat thread's earlier turns, while a new-topic answer is written
+        reading = system in (__import__("documents").READ_SYSTEM, TRANSCRIPT_FIX, TRANSCRIPT_FIX_EN, LEARN_SYSTEM)  # copies, not writes
+        if CLEAN and not reading:
+            system += CLEAN_RULE
+        dirty = None
         for url, api_key, model in tries:
             try:
                 response = await self.client.post(
@@ -915,8 +948,13 @@ class Writer:
                 label = {}
             value = label.get(key) if isinstance(label, dict) else None
             if (isinstance(value, str) and (value.strip() or key == "rule")) or (isinstance(value, list) and value):
+                if CLEAN and not reading and swears(json.dumps(scrub(label), ensure_ascii=False)):
+                    dirty = dirty or label  # try the next model; use this one only if none answers cleanly
+                    continue
                 return label
             await asyncio.sleep(1)
+        if dirty is not None:
+            return dirty
         raise Unavailable(502, "Muse Spark did not answer")
 
     def format_line(self, format):

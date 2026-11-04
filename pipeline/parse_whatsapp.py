@@ -36,7 +36,7 @@ def read_text(path: Path) -> str:
 
 
 def parse_timestamp(date: str, time: str, day_first: bool) -> datetime:
-    time = time.replace(".", "").upper().replace(" ", "")
+    time = time.replace(".", "").upper().replace(" ", "").replace("\u202f", "").replace("\u00a0", "")
     parts = re.split(r"[./-]", date)
     if len(parts[0]) == 4:  # 2024-01-15
         year, month, day = parts

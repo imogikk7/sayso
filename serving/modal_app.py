@@ -22,6 +22,7 @@ REPO = Path(__file__).resolve().parent.parent
 GPU = os.environ.get("SAYSO_GPU", "off")
 # "on": a new style also trains its own LoRA (training/modal_train.py, an H100 for ~10–30 min); "off": profile only.
 TRAIN = os.environ.get("SAYSO_TRAIN", "off")
+CLEAN = os.environ.get("SAYSO_CLEAN", "on")  # demo: no swearing in anything SaySo writes
 MODEL = "meta-models/Muse-Glimmer-30B"
 VLLM_PORT = 8000
 
@@ -77,7 +78,7 @@ def glimmer():
 api_image = (
     modal.Image.debian_slim(python_version="3.12")
     .pip_install("fastapi[standard]", "httpx", "transformers", "jinja2", "pypdf")
-    .env({"HF_HOME": "/cache/hf", "TRANSFORMERS_VERBOSITY": "error", "SAYSO_GPU": GPU, "SAYSO_TRAIN": TRAIN})
+    .env({"HF_HOME": "/cache/hf", "TRANSFORMERS_VERBOSITY": "error", "SAYSO_GPU": GPU, "SAYSO_TRAIN": TRAIN, "SAYSO_CLEAN": CLEAN})
     # pipeline/ modules read the user's data from <repo>/data; here that is the private volume
     .run_commands("mkdir -p /root/sayso && ln -s /data /root/sayso/data")
     .add_local_dir(REPO / "pipeline", "/root/sayso/pipeline", ignore=["__pycache__"])

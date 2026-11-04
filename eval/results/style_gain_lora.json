@@ -1,0 +1,72 @@
+{
+ "pairs": 40,
+ "results": {
+  "production": {
+   "form": 0.93,
+   "chrf": 49.3,
+   "n": 40
+  },
+  "lora": {
+   "form": 0.97,
+   "chrf": 55.7,
+   "n": 40
+  },
+  "lora_norerank": {
+   "form": 0.98,
+   "chrf": 50.0,
+   "n": 40
+  },
+  "open+lora": {
+   "form": 0.94,
+   "chrf": 47.3,
+   "n": 40
+  }
+ },
+ "vs_production": {
+  "lora": {
+   "n": 40,
+   "chrf_diff": 6.4,
+   "chrf_ci": [
+    0.8,
+    12.4
+   ],
+   "form_diff": 0.04,
+   "form_ci": [
+    0.01,
+    0.07
+   ],
+   "chrf_wins": 22,
+   "chrf_losses": 15
+  },
+  "lora_norerank": {
+   "n": 40,
+   "chrf_diff": 0.8,
+   "chrf_ci": [
+    -6.2,
+    7.3
+   ],
+   "form_diff": 0.05,
+   "form_ci": [
+    0.0,
+    0.07
+   ],
+   "chrf_wins": 19,
+   "chrf_losses": 17
+  },
+  "open+lora": {
+   "n": 40,
+   "chrf_diff": -2.0,
+   "chrf_ci": [
+    -3.9,
+    -0.6
+   ],
+   "form_diff": 0.01,
+   "form_ci": [
+    0.0,
+    0.03
+   ],
+   "chrf_wins": 3,
+   "chrf_losses": 11
+  }
+ }
+}
