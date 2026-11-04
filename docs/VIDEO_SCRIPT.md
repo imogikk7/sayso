@@ -247,7 +247,7 @@ by default Muse Spark Open writes`.
       number. Never a real third-party conversation on screen. The friend is never named in the video or the docs:
       neutral display name, placeholder avatar, no phone numbers on screen.
 - [ ] Clear the chat history above the staged messages, so no older messages show.
-- [ ] The Back Tap screenshot only contains the staged chat (it is sent to Muse Spark 1.3).
+- [ ] The Action Button screenshot only contains the staged chat (it is sent to Muse Spark 1.3).
 - [ ] WhatsApp export for beat 4: the staged chat only. Real names in **Which one is you?** and **Who are these chats
       with?** are blurred in the edit.
 - [ ] Before filming, open the built style's self-check card, the audience cards and the Emails tab: if any `You:`
@@ -261,14 +261,14 @@ by default Muse Spark Open writes`.
 - [ ] Do Not Disturb on; one theme for all takes; default text size.
 - [ ] SaySo keyboard added, **Full Access** on, active in WhatsApp. Keyboard tab: Formats include Series, variants = 3.
 - [ ] Microphone allowed for SaySo, so 🎙 works on the first take.
-- [ ] Shortcut installed with **Add the SaySo shortcut**; then Settings → Accessibility → Touch → **Back Tap** → Double Tap → that SaySo
+- [ ] Shortcut installed with **Add the SaySo shortcut**; then Settings → **Action Button** → Shortcut → that SaySo
       shortcut. Test it twice right before the take, including the Paste in WhatsApp.
 - [ ] The style built in beat 4 is the **active** style for the other beats.
 
 ### Server and models (what writes must match the badges)
 - [ ] Deployed with `SAYSO_GPU=modal` (and `SAYSO_SCALEDOWN` raised while filming, so the H100 stays warm between
       takes), `SAYSO_WRITER=open`, `SAYSO_CLEAN=on`. Warm it with `GET /warmup` before the first take.
-- [ ] ✨ and Back Tap takes: the answer must come from the LoRA (`styled: true` in the `/rewrite` / `/reply`
+- [ ] ✨ and Action Button takes: the answer must come from the LoRA (`styled: true` in the `/rewrite` / `/reply`
       response). A cold GPU answers with Muse Spark instead (`styled: false`); then refilm the take or change its badge
       to `Muse Spark Open` (✨) / `Muse Spark 1.3` (replies).
 - [ ] If Baseten is down, chat answers come from Spark 1.3 (the fallback): change those badges, or wait and refilm.
