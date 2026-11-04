@@ -52,3 +52,4 @@ data/blind/
 # filmed clips, voiceover and renders: private, never committed
 docs/video/*
 !docs/video/captions.srt
+!docs/video/captions_ru.srt

@@ -1,308 +1,376 @@
 1
-00:00:00,823 --> 00:00:03,063
-Ever sent an AI reply…
+00:00:00,874 --> 00:00:01,824
+Ever sent an
 
 2
-00:00:04,119 --> 00:00:06,239
-and your friend instantly knew?
+00:00:01,844 --> 00:00:02,964
+AI reply…
 
 3
-00:00:06,919 --> 00:00:08,949
-Yeah. Me too.
+00:00:03,774 --> 00:00:04,434
+and your friend
 
 4
-00:00:09,020 --> 00:00:10,820
-So I built SaySo.
+00:00:04,454 --> 00:00:06,935
+instantly knew? Yeah.
 
 5
-00:00:10,820 --> 00:00:12,530
-SaySo is an app that
+00:00:07,235 --> 00:00:08,075
+Me too.
 
 6
-00:00:12,530 --> 00:00:13,960
-learns how you write, from
+00:00:08,346 --> 00:00:10,236
+So I built SaySo.
 
 7
-00:00:13,960 --> 00:00:16,110
-your own chats and emails.
+00:00:10,504 --> 00:00:11,744
+SaySo is an app
 
 8
-00:00:16,200 --> 00:00:20,457
-Four tabs: Chat. Styles. Keyboard.
+00:00:11,764 --> 00:00:12,754
+that learns how you
 
 9
-00:00:20,547 --> 00:00:21,837
-And Settings.
+00:00:12,774 --> 00:00:13,754
+write, from your own
 
 10
-00:00:22,122 --> 00:00:23,022
-It has its own
+00:00:13,774 --> 00:00:15,164
+chats and emails.
 
 11
-00:00:23,022 --> 00:00:24,372
-keyboard, and a shortcut
+00:00:15,553 --> 00:00:18,934
+Four tabs: Chat. Styles.
 
 12
-00:00:24,372 --> 00:00:26,162
-for the Action Button.
+00:00:20,424 --> 00:00:21,334
+Keyboard.
 
 13
-00:00:27,121 --> 00:00:28,261
-A keyboard that
+00:00:22,824 --> 00:00:23,994
+And Settings.
 
 14
-00:00:28,261 --> 00:00:29,541
-texts like me.
+00:00:25,016 --> 00:00:25,836
+It has its own
 
 15
-00:00:30,417 --> 00:00:31,927
-I type what I mean,
+00:00:25,856 --> 00:00:27,096
+keyboard, and a shortcut
 
 16
-00:00:33,622 --> 00:00:34,902
-tap the sparkle,
+00:00:27,116 --> 00:00:28,756
+for the Action Button.
 
 17
-00:00:38,716 --> 00:00:39,716
-and my own model
+00:00:28,991 --> 00:00:30,051
+A keyboard that
 
 18
-00:00:39,716 --> 00:00:40,716
-writes it the way
+00:00:30,071 --> 00:00:31,271
+texts like me.
 
 19
-00:00:40,716 --> 00:00:42,346
-I'd actually say it.
+00:00:32,891 --> 00:00:33,481
+I type what
 
 20
-00:00:42,518 --> 00:00:45,563
-Even in bursts. Tap, send,
+00:00:33,501 --> 00:00:34,291
+I mean,
 
 21
-00:00:45,593 --> 00:00:46,423
-next.
+00:00:35,093 --> 00:00:36,273
+tap the sparkle,
 
 22
-00:00:48,320 --> 00:00:49,470
-No keyboard?
+00:00:40,195 --> 00:00:41,125
+and my own model
 
 23
-00:00:50,250 --> 00:00:51,910
-Press the Action Button.
+00:00:41,145 --> 00:00:42,065
+writes it the way
 
 24
-00:00:52,320 --> 00:00:53,600
-Who's it for,
+00:00:42,085 --> 00:00:43,605
+I'd actually say it.
 
 25
-00:00:53,860 --> 00:00:55,050
-what should I say.
+00:00:43,999 --> 00:00:46,304
+Even in bursts. Tap,
 
 26
-00:00:59,620 --> 00:01:01,800
-Three replies in my voice.
+00:00:46,404 --> 00:00:47,984
+send, next.
 
 27
-00:01:02,040 --> 00:01:04,740
-Pick one, paste, done.
+00:00:50,391 --> 00:00:51,461
+No keyboard?
 
 28
-00:01:06,520 --> 00:01:08,100
-Same vibe in the app.
+00:00:52,231 --> 00:00:53,781
+Press the Action Button.
 
 29
-00:01:08,197 --> 00:01:09,767
-Ask for a story,
+00:00:54,386 --> 00:00:55,576
+Who's it for,
 
 30
-00:01:14,622 --> 00:01:16,472
-get it as real messages.
+00:00:55,846 --> 00:00:56,946
+what should I say.
 
 31
-00:01:19,220 --> 00:01:20,030
-Where does my
+00:01:01,993 --> 00:01:03,093
+Three replies in
 
 32
-00:01:20,030 --> 00:01:21,270
-voice come from?
+00:01:03,113 --> 00:01:05,093
+my voice. Pick one,
 
 33
-00:01:21,423 --> 00:01:23,303
-My own chats and emails.
+00:01:05,273 --> 00:01:06,833
+paste, done.
 
 34
-00:01:24,024 --> 00:01:25,834
-This is the Styles tab.
+00:01:10,191 --> 00:01:10,831
+Same vibe in
 
 35
-00:01:25,834 --> 00:01:29,174
-Ninety-three percent: on messages it
+00:01:10,851 --> 00:01:11,671
+the app.
 
 36
-00:01:29,174 --> 00:01:31,294
-never saw, SaySo gets that
+00:01:12,063 --> 00:01:13,523
+Ask for a story,
 
 37
-00:01:31,294 --> 00:01:33,414
-close to me. Generic AI,
+00:01:19,894 --> 00:01:20,454
+get it as
 
 38
-00:01:33,414 --> 00:01:34,754
-sixty-nine.
+00:01:20,474 --> 00:01:21,624
+real messages.
 
 39
-00:01:34,838 --> 00:01:36,398
-Below, how I write to
+00:01:23,891 --> 00:01:24,621
+Where does my
 
 40
-00:01:36,398 --> 00:01:38,128
-each kind of person.
+00:01:24,641 --> 00:01:25,761
+voice come from?
 
 41
-00:01:38,215 --> 00:01:40,415
-Emails get their own style:
+00:01:26,150 --> 00:01:26,800
+My own chats
 
 42
-00:01:40,415 --> 00:01:43,045
-greeting, sign-off, tone and length.
+00:01:26,820 --> 00:01:27,860
+and emails.
 
 43
-00:01:43,143 --> 00:01:44,533
-It learns how I write,
+00:01:28,253 --> 00:01:29,603
+This is the Styles
 
 44
-00:01:44,533 --> 00:01:44,933
-never what others said.
+00:01:29,623 --> 00:01:31,803
+tab. Ninety-three percent: on
 
 45
-00:01:44,720 --> 00:01:46,110
-Essays too.
+00:01:31,823 --> 00:01:33,733
+messages it never saw,
 
 46
-00:01:47,318 --> 00:01:48,598
-I just talk,
+00:01:33,753 --> 00:01:35,113
+SaySo gets that close
 
 47
-00:01:49,917 --> 00:01:50,757
-it writes in
+00:01:35,133 --> 00:01:36,763
+to me. Generic AI,
 
 48
-00:01:50,757 --> 00:01:52,027
-my formal voice,
+00:01:36,783 --> 00:01:37,983
+sixty-nine.
 
 49
-00:01:52,267 --> 00:01:54,047
-only from my facts.
+00:01:38,893 --> 00:01:39,823
+Below, how I
 
 50
-00:01:54,132 --> 00:01:55,102
-Then it asks how
+00:01:39,843 --> 00:01:40,533
+write to each
 
 51
-00:01:55,102 --> 00:01:56,732
-to make it stronger.
+00:01:40,553 --> 00:01:41,883
+kind of person.
 
 52
-00:01:57,820 --> 00:02:00,277
-Too casual? Thumbs down.
+00:01:42,293 --> 00:01:43,693
+Emails get their own
 
 53
-00:02:05,024 --> 00:02:06,154
-It fixes it,
+00:01:43,713 --> 00:01:45,693
+style: greeting, sign-off, tone
 
 54
-00:02:07,818 --> 00:02:09,188
-and remembers.
+00:01:45,713 --> 00:01:46,663
+and length.
 
 55
-00:02:09,520 --> 00:02:10,680
-Under the hood:
+00:01:47,056 --> 00:01:47,796
+It learns how
 
 56
-00:02:10,680 --> 00:02:12,550
-four Meta models.
+00:01:47,816 --> 00:01:48,816
+I write, never
 
 57
-00:02:12,943 --> 00:02:15,263
-Muse Spark Open writes my
+00:01:48,836 --> 00:01:50,226
+what others said.
 
 58
-00:02:15,263 --> 00:02:17,913
-messages and emails. Muse Spark
+00:01:50,500 --> 00:01:51,790
+Essays too.
 
 59
-00:02:17,913 --> 00:02:20,223
-1.3 reads screenshots and writes
+00:01:52,183 --> 00:01:53,363
+I just talk,
 
 60
-00:02:20,223 --> 00:02:22,543
-essays. Muse Voice Transcribe turns
+00:01:53,755 --> 00:01:54,535
+it writes in
 
 61
-00:02:22,543 --> 00:02:24,633
-my voice into text.
+00:01:54,555 --> 00:01:55,735
+my formal voice,
 
 62
-00:02:25,019 --> 00:02:26,609
-And Muse Glimmer carries my
+00:01:55,985 --> 00:01:57,615
+only from my facts.
 
 63
-00:02:26,609 --> 00:02:28,199
-own LoRA, trained on my
+00:02:00,050 --> 00:02:00,940
+Then it asks how
 
 64
-00:02:28,199 --> 00:02:30,229
-messages, for the keyboard.
+00:02:00,960 --> 00:02:02,490
+to make it stronger.
 
 65
-00:02:30,618 --> 00:02:32,248
-The real test: I mixed
+00:02:03,452 --> 00:02:06,030
+Too casual? Thumbs down.
 
 66
-00:02:32,248 --> 00:02:34,428
-my real messages with SaySo's,
+00:02:09,551 --> 00:02:10,591
+It fixes it,
 
 67
-00:02:34,428 --> 00:02:35,788
-and my friends had to
+00:02:12,056 --> 00:02:13,336
+and remembers.
 
 68
-00:02:35,788 --> 00:02:37,308
-guess which were mine.
+00:02:15,852 --> 00:02:16,852
+Under the hood:
 
 69
-00:02:37,694 --> 00:02:39,374
-They got it right fifty-three
+00:02:16,872 --> 00:02:18,542
+four Meta models.
 
 70
-00:02:39,374 --> 00:02:41,284
-percent of the time. Barely
+00:02:18,931 --> 00:02:20,651
+Muse Spark Open writes
 
 71
-00:02:41,284 --> 00:02:42,724
-better than a coin flip.
+00:02:20,671 --> 00:02:22,681
+my messages and emails.
 
 72
-00:02:42,724 --> 00:02:44,164
-Small sample, but that's the
+00:02:22,701 --> 00:02:23,851
+Muse Spark 1.3 reads
 
 73
-00:02:44,164 --> 00:02:45,064
-idea.
+00:02:23,871 --> 00:02:25,881
+screenshots and writes essays.
 
 74
-00:02:46,120 --> 00:02:47,530
-Your words.
+00:02:25,901 --> 00:02:27,331
+Muse Voice Transcribe turns
 
 75
-00:02:48,220 --> 00:02:49,490
-Your voice.
+00:02:27,351 --> 00:02:29,191
+my voice into text.
 
 76
-00:02:49,585 --> 00:02:51,565
-You always press send.
+00:02:29,577 --> 00:02:30,757
+And Muse Glimmer carries
 
 77
-00:02:54,016 --> 00:02:55,826
+00:02:30,777 --> 00:02:31,947
+my own LoRA, trained
+
+78
+00:02:31,967 --> 00:02:33,147
+on my messages, for
+
+79
+00:02:33,167 --> 00:02:34,147
+the keyboard.
+
+80
+00:02:34,542 --> 00:02:35,472
+The real test: I
+
+81
+00:02:35,492 --> 00:02:37,142
+mixed my real messages
+
+82
+00:02:37,162 --> 00:02:38,332
+with SaySo's, and my
+
+83
+00:02:38,352 --> 00:02:39,292
+friends had to guess
+
+84
+00:02:39,312 --> 00:02:40,402
+which were mine.
+
+85
+00:02:40,796 --> 00:02:41,616
+They got it right
+
+86
+00:02:41,636 --> 00:02:43,086
+fifty-three percent of the
+
+87
+00:02:43,106 --> 00:02:44,556
+time. Barely better than
+
+88
+00:02:44,576 --> 00:02:45,396
+a coin flip. Small
+
+89
+00:02:45,416 --> 00:02:46,456
+sample, but that's the
+
+90
+00:02:46,476 --> 00:02:47,276
+idea.
+
+91
+00:02:47,942 --> 00:02:49,272
+Your words.
+
+92
+00:02:49,932 --> 00:02:51,122
+Your voice.
+
+93
+00:02:51,521 --> 00:02:53,371
+You always press send.
+
+94
+00:02:57,021 --> 00:02:58,701
 This is SaySo.
 
