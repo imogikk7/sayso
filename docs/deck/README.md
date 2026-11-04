@@ -21,7 +21,7 @@ For a live preview run `npx @marp-team/marp-cli@4 -s docs/deck --config-file doc
 
 ## Numbers
 Every number comes from the repo: `eval/results/style_gain.json` and `style_gain_open.json` (slide 6, "Results · the
-live path"), `eval/results/bench_v4.json` (slides 2, 7; slide 7's intent ceiling and guessing baseline come from
-`docs/PLAN_v4_thinking.md`), `eval/results/blind_test.json` (slide 8, "Results · blind test"). Cost and price on the
+live path"), `eval/results/style_gain_lora.json` (slide 7, the LoRA vs Muse Spark Open), `eval/results/bench_v4.json` (slides 2,
+7; slide 7's intent ceiling and guessing baseline come from `docs/PLAN_v4_thinking.md`), `eval/results/blind_test.json` (slide 8, "Results · blind test"). Cost and price on the
 scaling slide are estimates.
 `sayso.pdf` must be rebuilt after any change to `sayso.md`.

@@ -62,7 +62,7 @@ Your own voice, adapted to who you're talking to — in any messenger.
 
 - **Own keyboard**, RU / EN keys, stock iOS look; ✨ → 1–3 versions *in your style*
 - **Audience** and **format**: message · series (a stack, sent part by part) · official · email
-- **Back Tap**: screenshot → three replies in your voice → pick one, it's copied
+- **Back Tap / Action Button**: screenshot → three replies in your voice → pick one, it's copied
 - **Chat**: Write · Rewrite · Reply → message, series, official, **email**, **essay**; 🎙 voice; remembers the thread ("in English")
 - **Styles** by kind: Messages · Emails · Essays, with a self-check
 - **Keeps learning** from what you send (opt-in) and fix (👎)
@@ -72,7 +72,7 @@ Your own voice, adapted to who you're talking to — in any messenger.
 <div style="font-size: 18px;">
 
 <div class="card" style="margin-bottom: 16px;">
-<span class="who">Back Tap · one iOS Shortcut</span>
+<span class="who">One iOS Shortcut</span>
 <b>Take Screenshot → Reply with SaySo → Choose from List → Copy to Clipboard</b>
 One tap installs it (<em>Add the SaySo shortcut</em>). Replies also wait in the keyboard.
 </div>
@@ -122,12 +122,12 @@ Each with a copy button; other versions fold into stacks.
 <div class="card accent">
 <span class="who">Open weights · Baseten</span>
 <b>Muse Spark Open</b>
-<strong>Writes</strong> in your style: ✨, chat Write / Rewrite, official, email. Fallback for Spark 1.3.
+<strong>Writes</strong> in your style: chat, email, revisions; ✨ when the GPU is off.
 </div>
 <div class="card">
 <span class="who">Meta Model API</span>
 <b>Muse Spark 1.3</b>
-<strong>Reads</strong> screenshots, chats, photos; writes replies in your style and essays. Fallback for Spark Open.
+<strong>Reads</strong> screenshots, chats, photos; drafts replies; writes essays.
 </div>
 <div class="card">
 <span class="who">Meta Model API</span>
@@ -137,7 +137,7 @@ Each with a copy button; other versions fold into stacks.
 <div class="card">
 <span class="who">Meta open weights</span>
 <b>Your LoRA on Muse Glimmer 30B</b>
-Trained on your own messages and benchmarked. Not hosted live yet (no GPU credits).
+Writes ✨ and restyles replies with the GPU on. Live in the demo; off by default.
 </div>
 </div>
 
@@ -173,7 +173,7 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 
 <br>
 
-<p style="font-size: 23px;">40 held-out pairs: a neutral draft → what the user really wrote. Muse Spark 1.3, only the prompt changes. <strong>Live writer, Muse Spark Open (open weights) with the same prompt: form 0.93 · chrF 50.4</strong> — about the same form, fewer of the user's exact words (it keeps their fillers, swearing, emoji and message splitting at their own rate). Picking examples by meaning scored the same as random ones.</p>
+<p style="font-size: 23px;">40 held-out pairs: a neutral draft → what the user really wrote. Muse Spark 1.3, only the prompt changes. <strong>Default live writer (GPU off), Muse Spark Open (open weights) with the same prompt: form 0.93 · chrF 50.4</strong> — about the same form, fewer of the user's exact words (it keeps their fillers, swearing, emoji and message splitting at their own rate). Picking examples by meaning scored the same as random ones.</p>
 
 <p class="note">Form similarity = 1 − total variation of form features (length, case, punctuation, emoji, languages) vs the real messages, as in the app's style self-check. chrF = character n-gram overlap with the real message. Reruns vary by about 0.02 form / 2 chrF. Source: <code>eval/style_gain.py</code> → <code>eval/results/style_gain.json</code>, <code>style_gain_open.json</code>.</p>
 
@@ -181,39 +181,39 @@ Trained on your own messages and benchmarked. Not hosted live yet (no GPU credit
 
 <div class="kicker">Results · personal model</div>
 
-## The LoRA thinks first, then writes like you
+## Your own LoRA vs the live writer
 
 <div class="cols-4">
-<div class="card">
-<span class="who">Mean length</span>
-<div class="stat accent">26</div>
-<div class="stat-label">chars · real 28 · earlier LoRA 34</div>
+<div class="card accent">
+<span class="who">Form similarity</span>
+<div class="stat accent">0.97</div>
+<div class="stat-label">LoRA · Muse Spark Open 0.93</div>
+</div>
+<div class="card accent">
+<span class="who">chrF</span>
+<div class="stat accent">55.7</div>
+<div class="stat-label">LoRA · Muse Spark Open 49.3</div>
 </div>
 <div class="card">
-<span class="who">Form distance</span>
-<div class="stat accent">0.044</div>
-<div class="stat-label">vs 0.075 earlier LoRA (lower is better)</div>
+<span class="who">chrF difference</span>
+<div class="stat">+6.4</div>
+<div class="stat-label">95% CI +0.8…+12.4</div>
 </div>
 <div class="card">
-<span class="who">Tone mix distance</span>
-<div class="stat accent">0.06</div>
-<div class="stat-label">vs 0.09 earlier LoRA</div>
-</div>
-<div class="card">
-<span class="who">Intent match</span>
-<div class="stat accent">46%</div>
-<div class="stat-label">ceiling ~48% · guessing 36.8%</div>
+<span class="who">Better / worse</span>
+<div class="stat">22<span style="font-size: 36px;"> / 15</span></div>
+<div class="stat-label">of 40 held-out rewrites</div>
 </div>
 </div>
 
-<div style="font-size: 23px; margin-top: 22px;">
+<div style="font-size: 17px; margin-top: 10px;">
 
-- 499 held-out test pairs. The model writes a short thought (intent + tone) in Glimmer's reasoning channel, then the message. Trained and benchmarked; not hosted live (no GPU credits).
-- The intent is a control: *agree*, *refuse*, *joke* → three replies with different intents, all in your voice.
+- Server's GPU-on path (Glimmer 30B + LoRA v4, 5 candidates + rerank) vs Muse Spark Open, 40 held-out rewrites. Rerank does most of it (first candidate: chrF 50.0); restyling Spark Open's answer: chrF −2.0.
+- v4 thinks first (intent + tone), then writes: 26 chars (real 28), intent match 46% (ceiling ~48%). Live in the demo on a temporary H100; off by default.
 
 </div>
 
-<p class="note">Source: <code>eval/results/bench_v4.json</code> (v4 with act/tone from the profile vs v2, all tasks; intent match = v4 + rerank). Ceiling and guessing baseline: <code>docs/PLAN_v4_thinking.md</code>; intent ceiling = how often the tagger agrees with itself.</p>
+<p class="note">Source: <code>eval/results/style_gain_lora.json</code> (<code>eval/style_gain.py --writer lora</code>, one H100 in an ephemeral Modal app) · <code>eval/results/bench_v4.json</code> (length: v4 with act/tone from the profile; intent match: v4 + rerank) · ceiling and baseline: <code>docs/PLAN_v4_thinking.md</code>.</p>
 
 ---
 

@@ -9,7 +9,7 @@ Built solo for the **Meta Global AI Developer Hackathon** (indie track). This fi
 personal data, names of contacts, message text or keys. README.md is the judge-facing description; keep this file and
 README consistent, and check claims against `serving/*.py` and `ios/` (the code is the source of truth).
 
-_Last updated: 2026-11-03 (after the feature freeze; blind test v3 scored)._
+_Last updated: 2026-11-04 (LoRA vs Spark Open scored, demo video filmed with the GPU on, SAYSO_CLEAN)._
 
 ## Hackathon rules that constrain everything
 
@@ -21,9 +21,19 @@ _Last updated: 2026-11-03 (after the feature freeze; blind test v3 scored)._
 
 ## Current state (what the code does now)
 
-The deployed server runs with **`SAYSO_GPU=off`** (Modal credits nearly gone, Fireworks uploads disabled service-wide,
-the hackathon Baseten key serves only Muse Spark Open). So all live text comes from Muse Spark models guided by the
-user's style; the personal LoRA is trained and benchmarked but not hosted.
+Day to day the deployed server runs with **`SAYSO_GPU=off`** (Modal credits nearly gone, Fireworks uploads disabled
+service-wide, the hackathon Baseten key serves only Muse Spark Open). So by default all live text comes from Muse Spark
+models guided by the user's style, and Muse Spark Open is the default writer.
+
+The personal LoRA is trained, benchmarked, and was compared with Spark Open on the server's own code path
+(`style_gain_lora.json`, see Evaluation). **The demo video was filmed with the GPU on** (`SAYSO_GPU=modal`, a temporary
+H100): keyboard ✨ = the LoRA, live; Back Tap = Muse Spark 1.3 reads the screenshot, the LoRA restyles its drafts; in-app
+chat, series and 👎 revisions = Muse Spark Open; essays = Muse Spark 1.3; voice = Muse Voice Transcribe 1.0. Say both
+honestly: "live in the demo on a temporary H100", "off by default".
+
+`SAYSO_CLEAN` (on by default): nothing SaySo writes swears (a rule in every Spark writing prompt; swearing variants
+dropped; a swearing Spark answer goes to the next model, words cut out only as a last resort; the LoRA's swearing
+candidates dropped before the rerank, or the words cut out).
 
 ### Models and roles (say it the same way everywhere: README, deck, video)
 | Model | Where | Role |
@@ -31,7 +41,7 @@ user's style; the personal LoRA is trained and benchmarked but not hosted.
 | **Muse Spark Open** (`meta-models/muse-spark-open-1026`, open weights) | Baseten, OpenAI-compatible, `https://inference.baseten.co/v1`, `reasoning_effort: low` | **Writes** in the user's style: ✨, `/rewrite`, `/compose`, Chat Write/Rewrite answers and revisions, emails (`spark(..., writes=True)` with `SAYSO_WRITER=open`, the default). Fallback for every other Spark call. It always reasons; take only the final answer. |
 | **Muse Spark 1.3** (`muse-spark-1.3`) | Meta Model API, `https://api.meta.ai/v1/chat/completions`, `reasoning_effort: low` | **Reads**: screenshots and pasted chats (audience, situation, 20–30-word neutral summary, three reply drafts — with the GPU off these drafts are the Back Tap / Reply answers), photos and screenshots of the user's own emails and essays, chat uploads when building a style (tagging, self-check judge). **Writes essays.** Turns feedback into rules. Rewrites a compose answer that just echoed the instruction. Fallback when Spark Open fails. |
 | **Muse Voice Transcribe 1.0** (`muse-voice-transcribe-1.0`) | Meta Model API, `/v1/asr/transcribe` | 🎙 in Chat → text (`/transcribe`). 24 kHz WAV, trimmed and leveled (`prepare_wav`); hints `languageBias` (English only: no Russian on its list) and `keywords` (names). Then Muse Spark fixes slips (`fix_transcript`, English prompt for English notes), with the iPhone's on-device `SFSpeechRecognizer` text as a second hearing. Audio is not stored. |
-| **Muse Glimmer 30B** + the user's LoRA (open weights) | vLLM on Modal (`SAYSO_GPU=modal`) or Baseten (`SAYSO_GPU=baseten`, `serving/baseten/`) | Trained and benchmarked, **not served now**. When on: rewrites chat-format drafts (`message`, `series`) in the user's voice, 5 candidates + rerank; without a chat the main style's v4 "thinks first" (`act · tone · gist` in `to=self`). Base Glimmer tagged situations/thoughts for the main style's offline training data. |
+| **Muse Glimmer 30B** + the user's LoRA (open weights) | vLLM on Modal (`SAYSO_GPU=modal`) or Baseten (`SAYSO_GPU=baseten`, `serving/baseten/`) Trained and benchmarked; **off by default**, live in the demo video. When on: rewrites chat-format drafts (`message`, `series`) in the user's voice, 5 candidates + rerank; without a chat the main style's v4 "thinks first" (`act · tone · gist` in `to=self`). Base Glimmer tagged situations/thoughts for the main style's offline training data. |
 
 Fallback order (`Writer.spark`): reading calls try Muse Spark 1.3 twice, then Spark Open once; writing calls try Spark
 Open first, then Spark 1.3 twice; then 502.
@@ -53,7 +63,8 @@ Open first, then Spark 1.3 twice; then 502.
   collapsed stacks; long-press any bubble to copy. Under each answer: Copy, 👍, 👎, ✏️. 👎 shows **quick reason chips**
   (chat: Too long, Too formal, Too casual, Not my words, Wrong meaning, Too rude; Email/Essay: Shorter, Longer, More
   personal, Simpler words, Less formal) or free text; a lasting preference becomes a rule ("✨ Learned: …"). Email
-  returns a subject; Essay returns an outline, word count and up to 3 "make it stronger" questions.
+  returns a subject; Essay returns an outline, word count and up to 3 "make it stronger" questions; essays come as 3–6
+  real paragraphs (split on blank lines), with varied sentence openings and at most one linking word per paragraph.
 - **Styles** (`StylesView`, `StyleKinds`, `AddStyleView`, `FormalImportView`, `SourceGuides`, `StyleCardView`): the
   style pill's menu has **New style from chats… / Add emails / Add essays**, each with step-by-step source guides. The tab
   is split by kind with tabs at the top: **Messages** (hero score, audience cards), **Emails** (tone and length,
@@ -114,7 +125,7 @@ Routes: `/rewrite`, `/compose`, `/reply`, `/chat`, `/transcribe`, `/learn`, `/fe
 `/styles/{id}` (GET/PATCH/DELETE), `/styles/{id}/custom` (PATCH), `/styles/{id}/documents`, `/latest`, `/warmup`, `/blind/{id}` (GET page and POST `/answers`: the only routes
 without the token; GET `/responses` needs it). Request/response fields: README
 "API reference". Env flags at deploy: `SAYSO_GPU` (off | modal | baseten), `SAYSO_WRITER` (open | meta),
-`SAYSO_TRAIN` (off | on: new styles train their own LoRA, ≥150 turns).
+`SAYSO_TRAIN` (off | on: new styles train their own LoRA, ≥150 turns), `SAYSO_CLEAN` (on | off: no swearing).
 
 Modal secrets: `sayso` (`SAYSO_API_TOKEN`), `sayso-glimmer` (`GLIMMER_KEY`, vLLM's own key, never in the app),
 `sayso-meta` (`META_API_KEY`), `sayso-extra` (`BASETEN_API_KEY`), optional `sayso-baseten` (LoRA on Baseten).
@@ -128,7 +139,9 @@ the user's moves (agree, refuse, joke, ask_back, …). Style is conditioned on *
 
 - Source: Telegram Desktop **HTML** per-chat exports (`ChatExport_<name>/messages.html, messages2.html, …`; sort numerically). Each message is `div.message.default`; continuation messages have class `joined` and no `from_name` — they belong to the previous sender. Text is in `div.text`. Service messages are `div.message.service`. The user's display name in exports is stored in `data/config.json` as `self_name` (gitignored) — never hardcode it.
 - Other parsers (`pipeline/parse_whatsapp.py`, `parse_instagram.py`, `sources.py`) output the same turn format; they
-  are used by `build_style.py` for uploads from the app. Raw uploads are parsed in memory and never written.
+  are used by `build_style.py` for uploads from the app. Raw uploads are parsed in memory and never written. WhatsApp
+  iOS exports (U+202F before AM/PM) parse. A style build tags at most 500 turns (`MAX_TURNS`, ~2–4 min); a restarted
+  build asks again who you are (`needs_me` resets `confirmed`).
 - **Unit = turn:** consecutive own messages merged with newlines. **Cleaning:** strip URLs, phone numbers, emails,
   card-like numbers, media placeholders, forwards, duplicates. **Balance:** no chat above 35% of the set.
   **Split:** last weeks per chat held out for test.
@@ -150,7 +163,11 @@ the user's moves (agree, refuse, joke, ask_back, …). Style is conditioned on *
   the style each step, and Muse Spark Open with the production prompt (form 0.93 / chrF 50.4).
   `--writer lora --gpu-ok` runs the same 40 with the GPU-on server path (Glimmer 30B + LoRA v4, unchanged Writer code;
   vLLM calls answered by one H100 in the ephemeral app `sayso-eval-lora`, `eval/lora_gpu.py`, 15-min hard stop) next to
-  Spark Open → `style_gain_lora.json` (not run yet); side-by-side samples go to `data/style_gain/` only.
+  Spark Open → `style_gain_lora.json`; side-by-side samples go to `data/style_gain/` only. **Result (Nov 4):** Spark
+  Open form 0.93 / chrF 49.3; LoRA + rerank 0.97 / 55.7 (chrF +6.4, 95% CI +0.8…+12.4, wins 22 / losses 15; form
+  +0.04, CI +0.01…+0.07); LoRA without rerank 0.98 / 50.0 (chrF +0.8, CI −6.2…+7.3); Spark Open restyled by the LoRA
+  ("open+lora") 0.94 / 47.3 (chrF −2.0, CI −3.9…−0.6). Spark Open's 49.3 here vs 50.4 in `style_gain_open.json` is
+  rerun noise.
 - **Blind test v3** (`eval/blind_test.py`, page `eval/blind_template.html`, routes `serving/blind.py`): 20 messages,
   each with its situation in Russian (from the neutral summary); friends tap «Человек» or «ИИ». ~10 real replies
   (friends/family) and ~10 SaySo (`/chat` reply to other situations), `--generic N` plain-AI controls; Muse Spark 1.3
@@ -166,6 +183,10 @@ the user's moves (agree, refuse, joke, ask_back, …). Style is conditioned on *
 ## Demo language
 
 The user writes in Russian (with Kazakh/English mixed in); judges are likely English-speaking. So: English narration and captions; an English translation under each on-screen message (translated by Muse Spark); side-by-side "generic AI vs SaySo" with fingerprint features highlighted in color (length, end punctuation, lowercase, emoticons, EN/KZ insertions) so the difference is visible without reading Russian; benchmark numbers and blind-test results are language-independent. Do not invent an English profile without English data.
+
+The video was filmed in **WhatsApp** (staged chats, the friend not named) with the GPU on, and its voiceover is the
+owner's cloned voice; `docs/VIDEO_SCRIPT.md` has the beats, the voice lines and the model badge for each beat. No
+speed-ups in the edit except a time-lapse of the style build.
 
 ## Privacy rules (non-negotiable)
 
@@ -195,7 +216,7 @@ eval/       bench_generate.py, metrics.py, style_gain.py + lora_gpu.py, smoke_ap
             results/ (aggregated metrics only)
 tests/      test_api_auth.py, test_blind_test.py, test_blind_api.py, test_parsers.py, test_privacy.py, test_styles.py,
             test_writer_fakes.py, test_memory.py, test_guards.py, test_series.py, test_length.py,
-            test_thread_api.py, test_style_gain_lora.py, fixtures/ (made-up data only)
+            test_thread_api.py, test_style_gain_lora.py, test_whatsapp_time.py, fixtures/ (made-up data only)
 ios/        SaySoApp/, SaySoKeyboard/, Shared/ (API.swift, Settings.swift, Generated/), scripts/gen_secrets.sh
 docs/       SUBMISSION.md, VIDEO_SCRIPT.md, X_POST.md, DESIGN_BRIEF.md, deck/, video/, reviews/, plans and earlier reviews
 ```
