@@ -136,7 +136,9 @@ def build_style(style_id: str, files: list):
 @app.function(image=api_image, volumes={"/cache": cache, "/data": data},
               secrets=[modal.Secret.from_name(name) for name in ("sayso", "sayso-glimmer", "sayso-meta", "sayso-extra")]
               + ([modal.Secret.from_name("sayso-baseten")] if GPU == "baseten" else []),
-              scaledown_window=5 * 60, timeout=10 * 60, max_containers=1)  # one writer to the volume's files
+              scaledown_window=5 * 60, timeout=10 * 60, max_containers=1,  # one writer to the volume's files
+              # SAYSO_WARM=on keeps one CPU container up (no ~11 s cold start before the Shortcut's 25 s limit)
+              min_containers=1 if os.environ.get("SAYSO_WARM", "on") == "on" else 0)
 @modal.concurrent(max_inputs=32)
 @modal.asgi_app()
 def api():
